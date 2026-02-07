@@ -16,12 +16,12 @@ import Link from "next/link";
 
 function SignupForm() {
   const searchParams = useSearchParams();
-  const initialRole = searchParams.get("role") === "consultant" ? "consultant" : "sme";
+  const initialRole = searchParams.get("role") || "sme";
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<"sme" | "consultant">(initialRole as any);
+  const [role, setRole] = useState<"sme" | "consultant" | "admin">(initialRole as any);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
@@ -40,12 +40,14 @@ function SignupForm() {
         createdAt: serverTimestamp(),
       });
 
-      toast({ title: "Account created!", description: "Welcome to OpsMarketplace." });
+      toast({ title: "Account created!", description: `Welcome to OpsMarketplace as an ${role.toUpperCase()}.` });
       
       if (role === 'consultant') {
         router.push("/profile/setup");
+      } else if (role === 'admin') {
+        router.push("/dashboard/admin");
       } else {
-        router.push("/dashboard");
+        router.push("/dashboard/sme");
       }
     } catch (error: any) {
       toast({
@@ -99,7 +101,7 @@ function SignupForm() {
           </div>
           <div className="space-y-4 pt-2">
             <Label>I am a:</Label>
-            <RadioGroup value={role} onValueChange={(v: any) => setRole(v)} className="flex gap-6">
+            <RadioGroup value={role} onValueChange={(v: any) => setRole(v)} className="flex flex-col gap-2">
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="sme" id="role-sme" />
                 <Label htmlFor="role-sme">SME (Requestor)</Label>
@@ -107,6 +109,10 @@ function SignupForm() {
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="consultant" id="role-consultant" />
                 <Label htmlFor="role-consultant">Consultant (Provider)</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="admin" id="role-admin" />
+                <Label htmlFor="role-admin">Platform Admin (Super Admin)</Label>
               </div>
             </RadioGroup>
           </div>
