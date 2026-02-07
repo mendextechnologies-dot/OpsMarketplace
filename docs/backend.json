@@ -52,9 +52,12 @@
       "description": "An SME's request for professional services",
       "type": "object",
       "properties": {
-        "userId": { "type": "string" },
+        "userId": { "type": "string", "description": "Optional for admin created leads" },
         "serviceCategory": { "type": "string" },
         "companyName": { "type": "string" },
+        "contactName": { "type": "string" },
+        "contactPhone": { "type": "string" },
+        "contactEmail": { "type": "string" },
         "employeeCount": { "type": "number" },
         "state": { "type": "string" },
         "city": { "type": "string" },
@@ -62,6 +65,9 @@
         "urgency": { "type": "string", "enum": ["low", "medium", "high"] },
         "additionalNotes": { "type": "string" },
         "status": { "type": "string", "enum": ["new", "assigned", "completed"] },
+        "leadSource": { "type": "string", "enum": ["platform", "admin_manual", "linkedin", "google", "referral", "cold_outreach"] },
+        "leadType": { "type": "string", "enum": ["inbound", "outbound"] },
+        "createdByAdmin": { "type": "boolean" },
         "createdAt": { "type": "string", "format": "date-time" }
       }
     },

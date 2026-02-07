@@ -3,9 +3,9 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
-import { collection, query, getDocs, orderBy, doc, updateDoc, setDoc, serverTimestamp, deleteDoc } from "firebase/firestore";
+import { collection, query, getDocs, orderBy, doc, updateDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase-config";
-import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,20 +16,18 @@ import {
   Users, 
   CheckCircle, 
   ShieldAlert, 
-  Briefcase, 
   LayoutDashboard,
   ArrowUpRight,
   Loader2,
-  Package,
   Activity,
   UserPlus,
   Phone,
-  Mail,
-  Trash2,
-  AlertTriangle,
-  Zap
+  Zap,
+  PlusCircle,
+  Globe
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 type AdminView = 'dashboard' | 'requests' | 'consultants' | 'pipeline';
 
@@ -89,7 +87,6 @@ export default function AdminDashboard() {
 
   const handleManualAssign = async (reqId: string, consultantId: string) => {
     try {
-      // Create new assignment
       const assignmentId = `${reqId}_${consultantId}`;
       await setDoc(doc(db, "leadAssignments", assignmentId), {
         requestId: reqId,
@@ -98,7 +95,6 @@ export default function AdminDashboard() {
         createdAt: serverTimestamp(),
       });
 
-      // Update request status if it was new
       const request = requests.find(r => r.id === reqId);
       if (request?.status === 'new') {
         await updateDoc(doc(db, "serviceRequests", reqId), { status: 'assigned' });
@@ -106,7 +102,7 @@ export default function AdminDashboard() {
 
       toast({ title: "Expert Assigned", description: "Lead has been manually matched." });
       setAssigningTo(null);
-      fetchData(); // Refresh all
+      fetchData();
     } catch (error: any) {
       toast({ title: "Assignment Failed", description: error.message, variant: "destructive" });
     }
@@ -136,7 +132,6 @@ export default function AdminDashboard() {
     );
   }
 
-  // Dashboard Stats
   const totalRequests = requests.length;
   const newRequests = requests.filter(r => r.status === 'new').length;
   const activeLeads = assignments.filter(a => a.status === 'accepted' || a.status === 'sent').length;
@@ -160,7 +155,6 @@ export default function AdminDashboard() {
 
   return (
     <div className="flex min-h-screen bg-[#F8FAFC]">
-      {/* Sidebar */}
       <aside className="w-72 border-r bg-white p-6 hidden lg:block sticky top-0 h-screen">
         <div className="flex items-center gap-2 mb-10 px-2">
           <Zap className="h-6 w-6 text-primary fill-primary" />
@@ -180,6 +174,11 @@ export default function AdminDashboard() {
         </div>
 
         <div className="mt-auto pt-6 border-t px-4">
+          <Button asChild variant="default" className="w-full justify-start gap-2 mb-6" size="sm">
+            <Link href="/admin/create-lead">
+              <PlusCircle className="h-4 w-4" /> Create Manual Lead
+            </Link>
+          </Button>
           <div className="flex items-center gap-3">
             <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
               {profile.name.charAt(0)}
@@ -192,7 +191,6 @@ export default function AdminDashboard() {
         </div>
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1 p-8 lg:p-12">
         <header className="mb-10 flex justify-between items-start">
           <div>
@@ -201,18 +199,24 @@ export default function AdminDashboard() {
             </h2>
             <p className="text-slate-500 mt-1">Foundation level oversight of SME-Expert interactions.</p>
           </div>
-          <Button onClick={fetchData} variant="outline" size="sm" className="gap-2">
-            <Activity className="h-4 w-4" /> Refresh Data
-          </Button>
+          <div className="flex gap-3">
+            <Button asChild variant="default" size="sm" className="gap-2">
+              <Link href="/admin/create-lead">
+                <PlusCircle className="h-4 w-4" /> New Lead
+              </Link>
+            </Button>
+            <Button onClick={fetchData} variant="outline" size="sm" className="gap-2">
+              <Activity className="h-4 w-4" /> Refresh
+            </Button>
+          </div>
         </header>
 
         {activeView === 'dashboard' && (
           <div className="space-y-10">
-            {/* KPI Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               {[
                 { label: "Total Requests", val: totalRequests, icon: FileText, color: "text-blue-600", bg: "bg-blue-50" },
-                { label: "New Requests", val: newRequests, icon: AlertTriangle, color: "text-amber-600", bg: "bg-amber-50" },
+                { label: "New Requests", val: newRequests, icon: ShieldAlert, color: "text-amber-600", bg: "bg-amber-50" },
                 { label: "Active Leads", val: activeLeads, icon: Activity, color: "text-primary", bg: "bg-primary/5" },
                 { label: "Completed", val: completedJobs, icon: CheckCircle, color: "text-green-600", bg: "bg-green-50" },
                 { label: "Total Experts", val: totalCons, icon: Users, color: "text-purple-600", bg: "bg-purple-50" },
@@ -232,8 +236,8 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <Card className="lg:col-span-2 border-none shadow-sm">
                 <CardHeader>
-                  <CardTitle>Critical: New Requests</CardTitle>
-                  <CardDescription>SMEs waiting for expert validation.</CardDescription>
+                  <CardTitle>Recent Activity</CardTitle>
+                  <CardDescription>Latest service requests requiring attention.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Table>
@@ -241,18 +245,22 @@ export default function AdminDashboard() {
                       <TableRow>
                         <TableHead>Service</TableHead>
                         <TableHead>Company</TableHead>
-                        <TableHead>Location</TableHead>
+                        <TableHead>Type</TableHead>
                         <TableHead className="text-right">Action</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {requests.filter(r => r.status === 'new').slice(0, 5).map((req) => (
+                      {requests.slice(0, 5).map((req) => (
                         <TableRow key={req.id}>
                           <TableCell className="font-bold">{req.serviceCategory}</TableCell>
                           <TableCell className="text-xs">{req.companyName}</TableCell>
-                          <TableCell className="text-xs">{req.city}, {req.state}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-[9px] uppercase">
+                              {req.leadType || 'Inbound'}
+                            </Badge>
+                          </TableCell>
                           <TableCell className="text-right">
-                            <Button size="xs" variant="ghost" className="text-primary font-bold h-8" onClick={() => setActiveView('requests')}>
+                            <Button size="sm" variant="ghost" className="text-primary font-bold h-8" onClick={() => setActiveView('requests')}>
                               Review <ArrowUpRight className="ml-1 h-3 w-3" />
                             </Button>
                           </TableCell>
@@ -265,24 +273,19 @@ export default function AdminDashboard() {
 
               <Card className="border-none shadow-sm">
                 <CardHeader>
-                  <CardTitle>Top Experts</CardTitle>
-                  <CardDescription>Most active consultants.</CardDescription>
+                  <CardTitle>Source Analysis</CardTitle>
+                  <CardDescription>Where requests are coming from.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {consultants.slice(0, 5).map((cons) => {
-                    const leadCount = assignments.filter(a => a.consultantId === cons.id).length;
+                  {['platform', 'linkedin', 'google', 'referral', 'admin_manual'].map(source => {
+                    const count = requests.filter(r => r.leadSource === source || (source === 'platform' && !r.leadSource)).length;
                     return (
-                      <div key={cons.id} className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold uppercase">
-                            {cons.name.charAt(0)}
-                          </div>
-                          <div>
-                            <p className="text-xs font-bold leading-none">{cons.name}</p>
-                            <p className="text-[10px] text-muted-foreground">{cons.city}</p>
-                          </div>
+                      <div key={source} className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Globe className="h-3 w-3 text-slate-400" />
+                          <span className="text-xs capitalize font-medium">{source.replace('_', ' ')}</span>
                         </div>
-                        <Badge variant="outline" className="text-[10px]">{leadCount} Leads</Badge>
+                        <Badge variant="secondary" className="text-[10px]">{count}</Badge>
                       </div>
                     );
                   })}
@@ -317,13 +320,16 @@ export default function AdminDashboard() {
                     return (
                       <TableRow key={req.id}>
                         <TableCell>
-                          <p className="font-bold">{req.serviceCategory}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-bold">{req.serviceCategory}</p>
+                            {req.createdByAdmin && <Badge className="bg-amber-100 text-amber-700 text-[8px] h-3 px-1">MANUAL</Badge>}
+                          </div>
                           <p className="text-[10px] text-muted-foreground line-clamp-1">{req.description}</p>
                         </TableCell>
                         <TableCell>
                           <p className="text-xs font-bold">{req.companyName}</p>
                           <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-                            <Phone className="h-2 w-2" /> {org?.phone || 'No phone'}
+                            <Phone className="h-2 w-2" /> {req.contactPhone || org?.phone || 'No phone'}
                           </p>
                         </TableCell>
                         <TableCell>
