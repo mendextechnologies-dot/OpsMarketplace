@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, Suspense } from "react";
@@ -41,9 +42,9 @@ function SignupForm() {
         createdAt: serverTimestamp(),
       };
 
+      // We use the db instance from firebase-config which is set to 'ops-marketplace-db'
       const userDocRef = doc(db, "users", user.uid);
 
-      // Non-blocking mutation with catch block for rich errors
       setDoc(userDocRef, profileData)
         .then(() => {
           toast({ 
@@ -60,12 +61,14 @@ function SignupForm() {
           }
         })
         .catch(async (error) => {
+          console.error("Firestore Write Error:", error);
           const permissionError = new FirestorePermissionError({
             path: userDocRef.path,
             operation: 'create',
             requestResourceData: profileData,
           });
           errorEmitter.emit('permission-error', permissionError);
+          setLoading(false);
         });
 
     } catch (error: any) {

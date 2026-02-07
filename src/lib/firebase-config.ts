@@ -1,3 +1,4 @@
+
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
@@ -11,9 +12,16 @@ const firebaseConfig = {
   appId: "1:638757531639:web:cee8f654892db9edab48f2"
 };
 
+// Initialize Firebase App
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+
+// Initialize Auth
 const auth = getAuth(app);
-// Explicitly using the named database 'ops-marketplace-db' as requested
+
+/**
+ * Initialize Firestore with the specific named database 'ops-marketplace-db'.
+ * This prevents the SDK from defaulting to '(default)' which may not exist.
+ */
 const db = getFirestore(app, "ops-marketplace-db");
 
 export { auth, db };

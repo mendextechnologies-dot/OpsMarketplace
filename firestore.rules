@@ -1,54 +1,9 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper function to get the current user's profile data
-    function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-    }
-
-    // User Profiles: Users can read all profiles (to see names), 
-    // but can only create/update their own profile. Admins have full access.
-    match /users/{userId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null && request.auth.uid == userId;
-      allow update: if request.auth != null && (request.auth.uid == userId || getUserData().role == 'admin');
-    }
-
-    // Consultant Profiles: Publicly readable by authenticated users.
-    // Only the consultant themselves or an admin can edit.
-    match /consultantProfiles/{userId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && (request.auth.uid == userId || getUserData().role == 'admin');
-    }
-
-    // Service Requests: SMEs can see/edit their own. 
-    // Consultants can see requests to evaluate leads. Admins see all.
-    match /serviceRequests/{requestId} {
-      allow read: if request.auth != null && (
-        resource.data.userId == request.auth.uid || 
-        getUserData().role == 'admin' || 
-        getUserData().role == 'consultant'
-      );
-      allow create: if request.auth != null;
-      allow update: if request.auth != null && (
-        resource.data.userId == request.auth.uid || 
-        getUserData().role == 'admin'
-      );
-      allow delete: if request.auth != null && getUserData().role == 'admin';
-    }
-
-    // Lead Assignments: Mapping between requests and consultants.
-    // Visible to the specific consultant, the requester, or an admin.
-    match /leadAssignments/{assignmentId} {
-      allow read: if request.auth != null && (
-        resource.data.consultantId == request.auth.uid || 
-        getUserData().role == 'admin'
-      );
-      allow create: if request.auth != null; // For simplicity in this MVP matching simulation
-      allow update, delete: if request.auth != null && (
-        resource.data.consultantId == request.auth.uid || 
-        getUserData().role == 'admin'
-      );
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
