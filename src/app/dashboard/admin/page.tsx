@@ -19,7 +19,9 @@ import {
   Loader2,
   Activity,
   PlusCircle,
-  Zap
+  Zap,
+  MapPin,
+  Briefcase
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -220,6 +222,61 @@ export default function AdminDashboard() {
                             </Button>
                           </div>
                         )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+
+        {activeView === 'consultants' && (
+          <Card className="border-none shadow-sm">
+            <CardContent className="pt-6">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Expert Name</TableHead>
+                    <TableHead>Company & Experience</TableHead>
+                    <TableHead>Location</TableHead>
+                    <TableHead>Specializations</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {consultants.map((cons) => (
+                    <TableRow key={cons.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="bg-primary/10 text-primary h-8 w-8 rounded-full flex items-center justify-center font-bold text-xs">
+                            {cons.name?.charAt(0)}
+                          </div>
+                          <div>
+                            <p className="font-bold text-sm">{cons.name}</p>
+                            <p className="text-[10px] text-muted-foreground">{cons.phone}</p>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
+                          <p className="text-xs flex items-center gap-1 font-medium">
+                            <Briefcase className="h-3 w-3 text-muted-foreground" /> {cons.companyName}
+                          </p>
+                          <Badge variant="secondary" className="text-[9px]">
+                            {cons.yearsExperience}+ Years Exp
+                          </Badge>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-xs flex items-center gap-1">
+                          <MapPin className="h-3 w-3 text-muted-foreground" />
+                          <span>{cons.city}, {cons.statesCovered?.join(', ')}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <p className="text-[10px] text-muted-foreground italic line-clamp-2 max-w-[250px]">
+                          {getServiceNames(cons.servicesOffered)}
+                        </p>
                       </TableCell>
                     </TableRow>
                   ))}
