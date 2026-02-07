@@ -37,9 +37,11 @@
       "properties": {
         "userId": { "type": "string" },
         "name": { "type": "string" },
+        "companyName": { "type": "string" },
         "phone": { "type": "string" },
         "city": { "type": "string" },
         "description": { "type": "string" },
+        "yearsExperience": { "type": "number" },
         "servicesOffered": { "type": "array", "items": { "type": "string" } },
         "statesCovered": { "type": "array", "items": { "type": "string" } },
         "createdAt": { "type": "string", "format": "date-time" }
@@ -70,7 +72,7 @@
       "properties": {
         "requestId": { "type": "string" },
         "consultantId": { "type": "string" },
-        "status": { "type": "string", "enum": ["sent", "viewed", "accepted", "rejected"] },
+        "status": { "type": "string", "enum": ["sent", "viewed", "accepted", "rejected", "completed"] },
         "createdAt": { "type": "string", "format": "date-time" }
       }
     }
