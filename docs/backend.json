@@ -42,8 +42,31 @@
         "city": { "type": "string" },
         "description": { "type": "string" },
         "yearsExperience": { "type": "number" },
-        "servicesOffered": { "type": "array", "items": { "type": "string" } },
+        "servicesOffered": { "type": "array", "items": { "type": "string" }, "description": "Array of specific service IDs" },
         "statesCovered": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "ServiceCategory": {
+      "title": "Service Category",
+      "description": "Broad category of services (e.g., Payroll)",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "isActive": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "SubService": {
+      "title": "SubService",
+      "description": "Specific granular service (e.g., PF Filing)",
+      "type": "object",
+      "properties": {
+        "categoryId": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "isActive": { "type": "boolean" },
         "createdAt": { "type": "string", "format": "date-time" }
       }
     },
@@ -52,8 +75,10 @@
       "description": "An SME's request for professional services",
       "type": "object",
       "properties": {
-        "userId": { "type": "string", "description": "Optional for admin created leads" },
-        "serviceCategory": { "type": "string" },
+        "userId": { "type": "string" },
+        "categoryId": { "type": "string" },
+        "serviceId": { "type": "string" },
+        "serviceCategory": { "type": "string", "description": "Legacy field for backward compatibility" },
         "companyName": { "type": "string" },
         "contactName": { "type": "string" },
         "contactPhone": { "type": "string" },
@@ -98,6 +123,14 @@
     "/consultantProfiles/{userId}": {
       "schema": "ConsultantProfile",
       "description": "Consultant professional profile"
+    },
+    "/serviceCategories/{categoryId}": {
+      "schema": "ServiceCategory",
+      "description": "Service categories lookup"
+    },
+    "/services/{serviceId}": {
+      "schema": "SubService",
+      "description": "Specific services lookup"
     },
     "/serviceRequests/{requestId}": {
       "schema": "ServiceRequest",

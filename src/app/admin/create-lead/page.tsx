@@ -13,16 +13,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, PlusCircle, Building2, MapPin, User, Phone, Mail, Zap } from "lucide-react";
+import { ArrowLeft, Building2, MapPin, User, Phone, Mail, Zap } from "lucide-react";
 import Link from "next/link";
-
-const CATEGORIES = [
-  "Labour Compliance",
-  "PF/ESIC Registration",
-  "Payroll Setup",
-  "HR Policy Drafting",
-  "Compliance Audit",
-];
+import { SERVICE_TAXONOMY, getServiceName } from "@/lib/constants";
 
 const SOURCES = [
   { id: "admin_manual", label: "Admin Manual" },
@@ -39,7 +32,8 @@ export default function AdminCreateLeadPage() {
   const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
-    serviceCategory: "",
+    categoryId: "",
+    serviceId: "",
     companyName: "",
     contactName: "",
     contactPhone: "",
@@ -63,13 +57,17 @@ export default function AdminCreateLeadPage() {
     );
   }
 
+  const selectedCategory = SERVICE_TAXONOMY.find(c => c.id === formData.categoryId);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
       const leadData = {
-        serviceCategory: formData.serviceCategory,
+        categoryId: formData.categoryId,
+        serviceId: formData.serviceId,
+        serviceCategory: getServiceName(formData.serviceId),
         companyName: formData.companyName,
         contactName: formData.contactName,
         contactPhone: formData.contactPhone,
@@ -89,14 +87,14 @@ export default function AdminCreateLeadPage() {
       await addDoc(collection(db, "serviceRequests"), leadData);
 
       toast({
-        title: "Lead Created",
-        description: "The manual lead has been successfully added to the marketplace.",
+        title: "Manual Lead Created",
+        description: "The lead has been added to the registry for matching.",
       });
 
       router.push("/dashboard/admin");
     } catch (error: any) {
       toast({
-        title: "Creation Failed",
+        title: "Failed",
         description: error.message,
         variant: "destructive",
       });
@@ -106,17 +104,17 @@ export default function AdminCreateLeadPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-12 max-w-3xl">
+    <div className="container mx-auto px-4 py-12 max-w-4xl">
       <Button variant="ghost" asChild className="mb-6">
         <Link href="/dashboard/admin">
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Dashboard
+          Back to Admin Console
         </Link>
       </Button>
 
       <div className="mb-8">
-        <h1 className="text-3xl font-extrabold tracking-tight">Create Manual Lead</h1>
-        <p className="text-muted-foreground">Add a lead found via offline or external channels.</p>
+        <h1 className="text-3xl font-extrabold tracking-tight text-primary">Add Outbound Lead</h1>
+        <p className="text-muted-foreground">Manually log external opportunities into the marketplace.</p>
       </div>
 
       <Card className="border-2 shadow-sm">
@@ -124,21 +122,41 @@ export default function AdminCreateLeadPage() {
           <CardContent className="space-y-6 pt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label>Service Category</Label>
+                <Label>Category</Label>
                 <Select
-                  value={formData.serviceCategory}
-                  onValueChange={(v) => setFormData({ ...formData, serviceCategory: v })}
+                  value={formData.categoryId}
+                  onValueChange={(v) => setFormData({ ...formData, categoryId: v, serviceId: "" })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select Category" />
+                    <SelectValue placeholder="Pick Category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {CATEGORIES.map((cat) => (
-                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    {SERVICE_TAXONOMY.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
+              <div className="space-y-2">
+                <Label>Specific Service</Label>
+                <Select
+                  value={formData.serviceId}
+                  onValueChange={(v) => setFormData({ ...formData, serviceId: v })}
+                  disabled={!formData.categoryId}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pick Service" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {selectedCategory?.services.map((serv) => (
+                      <SelectItem key={serv.id} value={serv.id}>{serv.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label>Lead Source</Label>
                 <Select
@@ -146,7 +164,7 @@ export default function AdminCreateLeadPage() {
                   onValueChange={(v) => setFormData({ ...formData, leadSource: v })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select Source" />
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {SOURCES.map((src) => (
@@ -155,9 +173,22 @@ export default function AdminCreateLeadPage() {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="space-y-2">
+                <Label>Urgency</Label>
+                <Select value={formData.urgency} onValueChange={(v) => setFormData({ ...formData, urgency: v })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 pt-4 border-t">
               <Label>Company Name</Label>
               <div className="relative">
                 <Building2 className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -200,51 +231,39 @@ export default function AdminCreateLeadPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label>Contact Phone</Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    className="pl-9"
-                    placeholder="+91..."
-                    value={formData.contactPhone}
-                    onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
-                    required
-                  />
-                </div>
+                <Input
+                  placeholder="+91..."
+                  value={formData.contactPhone}
+                  onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
+                  required
+                />
               </div>
               <div className="space-y-2">
                 <Label>Contact Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    className="pl-9"
-                    type="email"
-                    placeholder="contact@company.com"
-                    value={formData.contactEmail}
-                    onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
-                    required
-                  />
-                </div>
+                <Input
+                  type="email"
+                  placeholder="name@email.com"
+                  value={formData.contactEmail}
+                  onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
+                  required
+                />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label>State</Label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    className="pl-9"
-                    placeholder="Maharashtra"
-                    value={formData.state}
-                    onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                    required
-                  />
-                </div>
+                <Input
+                  placeholder="Maharashtra"
+                  value={formData.state}
+                  onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                  required
+                />
               </div>
               <div className="space-y-2">
                 <Label>City</Label>
                 <Input
-                  placeholder="Pune"
+                  placeholder="Mumbai"
                   value={formData.city}
                   onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                   required
@@ -253,10 +272,10 @@ export default function AdminCreateLeadPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>Description of Requirement</Label>
+              <Label>Request Description</Label>
               <Textarea
                 placeholder="Details of what the client needs..."
-                className="min-h-[120px]"
+                className="min-h-[100px]"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 required
@@ -264,8 +283,8 @@ export default function AdminCreateLeadPage() {
             </div>
           </CardContent>
           <CardFooter>
-            <Button className="w-full h-12 text-lg" type="submit" disabled={loading || !formData.serviceCategory}>
-              {loading ? "Saving Lead..." : "Create Lead"}
+            <Button className="w-full h-12 text-lg" type="submit" disabled={loading || !formData.serviceId}>
+              {loading ? "Processing..." : "Create Manual Lead"}
             </Button>
           </CardFooter>
         </form>
