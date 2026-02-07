@@ -1,4 +1,3 @@
-
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
@@ -14,7 +13,7 @@ const firebaseConfig = {
 
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 const auth = getAuth(app);
-// Explicitly pointing to your named database 'ops-marketplace-db'
+// Explicitly using the named database 'ops-marketplace-db' as requested
 const db = getFirestore(app, "ops-marketplace-db");
 
 export { auth, db };

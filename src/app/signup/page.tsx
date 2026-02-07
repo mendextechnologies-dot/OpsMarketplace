@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, Suspense } from "react";
@@ -35,6 +34,7 @@ function SignupForm() {
       const user = userCredential.user;
 
       // 2. Create user profile in Firestore 'users' collection with the selected role
+      // This will use the 'ops-marketplace-db' as configured in lib/firebase-config.ts
       await setDoc(doc(db, "users", user.uid), {
         name,
         email,
