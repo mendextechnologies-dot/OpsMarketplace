@@ -15,8 +15,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle2, ArrowRight, ArrowLeft, ChevronRight } from "lucide-react";
+import { CheckCircle2, ArrowRight, ArrowLeft, ChevronRight, Tags } from "lucide-react";
 import { SERVICE_TAXONOMY, getServiceNames, getCategoryName } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 
 export default function NewRequestPage() {
   const { profile, orgProfile } = useAuth();
@@ -134,7 +135,10 @@ export default function NewRequestPage() {
             {SERVICE_TAXONOMY.map((cat) => (
               <Card 
                 key={cat.id} 
-                className={`cursor-pointer hover:border-primary transition-all group ${formData.categoryId === cat.id ? 'border-primary ring-2 ring-primary/10' : ''}`}
+                className={cn(
+                  "cursor-pointer hover:border-primary transition-all group",
+                  formData.categoryId === cat.id ? 'border-primary ring-2 ring-primary/10' : ''
+                )}
                 onClick={() => {
                   setFormData({ ...formData, categoryId: cat.id, serviceIds: [] });
                   setStep(2);
@@ -161,29 +165,52 @@ export default function NewRequestPage() {
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold flex items-center gap-2">
               <span className="bg-primary text-primary-foreground w-8 h-8 rounded-full flex items-center justify-center text-sm">2</span>
-              Specific Services in {selectedCategory?.name}
+              Select Specific Services
             </h2>
-            <span className="text-xs text-muted-foreground">{formData.serviceIds.length} selected</span>
+            <span className="text-xs font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">
+              {formData.serviceIds.length} Selected
+            </span>
           </div>
+          <p className="text-sm text-muted-foreground mb-4">Choose one or more services required in <strong>{selectedCategory?.name}</strong>:</p>
+          
           <div className="grid grid-cols-1 gap-3">
-            {selectedCategory?.services.map((serv) => (
-              <Card 
-                key={serv.id} 
-                className={`cursor-pointer hover:border-primary transition-all group ${formData.serviceIds.includes(serv.id) ? 'border-primary bg-primary/5' : ''}`}
-                onClick={() => toggleService(serv.id)}
-              >
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Checkbox checked={formData.serviceIds.includes(serv.id)} onCheckedChange={() => toggleService(serv.id)} />
-                    <span className="font-medium group-hover:text-primary">{serv.name}</span>
+            {selectedCategory?.services.map((serv) => {
+              const isSelected = formData.serviceIds.includes(serv.id);
+              return (
+                <div 
+                  key={serv.id} 
+                  className={cn(
+                    "flex items-center space-x-4 p-4 border-2 rounded-xl cursor-pointer transition-all",
+                    isSelected 
+                      ? "border-primary bg-primary/5 shadow-sm" 
+                      : "hover:border-primary/40 bg-white"
+                  )}
+                  onClick={() => toggleService(serv.id)}
+                >
+                  <Checkbox 
+                    id={serv.id}
+                    checked={isSelected}
+                    className="h-5 w-5 pointer-events-none"
+                    onCheckedChange={() => {}} // Controlled by parent div onClick
+                  />
+                  <div className="flex-1">
+                    <Label htmlFor={serv.id} className="text-base font-semibold cursor-pointer block">
+                      {serv.name}
+                    </Label>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
+                </div>
+              );
+            })}
           </div>
-          <div className="pt-4">
-            <Button className="w-full" size="lg" disabled={formData.serviceIds.length === 0} onClick={() => setStep(3)}>
-              Continue to Details <ArrowRight className="ml-2 h-4 w-4" />
+          
+          <div className="pt-8 sticky bottom-4">
+            <Button 
+              className="w-full h-14 text-lg shadow-xl" 
+              size="lg" 
+              disabled={formData.serviceIds.length === 0} 
+              onClick={() => setStep(3)}
+            >
+              Continue to Details <ArrowRight className="ml-4 h-5 w-5" />
             </Button>
           </div>
         </div>
@@ -197,37 +224,39 @@ export default function NewRequestPage() {
             </Button>
             <CardTitle className="flex items-center gap-2 text-primary">
               <span className="bg-primary text-primary-foreground w-8 h-8 rounded-full flex items-center justify-center text-sm">3</span>
-              {selectedCategory?.name} Request
+              Finalize Your Request
             </CardTitle>
             <CardDescription>
-              Provide specific details for the {formData.serviceIds.length} services selected.
+              We'll use these details to find the best expert match.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="p-3 bg-muted rounded-lg space-y-1">
-              <Label className="text-[10px] uppercase text-muted-foreground font-bold">Selected Services</Label>
-              <p className="text-xs font-semibold">{getServiceNames(formData.serviceIds)}</p>
+            <div className="p-4 bg-muted/50 rounded-xl border border-muted space-y-2">
+              <Label className="text-[10px] uppercase text-muted-foreground font-bold flex items-center gap-1">
+                <Tags className="h-3 w-3" /> Selected Requirements
+              </Label>
+              <p className="text-sm font-bold text-foreground leading-tight">{getServiceNames(formData.serviceIds)}</p>
             </div>
 
             <div className="space-y-2">
               <Label>Urgency Level</Label>
               <Select value={formData.urgency} onValueChange={(v) => setFormData({ ...formData, urgency: v })}>
-                <SelectTrigger>
+                <SelectTrigger className="h-12">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="low">Standard (Few weeks)</SelectItem>
                   <SelectItem value="medium">Important (This week)</SelectItem>
-                  <SelectItem value="high">Urgent (Immediate)</SelectItem>
+                  <SelectItem value="high">Urgent (Immediate Support)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label>Description of Requirement</Label>
+              <Label>Describe what you need help with</Label>
               <Textarea
-                placeholder="Details of what you need help with..."
-                className="min-h-[120px]"
+                placeholder="Be as specific as possible (e.g. 'We need to register 5 employees for ESIC by Friday')"
+                className="min-h-[150px] text-base"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 required
@@ -237,14 +266,14 @@ export default function NewRequestPage() {
             <div className="space-y-2">
               <Label>Internal Reference / Notes (Optional)</Label>
               <Input
-                placeholder="Any internal identifiers or specific constraints..."
+                placeholder="Any internal IDs or specific constraints..."
                 value={formData.additionalNotes}
                 onChange={(e) => setFormData({ ...formData, additionalNotes: e.target.value })}
               />
             </div>
           </CardContent>
           <CardFooter>
-            <Button className="w-full h-12 text-lg shadow-lg group" onClick={handleSubmit} disabled={loading || !formData.description}>
+            <Button className="w-full h-14 text-lg shadow-lg group" onClick={handleSubmit} disabled={loading || !formData.description}>
               {loading ? "Submitting..." : "Post Requirement"}
               <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </Button>
