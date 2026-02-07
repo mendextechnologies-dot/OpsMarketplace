@@ -14,6 +14,7 @@ const firebaseConfig = {
 
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
+// Explicitly pointing to your named database 'ops-marketplace-db'
+const db = getFirestore(app, "ops-marketplace-db");
 
 export { auth, db };

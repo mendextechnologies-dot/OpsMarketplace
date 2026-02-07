@@ -30,9 +30,11 @@ function SignupForm() {
     e.preventDefault();
     setLoading(true);
     try {
+      // 1. Create user in Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
+      // 2. Create user profile in Firestore 'users' collection with the selected role
       await setDoc(doc(db, "users", user.uid), {
         name,
         email,
@@ -40,8 +42,12 @@ function SignupForm() {
         createdAt: serverTimestamp(),
       });
 
-      toast({ title: "Account created!", description: `Welcome to OpsMarketplace as an ${role.toUpperCase()}.` });
+      toast({ 
+        title: "Account created!", 
+        description: `Welcome to OpsMarketplace as an ${role.toUpperCase()}.` 
+      });
       
+      // 3. Redirect based on role
       if (role === 'consultant') {
         router.push("/profile/setup");
       } else if (role === 'admin') {
