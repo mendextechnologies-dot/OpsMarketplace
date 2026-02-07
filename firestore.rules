@@ -2,8 +2,47 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if false;
+    
+    // Helper function to check if the user is an admin
+    function isAdmin() {
+      return request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Rules for the 'users' collection
+    match /users/{userId} {
+      // Users can read their own profile, or admins can read any profile
+      allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      // A user can create their own profile document
+      allow create: if request.auth != null && request.auth.uid == userId;
+      // Users can update their own profile, or admins can update any profile
+      allow update: if request.auth != null && (request.auth.uid == userId || isAdmin());
+    }
+
+    // Rules for consultant profiles
+    match /consultantProfiles/{userId} {
+      allow read: if request.auth != null;
+      allow create, update: if request.auth != null && (request.auth.uid == userId || isAdmin());
+    }
+
+    // Rules for service requests
+    match /serviceRequests/{requestId} {
+      // Requesters can see their own requests, admins can see all
+      allow read: if request.auth != null && (resource.data.userId == request.auth.uid || isAdmin());
+      // Any authenticated user can create a request
+      allow create: if request.auth != null;
+      // Requesters or admins can update requests
+      allow update: if request.auth != null && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    // Rules for lead assignments
+    match /leadAssignments/{assignmentId} {
+      // Matched consultants or admins can read assignments
+      allow read: if request.auth != null && (resource.data.consultantId == request.auth.uid || isAdmin());
+      // Allow creation for matching purposes in the mock flow
+      allow create: if request.auth != null;
+      // Allow status updates
+      allow update: if request.auth != null;
     }
   }
 }
