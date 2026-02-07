@@ -17,17 +17,18 @@ const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 // Initialize Auth
 const auth = getAuth(app);
 
+// Explicitly define the database ID
+const databaseId = "ops-marketplace-db";
+
 /**
  * Initialize Firestore with the specific named database.
- * We use the environment variable to ensure we don't fall back to '(default)'.
  */
-const databaseId = process.env.NEXT_PUBLIC_FIREBASE_DATABASE_ID || "ops-marketplace-db";
-
-// For debugging: log the database being used to the console
-if (typeof window !== "undefined") {
-  console.log("🔥 Initializing Firestore with Database ID:", databaseId);
-}
-
 const db = getFirestore(app, databaseId);
+
+// For debugging in the browser console
+if (typeof window !== "undefined") {
+  console.log("🔥 Firebase initialized with Database ID:", databaseId);
+  console.log("🔥 Project ID:", firebaseConfig.projectId);
+}
 
 export { auth, db };
