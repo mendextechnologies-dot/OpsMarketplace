@@ -3,15 +3,27 @@
   "placeholderImages": [
     {
       "id": "hero-image",
-      "description": "Professional business meeting",
-      "imageUrl": "https://picsum.photos/seed/ops1/1200/600",
-      "imageHint": "business office"
+      "description": "Enterprise business dashboard",
+      "imageUrl": "https://picsum.photos/seed/ops-enterprise/1200/600",
+      "imageHint": "enterprise office"
     },
     {
-      "id": "compliance-icon",
-      "description": "Compliance document icon",
-      "imageUrl": "https://picsum.photos/seed/compliance/400/400",
-      "imageHint": "legal document"
+      "id": "compliance-service",
+      "description": "Legal compliance documents",
+      "imageUrl": "https://picsum.photos/seed/compliance-legal/400/300",
+      "imageHint": "legal papers"
+    },
+    {
+      "id": "hr-ops",
+      "description": "HR team meeting",
+      "imageUrl": "https://picsum.photos/seed/hr-team/400/300",
+      "imageHint": "hr team"
+    },
+    {
+      "id": "payroll-calc",
+      "description": "Payroll and accounting",
+      "imageUrl": "https://picsum.photos/seed/payroll-accounting/400/300",
+      "imageHint": "accounting office"
     }
   ]
 }
