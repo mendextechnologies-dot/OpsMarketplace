@@ -4,7 +4,6 @@ service cloud.firestore {
   match /databases/{database}/documents {
     
     // Helper to check if the user is an admin
-    // We use a safe check that doesn't crash if the document is missing
     function isAdmin() {
       return request.auth != null && 
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
@@ -12,10 +11,13 @@ service cloud.firestore {
 
     // Rules for the 'users' collection
     match /users/{userId} {
-      // Users can read/write their own profile
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-      // Admins can manage all users
-      allow read, write: if isAdmin();
+      // Allow creation if the user is authenticated and the ID matches
+      // This is essential for the signup process
+      allow create: if request.auth != null && request.auth.uid == userId;
+      // Allow read/update if it's their own profile or they are admin
+      allow read, update: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      // Admin can do anything
+      allow delete: if isAdmin();
     }
 
     // Rules for consultant profiles

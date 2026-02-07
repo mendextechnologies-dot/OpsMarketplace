@@ -22,8 +22,10 @@ const databaseId = "ops-marketplace-db";
 
 /**
  * Initialize Firestore with the specific named database.
- * This prevents the SDK from defaulting to the '(default)' database which may not exist.
+ * We hardcode the ID here to ensure the SDK never defaults to '(default)'.
  */
 const db = getFirestore(app, databaseId);
+
+console.log("Firestore Initialized for database:", databaseId);
 
 export { auth, db };
