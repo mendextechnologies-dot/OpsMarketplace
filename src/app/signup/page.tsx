@@ -42,9 +42,9 @@ function SignupForm() {
         createdAt: serverTimestamp(),
       };
 
-      // We use the db instance from firebase-config which is set to 'ops-marketplace-db'
       const userDocRef = doc(db, "users", user.uid);
 
+      // Perform the write
       setDoc(userDocRef, profileData)
         .then(() => {
           toast({ 

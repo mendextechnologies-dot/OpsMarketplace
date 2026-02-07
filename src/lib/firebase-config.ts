@@ -1,15 +1,14 @@
-
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDfi4uRsMaJ_q9gkpA8vMfnq0Rc3saYr4Q",
-  authDomain: "studio-9601698734-99e90.firebaseapp.com",
-  projectId: "studio-9601698734-99e90",
-  storageBucket: "studio-9601698734-99e90.firebasestorage.app",
-  messagingSenderId: "638757531639",
-  appId: "1:638757531639:web:cee8f654892db9edab48f2"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
 // Initialize Firebase App
@@ -19,9 +18,16 @@ const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
 /**
- * Initialize Firestore with the specific named database 'ops-marketplace-db'.
- * This prevents the SDK from defaulting to '(default)' which may not exist.
+ * Initialize Firestore with the specific named database.
+ * We use the environment variable to ensure we don't fall back to '(default)'.
  */
-const db = getFirestore(app, "ops-marketplace-db");
+const databaseId = process.env.NEXT_PUBLIC_FIREBASE_DATABASE_ID || "ops-marketplace-db";
+
+// For debugging: log the database being used to the console
+if (typeof window !== "undefined") {
+  console.log("🔥 Initializing Firestore with Database ID:", databaseId);
+}
+
+const db = getFirestore(app, databaseId);
 
 export { auth, db };
