@@ -1,0 +1,17 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "hero-image",
+      "description": "Professional business meeting",
+      "imageUrl": "https://picsum.photos/seed/ops1/1200/600",
+      "imageHint": "business office"
+    },
+    {
+      "id": "compliance-icon",
+      "description": "Compliance document icon",
+      "imageUrl": "https://picsum.photos/seed/compliance/400/400",
+      "imageHint": "legal document"
+    }
+  ]
+}
