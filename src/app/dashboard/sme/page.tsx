@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
 import { PlusCircle, FileText, Clock, CheckCircle2, LayoutGrid, ArrowRight, Building2, Tag } from "lucide-react";
-import { getServiceNames } from "@/lib/constants";
+import { getServiceNames, getCategoryName } from "@/lib/constants";
 
 export default function SMEDashboard() {
   const { profile, orgProfile } = useAuth();
