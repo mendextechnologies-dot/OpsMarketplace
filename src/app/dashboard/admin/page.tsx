@@ -5,12 +5,12 @@ import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
 import { collection, query, getDocs, orderBy, doc, updateDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase-config";
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/ui/table";
-import { Badge } from "@/ui/badge";
-import { Button } from "@/ui/button";
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   FileText, 
   Users, 
@@ -159,7 +159,7 @@ export default function AdminDashboard() {
               <Card key={i} className="border-none shadow-sm">
                 <CardContent className="pt-6">
                   <stat.icon className={cn("h-5 w-5 mb-4", stat.color)} />
-                  <p className="text-xs text-muted-foreground uppercase font-bold tracking-tighter">{stat.label}</p>
+                  <p className="text-sm text-muted-foreground uppercase font-bold tracking-tighter">{stat.label}</p>
                   <h3 className="text-2xl font-bold mt-1">{stat.val}</h3>
                 </CardContent>
               </Card>
