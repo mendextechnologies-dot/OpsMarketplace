@@ -3,13 +3,14 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
-import { collection, query, getDocs, orderBy, doc, updateDoc } from "firebase/firestore";
+import { collection, query, getDocs, orderBy, doc, updateDoc, setDoc, serverTimestamp, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase-config";
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   FileText, 
   Users, 
@@ -19,11 +20,18 @@ import {
   LayoutDashboard,
   ArrowUpRight,
   Loader2,
-  Package
+  Package,
+  Activity,
+  UserPlus,
+  Phone,
+  Mail,
+  Trash2,
+  AlertTriangle,
+  Zap
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type AdminView = 'dashboard' | 'requests' | 'consultants' | 'assignments';
+type AdminView = 'dashboard' | 'requests' | 'consultants' | 'pipeline';
 
 export default function AdminDashboard() {
   const { profile, loading: authLoading } = useAuth();
@@ -33,52 +41,74 @@ export default function AdminDashboard() {
   const [requests, setRequests] = useState<any[]>([]);
   const [consultants, setConsultants] = useState<any[]>([]);
   const [assignments, setAssignments] = useState<any[]>([]);
+  const [orgProfiles, setOrgProfiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [assigningTo, setAssigningTo] = useState<string | null>(null);
+
+  const fetchData = async () => {
+    if (!profile || profile.role !== 'admin') return;
+    setLoading(true);
+    try {
+      const [reqSnap, consSnap, assignSnap, orgSnap] = await Promise.all([
+        getDocs(query(collection(db, "serviceRequests"), orderBy("createdAt", "desc"))),
+        getDocs(collection(db, "consultantProfiles")),
+        getDocs(query(collection(db, "leadAssignments"), orderBy("createdAt", "desc"))),
+        getDocs(collection(db, "organisationProfiles"))
+      ]);
+
+      setRequests(reqSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setConsultants(consSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setAssignments(assignSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setOrgProfiles(orgSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+    } catch (error: any) {
+      toast({
+        title: "Error fetching platform data",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (!profile || profile.role !== 'admin') return;
-
-      try {
-        const [reqSnap, consSnap, assignSnap] = await Promise.all([
-          getDocs(query(collection(db, "serviceRequests"), orderBy("createdAt", "desc"))),
-          getDocs(collection(db, "consultantProfiles")),
-          getDocs(query(collection(db, "leadAssignments"), orderBy("createdAt", "desc")))
-        ]);
-
-        setRequests(reqSnap.docs.map(d => ({ id: d.id, ...d.data() })));
-        setConsultants(consSnap.docs.map(d => ({ id: d.id, ...d.data() })));
-        setAssignments(assignSnap.docs.map(d => ({ id: d.id, ...d.data() })));
-      } catch (error: any) {
-        toast({
-          title: "Error fetching data",
-          description: error.message,
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (!authLoading) {
+    if (!authLoading && profile?.role === 'admin') {
       fetchData();
     }
-  }, [profile, authLoading, toast]);
+  }, [profile, authLoading]);
 
   const handleStatusChange = async (reqId: string, newStatus: string) => {
     try {
       await updateDoc(doc(db, "serviceRequests", reqId), { status: newStatus });
       setRequests(prev => prev.map(r => r.id === reqId ? { ...r, status: newStatus } : r));
-      toast({ 
-        title: "Status Updated", 
-        description: `Request status set to ${newStatus}.` 
-      });
+      toast({ title: "Status Updated", description: `Request status set to ${newStatus}.` });
     } catch (error: any) {
-      toast({ 
-        title: "Update Failed", 
-        description: error.message, 
-        variant: "destructive" 
+      toast({ title: "Update Failed", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const handleManualAssign = async (reqId: string, consultantId: string) => {
+    try {
+      // Create new assignment
+      const assignmentId = `${reqId}_${consultantId}`;
+      await setDoc(doc(db, "leadAssignments", assignmentId), {
+        requestId: reqId,
+        consultantId: consultantId,
+        status: "sent",
+        createdAt: serverTimestamp(),
       });
+
+      // Update request status if it was new
+      const request = requests.find(r => r.id === reqId);
+      if (request?.status === 'new') {
+        await updateDoc(doc(db, "serviceRequests", reqId), { status: 'assigned' });
+      }
+
+      toast({ title: "Expert Assigned", description: "Lead has been manually matched." });
+      setAssigningTo(null);
+      fetchData(); // Refresh all
+    } catch (error: any) {
+      toast({ title: "Assignment Failed", description: error.message, variant: "destructive" });
     }
   };
 
@@ -87,7 +117,7 @@ export default function AdminDashboard() {
       <div className="flex items-center justify-center min-h-screen bg-muted/30">
         <div className="text-center space-y-4">
           <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
-          <p className="text-muted-foreground font-medium">Initializing Admin Console...</p>
+          <p className="text-muted-foreground font-medium">Initializing Marketplace Console...</p>
         </div>
       </div>
     );
@@ -98,16 +128,20 @@ export default function AdminDashboard() {
       <div className="container mx-auto p-20 text-center space-y-4">
         <ShieldAlert className="h-12 w-12 mx-auto text-destructive" />
         <h2 className="text-2xl font-bold">Access Denied</h2>
-        <p className="text-muted-foreground">You do not have administrative privileges to view this page.</p>
-        <Button asChild variant="outline">
-          <a href="/dashboard">Return to Personal Dashboard</a>
+        <p className="text-muted-foreground">Super Admin privileges required.</p>
+        <Button asChild variant="outline" onClick={() => window.location.href = '/'}>
+          Return Home
         </Button>
       </div>
     );
   }
 
-  const openRequestsCount = requests.filter(r => r.status !== 'completed').length;
-  const totalConsultants = consultants.length;
+  // Dashboard Stats
+  const totalRequests = requests.length;
+  const newRequests = requests.filter(r => r.status === 'new').length;
+  const activeLeads = assignments.filter(a => a.status === 'accepted' || a.status === 'sent').length;
+  const completedJobs = requests.filter(r => r.status === 'completed').length;
+  const totalCons = consultants.length;
 
   const NavItem = ({ view, icon: Icon, label }: { view: AdminView, icon: any, label: string }) => (
     <button
@@ -115,7 +149,7 @@ export default function AdminDashboard() {
       className={cn(
         "w-full flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors rounded-lg",
         activeView === view 
-          ? "bg-primary text-primary-foreground shadow-sm" 
+          ? "bg-primary text-primary-foreground shadow-lg" 
           : "text-muted-foreground hover:bg-muted hover:text-foreground"
       )}
     >
@@ -125,192 +159,214 @@ export default function AdminDashboard() {
   );
 
   return (
-    <div className="flex min-h-screen bg-muted/10">
-      {/* Sidebar Navigation */}
-      <aside className="w-64 border-r bg-white p-6 hidden md:block">
-        <div className="mb-8 px-2">
-          <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-4">Management</h2>
-          <div className="space-y-1">
-            <NavItem view="dashboard" icon={LayoutDashboard} label="Dashboard" />
-            <NavItem view="requests" icon={FileText} label="Service Requests" />
-            <NavItem view="consultants" icon={Users} label="Consultants" />
-            <NavItem view="assignments" icon={Briefcase} label="Lead Assignments" />
-          </div>
+    <div className="flex min-h-screen bg-[#F8FAFC]">
+      {/* Sidebar */}
+      <aside className="w-72 border-r bg-white p-6 hidden lg:block sticky top-0 h-screen">
+        <div className="flex items-center gap-2 mb-10 px-2">
+          <Zap className="h-6 w-6 text-primary fill-primary" />
+          <h1 className="text-xl font-bold tracking-tight">OpsMarketplace</h1>
+        </div>
+
+        <div className="space-y-1 mb-8">
+          <p className="px-4 text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Monitor</p>
+          <NavItem view="dashboard" icon={LayoutDashboard} label="Control Center" />
+          <NavItem view="pipeline" icon={Activity} label="Lead Pipeline" />
         </div>
         
-        <div className="px-2 pt-6 border-t">
-          <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-4">System</h2>
-          <div className="p-3 bg-muted/50 rounded-lg">
-            <p className="text-[10px] text-muted-foreground leading-tight">
-              OpsMarketplace Admin Console v1.0. Connected to {db.app.options.projectId}
-            </p>
+        <div className="space-y-1 mb-8">
+          <p className="px-4 text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Operations</p>
+          <NavItem view="requests" icon={FileText} label="Service Requests" />
+          <NavItem view="consultants" icon={Users} label="Expert Registry" />
+        </div>
+
+        <div className="mt-auto pt-6 border-t px-4">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
+              {profile.name.charAt(0)}
+            </div>
+            <div>
+              <p className="text-xs font-bold leading-none">{profile.name}</p>
+              <p className="text-[10px] text-muted-foreground">Super Admin</p>
+            </div>
           </div>
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <main className="flex-1 p-8 lg:p-12 overflow-auto">
-        <header className="mb-10 flex justify-between items-end">
+      {/* Main Content */}
+      <main className="flex-1 p-8 lg:p-12">
+        <header className="mb-10 flex justify-between items-start">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-primary capitalize">{activeView}</h1>
-            <p className="text-muted-foreground">Manage and monitor platform activity in real-time.</p>
+            <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 capitalize">
+              {activeView === 'dashboard' ? 'Marketplace Pulse' : activeView}
+            </h2>
+            <p className="text-slate-500 mt-1">Foundation level oversight of SME-Expert interactions.</p>
           </div>
-          <Badge variant="outline" className="text-xs py-1 px-3 bg-white">
-            Admin: {profile.name}
-          </Badge>
+          <Button onClick={fetchData} variant="outline" size="sm" className="gap-2">
+            <Activity className="h-4 w-4" /> Refresh Data
+          </Button>
         </header>
 
-        {/* Dynamic View Content */}
         {activeView === 'dashboard' && (
-          <div className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card className="shadow-sm border-2 border-primary/5">
-                <CardContent className="pt-6">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Open Requests</p>
-                      <h3 className="text-3xl font-bold mt-2">{openRequestsCount}</h3>
+          <div className="space-y-10">
+            {/* KPI Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              {[
+                { label: "Total Requests", val: totalRequests, icon: FileText, color: "text-blue-600", bg: "bg-blue-50" },
+                { label: "New Requests", val: newRequests, icon: AlertTriangle, color: "text-amber-600", bg: "bg-amber-50" },
+                { label: "Active Leads", val: activeLeads, icon: Activity, color: "text-primary", bg: "bg-primary/5" },
+                { label: "Completed", val: completedJobs, icon: CheckCircle, color: "text-green-600", bg: "bg-green-50" },
+                { label: "Total Experts", val: totalCons, icon: Users, color: "text-purple-600", bg: "bg-purple-50" },
+              ].map((kpi, i) => (
+                <Card key={i} className="border-none shadow-sm">
+                  <CardContent className="pt-6">
+                    <div className={cn("p-2 rounded-lg w-fit mb-4", kpi.bg)}>
+                      <kpi.icon className={cn("h-4 w-4", kpi.color)} />
                     </div>
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                      <FileText className="h-5 w-5 text-primary" />
-                    </div>
-                  </div>
-                  <div className="mt-4 flex items-center text-xs text-green-600 font-medium">
-                    <ArrowUpRight className="h-3 w-3 mr-1" /> Active matching
-                  </div>
+                    <p className="text-xs font-medium text-slate-500">{kpi.label}</p>
+                    <h3 className="text-2xl font-bold mt-1">{kpi.val}</h3>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <Card className="lg:col-span-2 border-none shadow-sm">
+                <CardHeader>
+                  <CardTitle>Critical: New Requests</CardTitle>
+                  <CardDescription>SMEs waiting for expert validation.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Service</TableHead>
+                        <TableHead>Company</TableHead>
+                        <TableHead>Location</TableHead>
+                        <TableHead className="text-right">Action</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {requests.filter(r => r.status === 'new').slice(0, 5).map((req) => (
+                        <TableRow key={req.id}>
+                          <TableCell className="font-bold">{req.serviceCategory}</TableCell>
+                          <TableCell className="text-xs">{req.companyName}</TableCell>
+                          <TableCell className="text-xs">{req.city}, {req.state}</TableCell>
+                          <TableCell className="text-right">
+                            <Button size="xs" variant="ghost" className="text-primary font-bold h-8" onClick={() => setActiveView('requests')}>
+                              Review <ArrowUpRight className="ml-1 h-3 w-3" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </CardContent>
               </Card>
 
-              <Card className="shadow-sm border-2 border-primary/5">
-                <CardContent className="pt-6">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Total Consultants</p>
-                      <h3 className="text-3xl font-bold mt-2">{totalConsultants}</h3>
-                    </div>
-                    <div className="p-2 bg-blue-50 rounded-lg">
-                      <Users className="h-5 w-5 text-blue-600" />
-                    </div>
-                  </div>
-                  <div className="mt-4 flex items-center text-xs text-muted-foreground">
-                    Across {Array.from(new Set(consultants.flatMap(c => c.statesCovered || []))).length} states
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="shadow-sm border-2 border-primary/5">
-                <CardContent className="pt-6">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Total Assignments</p>
-                      <h3 className="text-3xl font-bold mt-2">{assignments.length}</h3>
-                    </div>
-                    <div className="p-2 bg-purple-50 rounded-lg">
-                      <Briefcase className="h-5 w-5 text-purple-600" />
-                    </div>
-                  </div>
-                  <div className="mt-4 flex items-center text-xs text-muted-foreground font-medium">
-                    {assignments.filter(a => a.status === 'accepted').length} Accepted
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="shadow-sm border-2 border-primary/5">
-                <CardContent className="pt-6">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Conversion</p>
-                      <h3 className="text-3xl font-bold mt-2">
-                        {requests.length > 0 ? Math.round((assignments.filter(a => a.status === 'accepted').length / requests.length) * 100) : 0}%
-                      </h3>
-                    </div>
-                    <div className="p-2 bg-amber-50 rounded-lg">
-                      <Package className="h-5 w-5 text-amber-600" />
-                    </div>
-                  </div>
-                  <div className="mt-4 flex items-center text-xs text-muted-foreground">
-                    Request to acceptance
-                  </div>
+              <Card className="border-none shadow-sm">
+                <CardHeader>
+                  <CardTitle>Top Experts</CardTitle>
+                  <CardDescription>Most active consultants.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {consultants.slice(0, 5).map((cons) => {
+                    const leadCount = assignments.filter(a => a.consultantId === cons.id).length;
+                    return (
+                      <div key={cons.id} className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold uppercase">
+                            {cons.name.charAt(0)}
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold leading-none">{cons.name}</p>
+                            <p className="text-[10px] text-muted-foreground">{cons.city}</p>
+                          </div>
+                        </div>
+                        <Badge variant="outline" className="text-[10px]">{leadCount} Leads</Badge>
+                      </div>
+                    );
+                  })}
                 </CardContent>
               </Card>
             </div>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-                <CardDescription>The latest 5 service requests submitted by SMEs.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Service</TableHead>
-                      <TableHead>Company</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Date</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {requests.slice(0, 5).map((req) => (
-                      <TableRow key={req.id}>
-                        <TableCell className="font-medium">{req.serviceCategory}</TableCell>
-                        <TableCell>{req.companyName}</TableCell>
-                        <TableCell>
-                          <Badge variant={req.status === 'new' ? 'secondary' : 'default'}>{req.status}</Badge>
-                        </TableCell>
-                        <TableCell className="text-right text-xs text-muted-foreground">
-                          {req.createdAt?.seconds ? new Date(req.createdAt.seconds * 1000).toLocaleDateString() : 'Just now'}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
           </div>
         )}
 
         {activeView === 'requests' && (
-          <Card>
-            <CardHeader>
-              <CardTitle>All Service Requests</CardTitle>
-              <CardDescription>Manage the lifecycle of SME requirements.</CardDescription>
+          <Card className="border-none shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Service Requests</CardTitle>
+                <CardDescription>Validate and match incoming requirements.</CardDescription>
+              </div>
+              <Badge>{requests.length} Total</Badge>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Company</TableHead>
-                    <TableHead>Location</TableHead>
+                    <TableHead>Request Info</TableHead>
+                    <TableHead>SME Details</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="text-right">Marketplace Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {requests.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">No requests found.</TableCell>
-                    </TableRow>
-                  ) : (
-                    requests.map((req) => (
+                  {requests.map((req) => {
+                    const org = orgProfiles.find(o => o.id === req.userId);
+                    return (
                       <TableRow key={req.id}>
-                        <TableCell className="font-medium">{req.serviceCategory}</TableCell>
-                        <TableCell>{req.companyName}</TableCell>
-                        <TableCell>{req.city}, {req.state}</TableCell>
                         <TableCell>
-                          <Badge variant={req.status === 'new' ? 'secondary' : 'default'}>{req.status}</Badge>
+                          <p className="font-bold">{req.serviceCategory}</p>
+                          <p className="text-[10px] text-muted-foreground line-clamp-1">{req.description}</p>
                         </TableCell>
-                        <TableCell className="text-right">
-                          {req.status !== 'completed' && (
-                            <Button size="sm" variant="outline" onClick={() => handleStatusChange(req.id, 'completed')}>
-                              <CheckCircle className="h-3 w-3 mr-1" /> Mark Complete
-                            </Button>
+                        <TableCell>
+                          <p className="text-xs font-bold">{req.companyName}</p>
+                          <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                            <Phone className="h-2 w-2" /> {org?.phone || 'No phone'}
+                          </p>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={req.status === 'new' ? 'secondary' : 'default'} className="capitalize text-[10px]">
+                            {req.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right space-x-2">
+                          {assigningTo === req.id ? (
+                            <div className="flex items-center gap-2 justify-end">
+                              <Select onValueChange={(val) => handleManualAssign(req.id, val)}>
+                                <SelectTrigger className="w-[180px] h-8 text-xs">
+                                  <SelectValue placeholder="Pick Expert" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {consultants
+                                    .filter(c => c.servicesOffered?.includes(req.serviceCategory))
+                                    .map(c => (
+                                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                                    ))
+                                  }
+                                </SelectContent>
+                              </Select>
+                              <Button size="sm" variant="ghost" onClick={() => setAssigningTo(null)}>Cancel</Button>
+                            </div>
+                          ) : (
+                            <>
+                              {req.status === 'new' && (
+                                <Button size="sm" variant="default" className="h-8 gap-1" onClick={() => setAssigningTo(req.id)}>
+                                  <UserPlus className="h-3 w-3" /> Assign Expert
+                                </Button>
+                              )}
+                              {req.status !== 'completed' && (
+                                <Button size="sm" variant="outline" className="h-8" onClick={() => handleStatusChange(req.id, 'completed')}>
+                                  Mark Complete
+                                </Button>
+                              )}
+                            </>
                           )}
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
+                    );
+                  })}
                 </TableBody>
               </Table>
             </CardContent>
@@ -318,71 +374,94 @@ export default function AdminDashboard() {
         )}
 
         {activeView === 'consultants' && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Consultant Registry</CardTitle>
-              <CardDescription>All active consultants and their verified expertise.</CardDescription>
+          <Card className="border-none shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Expert Registry</CardTitle>
+                <CardDescription>Supply side management and verification.</CardDescription>
+              </div>
+              <Badge variant="outline">{consultants.length} Active</Badge>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Location</TableHead>
+                    <TableHead>Consultant</TableHead>
+                    <TableHead>Location & Coverage</TableHead>
                     <TableHead>Specialties</TableHead>
-                    <TableHead>Coverage</TableHead>
+                    <TableHead>Performance</TableHead>
+                    <TableHead className="text-right">Contact</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {consultants.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={4} className="text-center py-12 text-muted-foreground">No consultants registered.</TableCell>
-                    </TableRow>
-                  ) : (
-                    consultants.map((cons) => (
+                  {consultants.map((cons) => {
+                    const leadCount = assignments.filter(a => a.consultantId === cons.id).length;
+                    const acceptedCount = assignments.filter(a => a.consultantId === cons.id && a.status === 'accepted').length;
+                    return (
                       <TableRow key={cons.id}>
-                        <TableCell className="font-medium">{cons.name}</TableCell>
-                        <TableCell>{cons.city}</TableCell>
+                        <TableCell>
+                          <p className="font-bold">{cons.name}</p>
+                          <p className="text-[10px] text-muted-foreground">{cons.companyName}</p>
+                        </TableCell>
+                        <TableCell>
+                          <p className="text-xs font-medium">{cons.city}</p>
+                          <p className="text-[10px] text-muted-foreground">{cons.statesCovered?.join(", ")}</p>
+                        </TableCell>
                         <TableCell>
                           <div className="flex flex-wrap gap-1">
                             {cons.servicesOffered?.slice(0, 2).map((s: string) => (
-                              <Badge key={s} variant="outline" className="text-[10px]">{s}</Badge>
+                              <Badge key={s} variant="secondary" className="text-[9px] px-1 h-4">{s}</Badge>
                             ))}
-                            {cons.servicesOffered?.length > 2 && <Badge variant="outline" className="text-[10px]">+{cons.servicesOffered.length - 2}</Badge>}
                           </div>
                         </TableCell>
-                        <TableCell className="text-sm">
-                          {Array.isArray(cons.statesCovered) ? cons.statesCovered.join(", ") : cons.statesCovered}
+                        <TableCell>
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[10px] font-bold">{leadCount} Leads Recv.</span>
+                            <div className="w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-primary" 
+                                style={{ width: `${leadCount > 0 ? (acceptedCount/leadCount)*100 : 0}%` }}
+                              />
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex flex-col items-end gap-1">
+                            <a href={`tel:${cons.phone}`} className="text-[10px] font-bold hover:underline flex items-center gap-1">
+                              <Phone className="h-2 w-2" /> {cons.phone}
+                            </a>
+                            <span className="text-[10px] text-muted-foreground italic truncate max-w-[120px]">expert@opsmarketplace.com</span>
+                          </div>
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
+                    );
+                  })}
                 </TableBody>
               </Table>
             </CardContent>
           </Card>
         )}
 
-        {activeView === 'assignments' && (
-          <Card>
+        {activeView === 'pipeline' && (
+          <Card className="border-none shadow-sm">
             <CardHeader>
-              <CardTitle>Assignment Tracking</CardTitle>
-              <CardDescription>Monitoring matches between SMEs and Consultants.</CardDescription>
+              <CardTitle>Lead Pipeline</CardTitle>
+              <CardDescription>Real-time journey of every marketplace transaction.</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Request / SME</TableHead>
-                    <TableHead>Consultant</TableHead>
+                    <TableHead>SME / Request</TableHead>
+                    <TableHead>Assigned Expert</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Date</TableHead>
+                    <TableHead className="text-right">Matched At</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {assignments.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center py-12 text-muted-foreground">No lead assignments recorded.</TableCell>
+                      <TableCell colSpan={4} className="text-center py-20 text-muted-foreground">No leads in pipeline.</TableCell>
                     </TableRow>
                   ) : (
                     assignments.map((asgn) => {
@@ -391,18 +470,24 @@ export default function AdminDashboard() {
                       return (
                         <TableRow key={asgn.id}>
                           <TableCell>
-                            <p className="font-medium">{request?.serviceCategory || 'Unknown Service'}</p>
-                            <p className="text-[10px] text-muted-foreground">{request?.companyName || 'N/A'}</p>
+                            <p className="text-xs font-bold">{request?.companyName || 'Deleted SME'}</p>
+                            <Badge variant="outline" className="text-[9px] h-4">{request?.serviceCategory || 'Unknown'}</Badge>
                           </TableCell>
                           <TableCell>
-                            <p className="font-medium">{consultant?.name || 'Unknown Consultant'}</p>
-                            <p className="text-[10px] text-muted-foreground">{consultant?.city || 'N/A'}</p>
+                            <p className="text-xs font-bold">{consultant?.name || 'Unknown Expert'}</p>
+                            <p className="text-[10px] text-muted-foreground italic">{consultant?.city}</p>
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline" className="capitalize">{asgn.status}</Badge>
+                            <Badge className={cn(
+                              "text-[10px] capitalize",
+                              asgn.status === 'accepted' ? "bg-green-100 text-green-700 hover:bg-green-100" :
+                              asgn.status === 'sent' ? "bg-blue-100 text-blue-700 hover:bg-blue-100" : ""
+                            )}>
+                              {asgn.status}
+                            </Badge>
                           </TableCell>
-                          <TableCell className="text-right text-sm">
-                            {asgn.createdAt?.seconds ? new Date(asgn.createdAt.seconds * 1000).toLocaleDateString() : 'N/A'}
+                          <TableCell className="text-right text-[10px] text-muted-foreground">
+                            {asgn.createdAt?.seconds ? new Date(asgn.createdAt.seconds * 1000).toLocaleString() : 'Just now'}
                           </TableCell>
                         </TableRow>
                       );
