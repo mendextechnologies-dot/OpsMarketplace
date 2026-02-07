@@ -229,8 +229,8 @@ export default function AdminDashboard() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Request ID</TableHead>
-                    <TableHead>Consultant ID</TableHead>
+                    <TableHead>Service / Company</TableHead>
+                    <TableHead>Consultant</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Matched On</TableHead>
                   </TableRow>
@@ -243,18 +243,31 @@ export default function AdminDashboard() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    assignments.map((asgn) => (
-                      <TableRow key={asgn.id}>
-                        <TableCell className="font-mono text-[10px]">{asgn.requestId}</TableCell>
-                        <TableCell className="font-mono text-[10px]">{asgn.consultantId}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{asgn.status}</Badge>
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          {asgn.createdAt?.seconds ? new Date(asgn.createdAt.seconds * 1000).toLocaleDateString() : 'Pending'}
-                        </TableCell>
-                      </TableRow>
-                    ))
+                    assignments.map((asgn) => {
+                      const request = requests.find(r => r.id === asgn.requestId);
+                      const consultant = consultants.find(c => c.id === asgn.consultantId);
+                      
+                      return (
+                        <TableRow key={asgn.id}>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium">{request?.serviceCategory || 'Unknown Service'}</p>
+                              <p className="text-[10px] text-muted-foreground">{request?.companyName || 'N/A'}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <p className="font-medium">{consultant?.name || 'Unknown Consultant'}</p>
+                            <p className="text-[10px] text-muted-foreground">{consultant?.city || 'N/A'}</p>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{asgn.status}</Badge>
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {asgn.createdAt?.seconds ? new Date(asgn.createdAt.seconds * 1000).toLocaleDateString() : 'Pending'}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>
