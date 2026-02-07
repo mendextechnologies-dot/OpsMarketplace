@@ -12,6 +12,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 function SignupForm() {
   const searchParams = useSearchParams();
@@ -29,39 +31,49 @@ function SignupForm() {
     e.preventDefault();
     setLoading(true);
     try {
-      // 1. Create user in Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // 2. Create user profile in Firestore 'users' collection with the selected role
-      // This will use the 'ops-marketplace-db' as configured in lib/firebase-config.ts
-      await setDoc(doc(db, "users", user.uid), {
+      const profileData = {
         name,
         email,
         role,
         createdAt: serverTimestamp(),
-      });
+      };
 
-      toast({ 
-        title: "Account created!", 
-        description: `Welcome to OpsMarketplace as an ${role.toUpperCase()}.` 
-      });
-      
-      // 3. Redirect based on role
-      if (role === 'consultant') {
-        router.push("/profile/setup");
-      } else if (role === 'admin') {
-        router.push("/dashboard/admin");
-      } else {
-        router.push("/dashboard/sme");
-      }
+      const userDocRef = doc(db, "users", user.uid);
+
+      // Non-blocking mutation with catch block for rich errors
+      setDoc(userDocRef, profileData)
+        .then(() => {
+          toast({ 
+            title: "Account created!", 
+            description: `Welcome to OpsMarketplace as an ${role.toUpperCase()}.` 
+          });
+          
+          if (role === 'consultant') {
+            router.push("/profile/setup");
+          } else if (role === 'admin') {
+            router.push("/dashboard/admin");
+          } else {
+            router.push("/dashboard/sme");
+          }
+        })
+        .catch(async (error) => {
+          const permissionError = new FirestorePermissionError({
+            path: userDocRef.path,
+            operation: 'create',
+            requestResourceData: profileData,
+          });
+          errorEmitter.emit('permission-error', permissionError);
+        });
+
     } catch (error: any) {
       toast({
         title: "Signup Failed",
         description: error.message,
         variant: "destructive",
       });
-    } finally {
       setLoading(false);
     }
   };

@@ -1,9 +1,9 @@
-
 import type { Metadata } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/hooks/use-auth';
 import { Navbar } from '@/components/navbar';
 import { Toaster } from '@/components/ui/toaster';
+import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
 export const metadata: Metadata = {
   title: 'OpsMarketplace | SME Operational Services',
@@ -24,6 +24,7 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased bg-background min-h-screen flex flex-col">
         <AuthProvider>
+          <FirebaseErrorListener />
           <Navbar />
           <main className="flex-grow">
             {children}
