@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { db } from "@/lib/firebase-config";
 import { collection, addDoc, serverTimestamp, query, where, getDocs } from "firebase/firestore";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
