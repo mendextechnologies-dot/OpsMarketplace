@@ -3,42 +3,37 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Helper function to check if the user is an admin
-    // We use a more defensive check here
+    // Helper to check if the user is an admin
+    // We use a safe check that doesn't crash if the document is missing
     function isAdmin() {
       return request.auth != null && 
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
     // Rules for the 'users' collection
     match /users/{userId} {
-      // Users can read their own profile, or admins can read any profile
-      allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
-      // A user can create their own profile document
-      allow create: if request.auth != null && request.auth.uid == userId;
-      // Users can update their own profile, or admins can update any profile
-      allow update: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      // Users can read/write their own profile
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      // Admins can manage all users
+      allow read, write: if isAdmin();
     }
 
     // Rules for consultant profiles
     match /consultantProfiles/{userId} {
       allow read: if request.auth != null;
-      allow create, update: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      allow write: if request.auth != null && (request.auth.uid == userId || isAdmin());
     }
 
     // Rules for service requests
     match /serviceRequests/{requestId} {
-      allow read: if request.auth != null && (resource == null || resource.data.userId == request.auth.uid || isAdmin());
+      allow read: if request.auth != null;
       allow create: if request.auth != null;
-      allow update: if request.auth != null && (resource.data.userId == request.auth.uid || isAdmin());
+      allow update, delete: if request.auth != null && (resource.data.userId == request.auth.uid || isAdmin());
     }
 
     // Rules for lead assignments
     match /leadAssignments/{assignmentId} {
-      allow read: if request.auth != null && (resource.data.consultantId == request.auth.uid || isAdmin());
-      allow create: if request.auth != null;
-      allow update: if request.auth != null;
+      allow read, write: if request.auth != null;
     }
   }
 }

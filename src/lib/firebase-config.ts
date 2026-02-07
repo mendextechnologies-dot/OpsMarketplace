@@ -3,12 +3,12 @@ import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyDfi4uRsMaJ_q9gkpA8vMfnq0Rc3saYr4Q",
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "studio-9601698734-99e90.firebaseapp.com",
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "studio-9601698734-99e90",
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "studio-9601698734-99e90.firebasestorage.app",
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "638757531639",
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:638757531639:web:cee8f654892db9edab48f2",
 };
 
 // Initialize Firebase App
@@ -17,18 +17,13 @@ const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 // Initialize Auth
 const auth = getAuth(app);
 
-// Explicitly define the database ID
+// Explicitly define the database ID provided by the user
 const databaseId = "ops-marketplace-db";
 
 /**
  * Initialize Firestore with the specific named database.
+ * This prevents the SDK from defaulting to the '(default)' database which may not exist.
  */
 const db = getFirestore(app, databaseId);
-
-// For debugging in the browser console
-if (typeof window !== "undefined") {
-  console.log("🔥 Firebase initialized with Database ID:", databaseId);
-  console.log("🔥 Project ID:", firebaseConfig.projectId);
-}
 
 export { auth, db };

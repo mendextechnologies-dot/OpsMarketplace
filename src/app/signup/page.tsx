@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, Suspense } from "react";
@@ -32,6 +31,7 @@ function SignupForm() {
     e.preventDefault();
     setLoading(true);
     try {
+      // 1. Create the user in Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
@@ -42,9 +42,9 @@ function SignupForm() {
         createdAt: serverTimestamp(),
       };
 
+      // 2. Create the user profile in Firestore
       const userDocRef = doc(db, "users", user.uid);
 
-      // Perform the write
       setDoc(userDocRef, profileData)
         .then(() => {
           toast({ 
@@ -61,7 +61,6 @@ function SignupForm() {
           }
         })
         .catch(async (error) => {
-          console.error("Firestore Write Error:", error);
           const permissionError = new FirestorePermissionError({
             path: userDocRef.path,
             operation: 'create',
