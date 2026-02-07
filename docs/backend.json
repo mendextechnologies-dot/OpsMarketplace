@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "UserProfile": {
@@ -8,9 +9,26 @@
         "name": { "type": "string" },
         "email": { "type": "string", "format": "email" },
         "role": { "type": "string", "enum": ["sme", "consultant", "admin"] },
+        "onboarded": { "type": "boolean" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["name", "email", "role"]
+    },
+    "OrganisationProfile": {
+      "title": "Organisation Profile",
+      "description": "Detailed business info for SMEs",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "companyName": { "type": "string" },
+        "industry": { "type": "string" },
+        "employeeCount": { "type": "number" },
+        "state": { "type": "string" },
+        "city": { "type": "string" },
+        "contactPerson": { "type": "string" },
+        "phone": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
     },
     "ConsultantProfile": {
       "title": "Consultant Profile",
@@ -39,6 +57,8 @@
         "state": { "type": "string" },
         "city": { "type": "string" },
         "description": { "type": "string" },
+        "urgency": { "type": "string", "enum": ["low", "medium", "high"] },
+        "additionalNotes": { "type": "string" },
         "status": { "type": "string", "enum": ["new", "assigned", "completed"] },
         "createdAt": { "type": "string", "format": "date-time" }
       }
@@ -62,6 +82,10 @@
     "/users/{userId}": {
       "schema": "UserProfile",
       "description": "User account data"
+    },
+    "/organisationProfiles/{userId}": {
+      "schema": "OrganisationProfile",
+      "description": "SME company details"
     },
     "/consultantProfiles/{userId}": {
       "schema": "ConsultantProfile",

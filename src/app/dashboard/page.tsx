@@ -16,8 +16,14 @@ export default function DashboardPage() {
         router.push("/login");
       } else if (profile) {
         if (profile.role === "sme") {
-          router.push("/dashboard/sme");
+          // Check if onboarding is needed
+          if (!profile.onboarded) {
+            router.push("/onboarding/sme");
+          } else {
+            router.push("/dashboard/sme");
+          }
         } else if (profile.role === "consultant") {
+          // For consultants, we have /profile/setup logic usually
           router.push("/dashboard/consultant");
         } else if (profile.role === "admin") {
           router.push("/dashboard/admin");
@@ -27,8 +33,11 @@ export default function DashboardPage() {
   }, [user, profile, loading, router]);
 
   return (
-    <div className="h-96 flex items-center justify-center">
-      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    <div className="h-screen flex items-center justify-center">
+      <div className="text-center space-y-4">
+        <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
+        <p className="text-muted-foreground animate-pulse font-medium">Preparing your workspace...</p>
+      </div>
     </div>
   );
 }
