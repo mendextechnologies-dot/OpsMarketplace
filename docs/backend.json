@@ -1,0 +1,80 @@
+
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Core user information and role",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["sme", "consultant", "admin"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "email", "role"]
+    },
+    "ConsultantProfile": {
+      "title": "Consultant Profile",
+      "description": "Professional details for consultants",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "city": { "type": "string" },
+        "description": { "type": "string" },
+        "servicesOffered": { "type": "array", "items": { "type": "string" } },
+        "statesCovered": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "ServiceRequest": {
+      "title": "Service Request",
+      "description": "An SME's request for professional services",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "serviceCategory": { "type": "string" },
+        "companyName": { "type": "string" },
+        "employeeCount": { "type": "number" },
+        "state": { "type": "string" },
+        "city": { "type": "string" },
+        "description": { "type": "string" },
+        "status": { "type": "string", "enum": ["new", "assigned", "completed"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "LeadAssignment": {
+      "title": "Lead Assignment",
+      "description": "Mapping of a request to a matching consultant",
+      "type": "object",
+      "properties": {
+        "requestId": { "type": "string" },
+        "consultantId": { "type": "string" },
+        "status": { "type": "string", "enum": ["sent", "viewed", "accepted", "rejected"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    }
+  },
+  "auth": {
+    "providers": ["password"]
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User account data"
+    },
+    "/consultantProfiles/{userId}": {
+      "schema": "ConsultantProfile",
+      "description": "Consultant professional profile"
+    },
+    "/serviceRequests/{requestId}": {
+      "schema": "ServiceRequest",
+      "description": "SME service requests"
+    },
+    "/leadAssignments/{assignmentId}": {
+      "schema": "LeadAssignment",
+      "description": "Lead matches for consultants"
+    }
+  }
+}
