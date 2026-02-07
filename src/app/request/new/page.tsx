@@ -13,9 +13,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle2, ArrowRight, ArrowLeft, ShieldCheck, Briefcase, FileText, ChevronRight } from "lucide-react";
-import { SERVICE_TAXONOMY, getServiceName, getCategoryName } from "@/lib/constants";
+import { CheckCircle2, ArrowRight, ArrowLeft, ChevronRight } from "lucide-react";
+import { SERVICE_TAXONOMY, getServiceNames, getCategoryName } from "@/lib/constants";
 
 export default function NewRequestPage() {
   const { profile, orgProfile } = useAuth();
@@ -26,13 +27,22 @@ export default function NewRequestPage() {
 
   const [formData, setFormData] = useState({
     categoryId: "",
-    serviceId: "",
+    serviceIds: [] as string[],
     urgency: "medium",
     description: "",
     additionalNotes: "",
   });
 
   const selectedCategory = SERVICE_TAXONOMY.find(c => c.id === formData.categoryId);
+
+  const toggleService = (serviceId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      serviceIds: prev.serviceIds.includes(serviceId)
+        ? prev.serviceIds.filter(id => id !== serviceId)
+        : [...prev.serviceIds, serviceId]
+    }));
+  };
 
   const handleSubmit = async () => {
     if (!profile || !orgProfile) return;
@@ -42,8 +52,7 @@ export default function NewRequestPage() {
       const requestData = {
         userId: profile.id,
         categoryId: formData.categoryId,
-        serviceId: formData.serviceId,
-        serviceCategory: getServiceName(formData.serviceId), // compatibility
+        serviceIds: formData.serviceIds,
         urgency: formData.urgency,
         description: formData.description,
         additionalNotes: formData.additionalNotes,
@@ -59,7 +68,7 @@ export default function NewRequestPage() {
 
       const docRef = await addDoc(collection(db, "serviceRequests"), requestData);
 
-      // Trigger Matching
+      // Trigger Matching - find consultants who offer ANY of the selected services
       const consultantsQuery = query(
         collection(db, "consultantProfiles"),
         where("statesCovered", "array-contains", orgProfile.state)
@@ -68,7 +77,9 @@ export default function NewRequestPage() {
       
       for (const doc of consultantSnap.docs) {
         const cData = doc.data();
-        if (cData.servicesOffered?.includes(formData.serviceId)) {
+        const matchesService = cData.servicesOffered?.some((sId: string) => formData.serviceIds.includes(sId));
+        
+        if (matchesService) {
           await addDoc(collection(db, "leadAssignments"), {
             requestId: docRef.id,
             consultantId: doc.id,
@@ -94,12 +105,13 @@ export default function NewRequestPage() {
           <CheckCircle2 className="h-10 w-10 text-green-600" />
         </div>
         <h1 className="text-3xl font-headline font-extrabold mb-4 text-primary">Requirement Received</h1>
-        <p className="text-muted-foreground mb-8">
-          We are currently matching you with qualified experts for <strong>{getServiceName(formData.serviceId)}</strong>.
+        <p className="text-muted-foreground mb-8 text-sm">
+          We are currently matching you with qualified experts for: <br />
+          <span className="font-bold text-foreground">{getServiceNames(formData.serviceIds)}</span>.
           We will notify you when a consultant is assigned.
         </p>
         <Button size="lg" className="w-full" asChild>
-          <Link href="/dashboard/sme">Return to Dashboard</Link>
+          <Link href="/dashboard/sme">Go to Tracking Dashboard</Link>
         </Button>
       </div>
     );
@@ -124,7 +136,7 @@ export default function NewRequestPage() {
                 key={cat.id} 
                 className={`cursor-pointer hover:border-primary transition-all group ${formData.categoryId === cat.id ? 'border-primary ring-2 ring-primary/10' : ''}`}
                 onClick={() => {
-                  setFormData({ ...formData, categoryId: cat.id, serviceId: "" });
+                  setFormData({ ...formData, categoryId: cat.id, serviceIds: [] });
                   setStep(2);
                 }}
               >
@@ -146,26 +158,33 @@ export default function NewRequestPage() {
           <Button variant="ghost" size="sm" onClick={() => setStep(1)} className="mb-2">
             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Categories
           </Button>
-          <h2 className="text-xl font-bold flex items-center gap-2">
-            <span className="bg-primary text-primary-foreground w-8 h-8 rounded-full flex items-center justify-center text-sm">2</span>
-            Specific Service in {selectedCategory?.name}
-          </h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold flex items-center gap-2">
+              <span className="bg-primary text-primary-foreground w-8 h-8 rounded-full flex items-center justify-center text-sm">2</span>
+              Specific Services in {selectedCategory?.name}
+            </h2>
+            <span className="text-xs text-muted-foreground">{formData.serviceIds.length} selected</span>
+          </div>
           <div className="grid grid-cols-1 gap-3">
             {selectedCategory?.services.map((serv) => (
               <Card 
                 key={serv.id} 
-                className={`cursor-pointer hover:border-primary transition-all group ${formData.serviceId === serv.id ? 'border-primary bg-primary/5' : ''}`}
-                onClick={() => {
-                  setFormData({ ...formData, serviceId: serv.id });
-                  setStep(3);
-                }}
+                className={`cursor-pointer hover:border-primary transition-all group ${formData.serviceIds.includes(serv.id) ? 'border-primary bg-primary/5' : ''}`}
+                onClick={() => toggleService(serv.id)}
               >
                 <CardContent className="p-4 flex items-center justify-between">
-                  <span className="font-medium group-hover:text-primary">{serv.name}</span>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex items-center gap-3">
+                    <Checkbox checked={formData.serviceIds.includes(serv.id)} onCheckedChange={() => toggleService(serv.id)} />
+                    <span className="font-medium group-hover:text-primary">{serv.name}</span>
+                  </div>
                 </CardContent>
               </Card>
             ))}
+          </div>
+          <div className="pt-4">
+            <Button className="w-full" size="lg" disabled={formData.serviceIds.length === 0} onClick={() => setStep(3)}>
+              Continue to Details <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
           </div>
         </div>
       )}
@@ -174,17 +193,22 @@ export default function NewRequestPage() {
         <Card className="border-2 shadow-lg">
           <CardHeader>
             <Button variant="ghost" size="sm" onClick={() => setStep(2)} className="w-fit mb-4">
-              <ArrowLeft className="mr-2 h-4 w-4" /> Change Service
+              <ArrowLeft className="mr-2 h-4 w-4" /> Change Services
             </Button>
             <CardTitle className="flex items-center gap-2 text-primary">
               <span className="bg-primary text-primary-foreground w-8 h-8 rounded-full flex items-center justify-center text-sm">3</span>
-              {getServiceName(formData.serviceId)}
+              {selectedCategory?.name} Request
             </CardTitle>
             <CardDescription>
-              Provide specific details for your requirement.
+              Provide specific details for the {formData.serviceIds.length} services selected.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            <div className="p-3 bg-muted rounded-lg space-y-1">
+              <Label className="text-[10px] uppercase text-muted-foreground font-bold">Selected Services</Label>
+              <p className="text-xs font-semibold">{getServiceNames(formData.serviceIds)}</p>
+            </div>
+
             <div className="space-y-2">
               <Label>Urgency Level</Label>
               <Select value={formData.urgency} onValueChange={(v) => setFormData({ ...formData, urgency: v })}>

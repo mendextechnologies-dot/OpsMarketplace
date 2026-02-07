@@ -5,30 +5,25 @@ import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
 import { collection, query, getDocs, orderBy, doc, updateDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase-config";
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/ui/table";
+import { Badge } from "@/ui/badge";
+import { Button } from "@/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
 import { 
   FileText, 
   Users, 
-  CheckCircle, 
   ShieldAlert, 
   LayoutDashboard,
-  ArrowUpRight,
   Loader2,
   Activity,
-  UserPlus,
-  Phone,
-  Zap,
   PlusCircle,
-  Globe
+  Zap
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { getServiceName } from "@/lib/constants";
+import { getServiceNames, getCategoryName } from "@/lib/constants";
 
 type AdminView = 'dashboard' | 'requests' | 'consultants' | 'pipeline';
 
@@ -40,7 +35,6 @@ export default function AdminDashboard() {
   const [requests, setRequests] = useState<any[]>([]);
   const [consultants, setConsultants] = useState<any[]>([]);
   const [assignments, setAssignments] = useState<any[]>([]);
-  const [orgProfiles, setOrgProfiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [assigningTo, setAssigningTo] = useState<string | null>(null);
 
@@ -48,17 +42,15 @@ export default function AdminDashboard() {
     if (!profile || profile.role !== 'admin') return;
     setLoading(true);
     try {
-      const [reqSnap, consSnap, assignSnap, orgSnap] = await Promise.all([
+      const [reqSnap, consSnap, assignSnap] = await Promise.all([
         getDocs(query(collection(db, "serviceRequests"), orderBy("createdAt", "desc"))),
         getDocs(collection(db, "consultantProfiles")),
-        getDocs(query(collection(db, "leadAssignments"), orderBy("createdAt", "desc"))),
-        getDocs(collection(db, "organisationProfiles"))
+        getDocs(query(collection(db, "leadAssignments"), orderBy("createdAt", "desc")))
       ]);
 
       setRequests(reqSnap.docs.map(d => ({ id: d.id, ...d.data() })));
       setConsultants(consSnap.docs.map(d => ({ id: d.id, ...d.data() })));
       setAssignments(assignSnap.docs.map(d => ({ id: d.id, ...d.data() })));
-      setOrgProfiles(orgSnap.docs.map(d => ({ id: d.id, ...d.data() })));
     } catch (error: any) {
       toast({
         title: "Sync Failed",
@@ -75,16 +67,6 @@ export default function AdminDashboard() {
       fetchData();
     }
   }, [profile, authLoading]);
-
-  const handleStatusChange = async (reqId: string, newStatus: string) => {
-    try {
-      await updateDoc(doc(db, "serviceRequests", reqId), { status: newStatus });
-      setRequests(prev => prev.map(r => r.id === reqId ? { ...r, status: newStatus } : r));
-      toast({ title: "Updated", description: `Request status: ${newStatus}` });
-    } catch (error: any) {
-      toast({ title: "Failed", description: error.message, variant: "destructive" });
-    }
-  };
 
   const handleManualAssign = async (reqId: string, consultantId: string) => {
     try {
@@ -201,8 +183,8 @@ export default function AdminDashboard() {
                   {requests.map((req) => (
                     <TableRow key={req.id}>
                       <TableCell>
-                        <p className="font-bold">{req.serviceId ? getServiceName(req.serviceId) : req.serviceCategory}</p>
-                        <p className="text-[10px] text-muted-foreground italic line-clamp-1">{req.description}</p>
+                        <p className="font-bold">{getCategoryName(req.categoryId)}</p>
+                        <p className="text-[10px] text-muted-foreground italic line-clamp-1">{getServiceNames(req.serviceIds)}</p>
                       </TableCell>
                       <TableCell>
                         <p className="text-xs font-semibold">{req.companyName}</p>
@@ -221,7 +203,7 @@ export default function AdminDashboard() {
                             </SelectTrigger>
                             <SelectContent>
                               {consultants
-                                .filter(c => c.servicesOffered?.includes(req.serviceId))
+                                .filter(c => c.servicesOffered?.some((sId: string) => req.serviceIds?.includes(sId)))
                                 .map(c => (
                                   <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                                 ))
@@ -267,7 +249,8 @@ export default function AdminDashboard() {
                       <TableRow key={asgn.id}>
                         <TableCell>
                           <p className="text-xs font-bold">{req?.companyName}</p>
-                          <p className="text-[10px] text-muted-foreground">{req?.serviceId ? getServiceName(req.serviceId) : req?.serviceCategory}</p>
+                          <p className="text-[10px] text-muted-foreground">{req?.categoryId ? getCategoryName(req.categoryId) : 'Manual Lead'}</p>
+                          <p className="text-[9px] text-muted-foreground italic line-clamp-1">{getServiceNames(req?.serviceIds)}</p>
                         </TableCell>
                         <TableCell>
                           <p className="text-xs font-bold">{cons?.name}</p>

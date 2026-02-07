@@ -10,8 +10,9 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Building2, MapPin, Users, Clock, CheckCircle2, Phone, Mail, UserCheck } from "lucide-react";
+import { ArrowLeft, Building2, MapPin, Users, Clock, CheckCircle2, Phone, Mail, UserCheck, Tag } from "lucide-react";
 import Link from "next/link";
+import { getServiceNames, getCategoryName } from "@/lib/constants";
 
 export default function RequestDetailPage() {
   const { id } = useParams();
@@ -68,7 +69,7 @@ export default function RequestDetailPage() {
     );
   }
 
-  const assignedConsultant = matches.find(m => m.status === 'accepted' || m.status === 'sent'); // Simplified for MVP
+  const assignedConsultant = matches.find(m => m.status === 'accepted' || m.status === 'sent');
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-4xl">
@@ -84,7 +85,7 @@ export default function RequestDetailPage() {
           <Card className="border-2">
             <CardHeader className="flex flex-row items-center justify-between border-b pb-6">
               <div>
-                <CardTitle className="text-2xl font-bold text-primary">{request.serviceCategory}</CardTitle>
+                <CardTitle className="text-2xl font-bold text-primary">{getCategoryName(request.categoryId)}</CardTitle>
                 <CardDescription className="flex items-center gap-2 mt-1">
                   <Clock className="h-3 w-3" /> Submitted {new Date(request.createdAt?.seconds * 1000).toLocaleDateString()}
                 </CardDescription>
@@ -94,6 +95,16 @@ export default function RequestDetailPage() {
               </Badge>
             </CardHeader>
             <CardContent className="space-y-8 pt-8">
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <Tag className="h-5 w-5 text-primary shrink-0 mt-1" />
+                  <div>
+                    <h4 className="text-sm font-bold text-muted-foreground uppercase">Services Requested</h4>
+                    <p className="text-lg font-semibold">{getServiceNames(request.serviceIds)}</p>
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-muted/30 p-6 rounded-xl">
                 <div className="space-y-4">
                   <div className="flex items-center gap-3 text-sm">
@@ -158,7 +169,7 @@ export default function RequestDetailPage() {
                 <div className="text-center py-10">
                   <div className="relative w-16 h-16 mx-auto mb-6">
                     <div className="absolute inset-0 rounded-full border-4 border-primary/20 animate-ping"></div>
-                    <div className="relative z-10 bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center">
+                    <div className="relative z-10 bg-primary/10 w-16 h-12 rounded-full flex items-center justify-center">
                       <Clock className="h-8 w-8 text-primary animate-pulse" />
                     </div>
                   </div>

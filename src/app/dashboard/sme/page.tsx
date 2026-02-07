@@ -10,7 +10,8 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
-import { PlusCircle, FileText, Clock, CheckCircle2, LayoutGrid, ArrowRight, Building2 } from "lucide-react";
+import { PlusCircle, FileText, Clock, CheckCircle2, LayoutGrid, ArrowRight, Building2, Tag } from "lucide-react";
+import { getServiceNames } from "@/lib/constants";
 
 export default function SMEDashboard() {
   const { profile, orgProfile } = useAuth();
@@ -152,10 +153,14 @@ export default function SMEDashboard() {
                   <CardContent className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div className="space-y-1">
                       <div className="flex items-center gap-3">
-                        <h3 className="font-bold text-xl text-primary">{req.serviceCategory}</h3>
+                        <h3 className="font-bold text-xl text-primary">{getCategoryName(req.categoryId)}</h3>
                         {getStatusBadge(req.status)}
                       </div>
-                      <p className="text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Tag className="h-3 w-3" />
+                        <span>{getServiceNames(req.serviceIds)}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
                         Submitted {new Date(req.createdAt?.seconds * 1000).toLocaleDateString()}
                       </p>
                       <p className="text-sm line-clamp-1 italic text-muted-foreground/80 mt-2">"{req.description}"</p>
@@ -180,8 +185,12 @@ export default function SMEDashboard() {
               {completedRequests.map((req) => (
                 <Card key={req.id} className="bg-muted/10 opacity-80">
                   <CardContent className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div>
-                      <h3 className="font-bold text-lg">{req.serviceCategory}</h3>
+                    <div className="space-y-1">
+                      <h3 className="font-bold text-lg">{getCategoryName(req.categoryId)}</h3>
+                      <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                        <Tag className="h-3 w-3" />
+                        <span>{getServiceNames(req.serviceIds)}</span>
+                      </div>
                       <p className="text-sm text-muted-foreground">
                         Completed on {new Date(req.createdAt?.seconds * 1000).toLocaleDateString()}
                       </p>

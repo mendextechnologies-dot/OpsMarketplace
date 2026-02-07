@@ -102,6 +102,11 @@ export function getServiceName(serviceId: string) {
   return "Unknown Service";
 }
 
+export function getServiceNames(serviceIds: string[] | undefined) {
+  if (!serviceIds || serviceIds.length === 0) return "No specific services selected";
+  return serviceIds.map(id => getServiceName(id)).join(", ");
+}
+
 export function getCategoryName(categoryId: string) {
   const cat = SERVICE_TAXONOMY.find(c => c.id === categoryId);
   return cat ? cat.name : "Unknown Category";

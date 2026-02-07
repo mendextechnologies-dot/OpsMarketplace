@@ -12,10 +12,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Building2, MapPin, User, Phone, Mail, Zap } from "lucide-react";
+import { ArrowLeft, Building2, User, Phone, Mail, Tag } from "lucide-react";
 import Link from "next/link";
-import { SERVICE_TAXONOMY, getServiceName } from "@/lib/constants";
+import { SERVICE_TAXONOMY, getCategoryName } from "@/lib/constants";
 
 const SOURCES = [
   { id: "admin_manual", label: "Admin Manual" },
@@ -33,7 +34,7 @@ export default function AdminCreateLeadPage() {
 
   const [formData, setFormData] = useState({
     categoryId: "",
-    serviceId: "",
+    serviceIds: [] as string[],
     companyName: "",
     contactName: "",
     contactPhone: "",
@@ -59,15 +60,27 @@ export default function AdminCreateLeadPage() {
 
   const selectedCategory = SERVICE_TAXONOMY.find(c => c.id === formData.categoryId);
 
+  const toggleService = (serviceId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      serviceIds: prev.serviceIds.includes(serviceId)
+        ? prev.serviceIds.filter(id => id !== serviceId)
+        : [...prev.serviceIds, serviceId]
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (formData.serviceIds.length === 0) {
+      toast({ title: "Validation Error", description: "Select at least one service", variant: "destructive" });
+      return;
+    }
     setLoading(true);
 
     try {
       const leadData = {
         categoryId: formData.categoryId,
-        serviceId: formData.serviceId,
-        serviceCategory: getServiceName(formData.serviceId),
+        serviceIds: formData.serviceIds,
         companyName: formData.companyName,
         contactName: formData.contactName,
         contactPhone: formData.contactPhone,
@@ -125,7 +138,7 @@ export default function AdminCreateLeadPage() {
                 <Label>Category</Label>
                 <Select
                   value={formData.categoryId}
-                  onValueChange={(v) => setFormData({ ...formData, categoryId: v, serviceId: "" })}
+                  onValueChange={(v) => setFormData({ ...formData, categoryId: v, serviceIds: [] })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Pick Category" />
@@ -137,22 +150,22 @@ export default function AdminCreateLeadPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label>Specific Service</Label>
-                <Select
-                  value={formData.serviceId}
-                  onValueChange={(v) => setFormData({ ...formData, serviceId: v })}
-                  disabled={!formData.categoryId}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Pick Service" />
-                  </SelectTrigger>
-                  <SelectContent>
+              <div className="space-y-4">
+                <Label className="flex items-center gap-2">
+                  <Tag className="h-4 w-4" /> Specific Services
+                </Label>
+                {!formData.categoryId ? (
+                  <p className="text-xs text-muted-foreground italic">Select a category first</p>
+                ) : (
+                  <div className="grid grid-cols-1 gap-2 max-h-[200px] overflow-y-auto p-2 border rounded-md">
                     {selectedCategory?.services.map((serv) => (
-                      <SelectItem key={serv.id} value={serv.id}>{serv.name}</SelectItem>
+                      <div key={serv.id} className="flex items-center space-x-2">
+                        <Checkbox id={serv.id} checked={formData.serviceIds.includes(serv.id)} onCheckedChange={() => toggleService(serv.id)} />
+                        <Label htmlFor={serv.id} className="text-xs cursor-pointer">{serv.name}</Label>
+                      </div>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -283,7 +296,7 @@ export default function AdminCreateLeadPage() {
             </div>
           </CardContent>
           <CardFooter>
-            <Button className="w-full h-12 text-lg" type="submit" disabled={loading || !formData.serviceId}>
+            <Button className="w-full h-12 text-lg" type="submit" disabled={loading || formData.serviceIds.length === 0}>
               {loading ? "Processing..." : "Create Manual Lead"}
             </Button>
           </CardFooter>
