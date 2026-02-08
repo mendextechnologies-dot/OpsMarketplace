@@ -51,7 +51,7 @@ export default function Home() {
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Button size="lg" className="h-14 px-10 text-lg shadow-xl" asChild>
-              <Link href={user ? "/request/new" : "/signup?role=sme"}>
+              <Link href="/request/new">
                 Submit Request <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
@@ -231,7 +231,7 @@ export default function Home() {
             Join 500+ SMEs who have streamlined their business operations with our expert network.
           </p>
           <Button size="lg" className="h-16 px-12 text-xl shadow-2xl group" asChild>
-            <Link href={user ? "/request/new" : "/signup?role=sme"}>
+            <Link href="/request/new">
               Submit Your Requirement
               <ArrowRight className="ml-3 h-6 w-6 transition-transform group-hover:translate-x-2" />
             </Link>
