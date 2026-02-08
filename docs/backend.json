@@ -75,7 +75,8 @@
       "description": "An SME's request for professional services",
       "type": "object",
       "properties": {
-        "userId": { "type": "string" },
+        "userId": { "type": "string", "description": "Nullable for guest requests" },
+        "isGuestRequest": { "type": "boolean" },
         "categoryId": { "type": "string" },
         "serviceIds": { "type": "array", "items": { "type": "string" }, "description": "Array of requested service IDs" },
         "companyName": { "type": "string" },

@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { db } from "@/lib/firebase-config";
 import { collection, addDoc, serverTimestamp, query, where, getDocs } from "firebase/firestore";
@@ -15,16 +15,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle2, ArrowRight, ArrowLeft, ChevronRight, Tags } from "lucide-react";
-import { SERVICE_TAXONOMY, getServiceNames, getCategoryName } from "@/lib/constants";
+import { CheckCircle2, ArrowRight, ArrowLeft, ChevronRight, Tags, Building2, User, Phone, Mail, MapPin } from "lucide-react";
+import { SERVICE_TAXONOMY, getServiceNames } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 export default function NewRequestPage() {
-  const { profile, orgProfile } = useAuth();
+  const { user, profile, orgProfile } = useAuth();
   const router = useRouter();
-  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
+  const { toast } = useToast();
 
   const [formData, setFormData] = useState({
     categoryId: "",
@@ -32,7 +32,31 @@ export default function NewRequestPage() {
     urgency: "medium",
     description: "",
     additionalNotes: "",
+    // Guest fields (also used for mapping auth info)
+    companyName: "",
+    contactName: "",
+    contactPhone: "",
+    contactEmail: "",
+    state: "",
+    city: "",
+    employeeCount: "",
   });
+
+  // Pre-fill if authenticated
+  useEffect(() => {
+    if (profile && profile.role === 'sme' && orgProfile) {
+      setFormData(prev => ({
+        ...prev,
+        companyName: orgProfile.companyName || "",
+        contactName: profile.name || "",
+        contactPhone: orgProfile.phone || "",
+        contactEmail: profile.email || "",
+        state: orgProfile.state || "",
+        city: orgProfile.city || "",
+        employeeCount: orgProfile.employeeCount?.toString() || "",
+      }));
+    }
+  }, [profile, orgProfile]);
 
   const selectedCategory = SERVICE_TAXONOMY.find(c => c.id === formData.categoryId);
 
@@ -46,33 +70,37 @@ export default function NewRequestPage() {
   };
 
   const handleSubmit = async () => {
-    if (!profile || !orgProfile) return;
     setLoading(true);
 
     try {
+      const isGuestRequest = !user;
       const requestData = {
-        userId: profile.id,
+        userId: user ? user.uid : null,
+        isGuestRequest: isGuestRequest,
         categoryId: formData.categoryId,
         serviceIds: formData.serviceIds,
         urgency: formData.urgency,
         description: formData.description,
         additionalNotes: formData.additionalNotes,
-        companyName: orgProfile.companyName,
-        employeeCount: orgProfile.employeeCount,
-        state: orgProfile.state,
-        city: orgProfile.city,
+        companyName: formData.companyName,
+        contactName: formData.contactName,
+        contactPhone: formData.contactPhone,
+        contactEmail: formData.contactEmail,
+        employeeCount: parseInt(formData.employeeCount) || 0,
+        state: formData.state,
+        city: formData.city,
         status: "new",
-        leadType: "inbound",
+        leadType: isGuestRequest ? "inbound" : "inbound", // keeping inbound for platform submissions
         leadSource: "platform",
         createdAt: serverTimestamp(),
       };
 
       const docRef = await addDoc(collection(db, "serviceRequests"), requestData);
 
-      // Trigger Matching - find consultants who offer ANY of the selected services
+      // Trigger Matching Logic
       const consultantsQuery = query(
         collection(db, "consultantProfiles"),
-        where("statesCovered", "array-contains", orgProfile.state)
+        where("statesCovered", "array-contains", formData.state)
       );
       const consultantSnap = await getDocs(consultantsQuery);
       
@@ -90,7 +118,7 @@ export default function NewRequestPage() {
         }
       }
 
-      setStep(4);
+      setStep(user ? 4 : 5); // 4 for auth success, 5 for guest success
       toast({ title: "Request Submitted", description: "Finding matching experts..." });
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -99,6 +127,35 @@ export default function NewRequestPage() {
     }
   };
 
+  // Success screen for Guest
+  if (step === 5) {
+    return (
+      <div className="container mx-auto px-4 py-20 max-w-lg text-center">
+        <div className="bg-green-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+          <CheckCircle2 className="h-10 w-10 text-green-600" />
+        </div>
+        <h1 className="text-3xl font-headline font-extrabold mb-4 text-primary">Requirement Received</h1>
+        <p className="text-muted-foreground mb-8 text-sm">
+          We are matching you with experts for: <span className="font-bold text-foreground">{getServiceNames(formData.serviceIds)}</span>.
+          We will contact you on <span className="font-bold">{formData.contactPhone}</span> soon.
+        </p>
+        <Card className="bg-muted/30 border-dashed mb-8">
+          <CardContent className="pt-6">
+            <h3 className="font-bold mb-2">Want to track progress online?</h3>
+            <p className="text-xs text-muted-foreground mb-4">Create an account to manage this and future requests.</p>
+            <Button className="w-full" variant="outline" asChild>
+              <Link href="/signup?role=sme">Create SME Account</Link>
+            </Button>
+          </CardContent>
+        </Card>
+        <Button variant="ghost" asChild>
+          <Link href="/">Return Home</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  // Success screen for Auth
   if (step === 4) {
     return (
       <div className="container mx-auto px-4 py-20 max-w-lg text-center">
@@ -107,9 +164,7 @@ export default function NewRequestPage() {
         </div>
         <h1 className="text-3xl font-headline font-extrabold mb-4 text-primary">Requirement Received</h1>
         <p className="text-muted-foreground mb-8 text-sm">
-          We are currently matching you with qualified experts for: <br />
-          <span className="font-bold text-foreground">{getServiceNames(formData.serviceIds)}</span>.
-          We will notify you when a consultant is assigned.
+          Experts are being matched for <span className="font-bold text-foreground">{getServiceNames(formData.serviceIds)}</span>.
         </p>
         <Button size="lg" className="w-full" asChild>
           <Link href="/dashboard/sme">Go to Tracking Dashboard</Link>
@@ -121,8 +176,8 @@ export default function NewRequestPage() {
   return (
     <div className="container mx-auto px-4 py-12 max-w-3xl">
       <div className="mb-10">
-        <h1 className="text-3xl font-headline font-bold text-primary">New Service Request</h1>
-        <p className="text-muted-foreground">Streamlined operational support for {orgProfile?.companyName}.</p>
+        <h1 className="text-3xl font-headline font-bold text-primary">Service Marketplace</h1>
+        <p className="text-muted-foreground">Professional support for {user ? formData.companyName : "your business"}.</p>
       </div>
 
       {step === 1 && (
@@ -171,7 +226,6 @@ export default function NewRequestPage() {
               {formData.serviceIds.length} Selected
             </span>
           </div>
-          <p className="text-sm text-muted-foreground mb-4">Choose one or more services required in <strong>{selectedCategory?.name}</strong>:</p>
           
           <div className="grid grid-cols-1 gap-3">
             {selectedCategory?.services.map((serv) => {
@@ -181,9 +235,7 @@ export default function NewRequestPage() {
                   key={serv.id} 
                   className={cn(
                     "flex items-center space-x-4 p-4 border-2 rounded-xl cursor-pointer transition-all",
-                    isSelected 
-                      ? "border-primary bg-primary/5 shadow-sm" 
-                      : "hover:border-primary/40 bg-white"
+                    isSelected ? "border-primary bg-primary/5 shadow-sm" : "hover:border-primary/40 bg-white"
                   )}
                   onClick={() => toggleService(serv.id)}
                 >
@@ -191,7 +243,7 @@ export default function NewRequestPage() {
                     id={serv.id}
                     checked={isSelected}
                     className="h-5 w-5 pointer-events-none"
-                    onCheckedChange={() => {}} // Controlled by parent div onClick
+                    onCheckedChange={() => {}} 
                   />
                   <div className="flex-1">
                     <Label htmlFor={serv.id} className="text-base font-semibold cursor-pointer block">
@@ -203,7 +255,7 @@ export default function NewRequestPage() {
             })}
           </div>
           
-          <div className="pt-8 sticky bottom-4">
+          <div className="pt-8">
             <Button 
               className="w-full h-14 text-lg shadow-xl" 
               size="lg" 
@@ -220,23 +272,55 @@ export default function NewRequestPage() {
         <Card className="border-2 shadow-lg">
           <CardHeader>
             <Button variant="ghost" size="sm" onClick={() => setStep(2)} className="w-fit mb-4">
-              <ArrowLeft className="mr-2 h-4 w-4" /> Change Services
+              <ArrowLeft className="mr-2 h-4 w-4" /> Back to Services
             </Button>
             <CardTitle className="flex items-center gap-2 text-primary">
               <span className="bg-primary text-primary-foreground w-8 h-8 rounded-full flex items-center justify-center text-sm">3</span>
-              Finalize Your Request
+              Finalize Request
             </CardTitle>
             <CardDescription>
-              We'll use these details to find the best expert match.
+              {user ? "Confirm your details and requirement." : "Tell us about your business and requirement."}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="p-4 bg-muted/50 rounded-xl border border-muted space-y-2">
-              <Label className="text-[10px] uppercase text-muted-foreground font-bold flex items-center gap-1">
-                <Tags className="h-3 w-3" /> Selected Requirements
-              </Label>
-              <p className="text-sm font-bold text-foreground leading-tight">{getServiceNames(formData.serviceIds)}</p>
-            </div>
+            {!user && (
+              <div className="space-y-6 pt-2 pb-6 border-b">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2"><Building2 className="h-3 w-3" /> Company Name</Label>
+                    <Input value={formData.companyName} onChange={e => setFormData({...formData, companyName: e.target.value})} placeholder="Acme Inc" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2"><User className="h-3 w-3" /> Contact Name</Label>
+                    <Input value={formData.contactName} onChange={e => setFormData({...formData, contactName: e.target.value})} placeholder="John Doe" required />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2"><Phone className="h-3 w-3" /> Phone Number</Label>
+                    <Input value={formData.contactPhone} onChange={e => setFormData({...formData, contactPhone: e.target.value})} placeholder="+91..." required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2"><Mail className="h-3 w-3" /> Email Address</Label>
+                    <Input type="email" value={formData.contactEmail} onChange={e => setFormData({...formData, contactEmail: e.target.value})} placeholder="john@email.com" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2"><MapPin className="h-3 w-3" /> State</Label>
+                    <Input value={formData.state} onChange={e => setFormData({...formData, state: e.target.value})} placeholder="Maharashtra" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>City</Label>
+                    <Input value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} placeholder="Mumbai" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Employees</Label>
+                    <Input type="number" value={formData.employeeCount} onChange={e => setFormData({...formData, employeeCount: e.target.value})} placeholder="10" required />
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label>Urgency Level</Label>
@@ -255,27 +339,22 @@ export default function NewRequestPage() {
             <div className="space-y-2">
               <Label>Describe what you need help with</Label>
               <Textarea
-                placeholder="Be as specific as possible (e.g. 'We need to register 5 employees for ESIC by Friday')"
-                className="min-h-[150px] text-base"
+                placeholder="Be as specific as possible..."
+                className="min-h-[120px]"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 required
               />
             </div>
-
-            <div className="space-y-2">
-              <Label>Internal Reference / Notes (Optional)</Label>
-              <Input
-                placeholder="Any internal IDs or specific constraints..."
-                value={formData.additionalNotes}
-                onChange={(e) => setFormData({ ...formData, additionalNotes: e.target.value })}
-              />
-            </div>
           </CardContent>
           <CardFooter>
-            <Button className="w-full h-14 text-lg shadow-lg group" onClick={handleSubmit} disabled={loading || !formData.description}>
-              {loading ? "Submitting..." : "Post Requirement"}
-              <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+            <Button 
+              className="w-full h-14 text-lg shadow-lg" 
+              onClick={handleSubmit} 
+              disabled={loading || !formData.description || !formData.companyName || !formData.contactPhone || !formData.state}
+            >
+              {loading ? "Submitting..." : user ? "Post Requirement" : "Submit Requirement (Guest)"}
+              <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </CardFooter>
         </Card>
