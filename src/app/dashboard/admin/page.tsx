@@ -42,7 +42,9 @@ import {
   Search,
   History,
   Briefcase,
-  Globe
+  Globe,
+  PieChart,
+  Target
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -61,6 +63,7 @@ export default function AdminDashboard() {
   const [assignments, setAssignments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewingConsultant, setViewingConsultant] = useState<any>(null);
+  const [viewingPartner, setViewingPartner] = useState<any>(null);
 
   const fetchData = async () => {
     if (!profile || profile.role !== 'admin') return;
@@ -453,7 +456,14 @@ export default function AdminDashboard() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="sm" className="h-8 text-xs">Reports</Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-8 text-xs"
+                          onClick={() => setViewingPartner(partner)}
+                        >
+                          Reports
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -705,6 +715,84 @@ export default function AdminDashboard() {
                 <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 py-1.5 px-3">
                   <ShieldCheck className="h-3 w-3 mr-1" /> Verified Platform Expert
                 </Badge>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* PARTNER REPORT DIALOG */}
+      <Dialog open={!!viewingPartner} onOpenChange={() => setViewingPartner(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader className="border-b pb-4">
+            <div className="flex items-center gap-4">
+              <div className="bg-amber-100 h-16 w-16 rounded-2xl flex items-center justify-center text-amber-600">
+                <Handshake className="h-8 w-8" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-bold">Partner Intelligence Report</DialogTitle>
+                <DialogDescription className="text-sm">
+                  {viewingPartner?.partnerName} • Network Analytics
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+          
+          {viewingPartner && (
+            <div className="space-y-6 pt-6">
+              <div className="grid grid-cols-3 gap-4">
+                <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl text-center">
+                  <p className="text-[10px] font-black text-blue-700 uppercase">Total Leads</p>
+                  <p className="text-2xl font-black text-blue-900 mt-1">
+                    {requests.filter(r => r.leadOwnerId === viewingPartner.userId).length}
+                  </p>
+                </div>
+                <div className="p-4 bg-green-50 border border-green-100 rounded-xl text-center">
+                  <p className="text-[10px] font-black text-green-700 uppercase">Active</p>
+                  <p className="text-2xl font-black text-green-900 mt-1">
+                    {requests.filter(r => r.leadOwnerId === viewingPartner.userId && r.status !== 'completed').length}
+                  </p>
+                </div>
+                <div className="p-4 bg-primary/5 border border-primary/10 rounded-xl text-center">
+                  <p className="text-[10px] font-black text-primary uppercase">Conversion</p>
+                  <p className="text-2xl font-black text-primary mt-1">
+                    {((requests.filter(r => r.leadOwnerId === viewingPartner.userId && r.status === 'completed').length / 
+                      (requests.filter(r => r.leadOwnerId === viewingPartner.userId).length || 1)) * 100).toFixed(0)}%
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-2">
+                  <Target className="h-3 w-3" /> Service Focus Area
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {viewingPartner.servicesFocus?.map((s: string, i: number) => (
+                    <Badge key={i} variant="secondary" className="bg-amber-50 text-amber-700 border-amber-200">
+                      {s.replace('cat_', '').replace('_', ' ')}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              <div className="p-4 bg-muted/20 rounded-xl border border-dashed">
+                <p className="text-[10px] font-black uppercase text-muted-foreground mb-4">Referred Leads Pipeline</p>
+                <div className="space-y-2">
+                  {requests.filter(r => r.leadOwnerId === viewingPartner.userId).slice(0, 5).map((r, i) => (
+                    <div key={i} className="flex items-center justify-between text-xs p-2 bg-white rounded-lg border shadow-sm">
+                      <span className="font-bold">{r.companyName}</span>
+                      <Badge variant="outline" className="text-[9px] uppercase">{r.status}</Badge>
+                    </div>
+                  ))}
+                  {requests.filter(r => r.leadOwnerId === viewingPartner.userId).length === 0 && (
+                    <p className="text-[10px] text-center text-muted-foreground italic py-4">No leads referred yet.</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="pt-6 border-t flex justify-between items-center text-[10px] text-muted-foreground font-medium uppercase tracking-widest">
+                <span>Account Status: {viewingPartner.status}</span>
+                <span>Partner ID: {viewingPartner.userId.slice(0, 8)}</span>
               </div>
             </div>
           )}
