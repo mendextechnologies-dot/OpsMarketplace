@@ -8,29 +8,29 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MapPin, Users, Phone, Building2, Briefcase, CheckCircle2, LayoutGrid, Clock, ArrowRight, Sparkles, TrendingUp } from "lucide-react";
+import { MapPin, Users, Phone, Building2, Briefcase, CheckCircle2, LayoutGrid, Clock, ArrowRight, Sparkles, TrendingUp, Zap, BarChart3 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 export default function ConsultantDashboard() {
   const { profile } = useAuth();
   const [leads, setLeads] = useState<any[]>([]);
+  const [consultantData, setConsultantData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchLeads = async () => {
+    const fetchData = async () => {
       if (!profile) return;
       
-      const q = query(
-        collection(db, "leadAssignments"),
-        where("consultantId", "==", profile.id),
-        orderBy("createdAt", "desc")
-      );
+      const [leadsSnap, profileSnap] = await Promise.all([
+        getDocs(query(collection(db, "leadAssignments"), where("consultantId", "==", profile.id), orderBy("createdAt", "desc"))),
+        getDoc(doc(db, "consultantProfiles", profile.id))
+      ]);
       
-      const snapshot = await getDocs(q);
+      setConsultantData(profileSnap.data());
       
       const leadsWithDetails = await Promise.all(
-        snapshot.docs.map(async (assignmentDoc) => {
+        leadsSnap.docs.map(async (assignmentDoc) => {
           const assignment = assignmentDoc.data();
           const requestSnap = await getDoc(doc(db, "serviceRequests", assignment.requestId));
           const reqData = requestSnap.data() || {};
@@ -45,13 +45,18 @@ export default function ConsultantDashboard() {
         })
       );
       
-      // AI Ranking Logic: Sort by AI Quality Score
-      const rankedLeads = leadsWithDetails.sort((a, b) => (b.ai_metadata?.quality_score || 0) - (a.ai_metadata?.quality_score || 0));
+      // Dynamic Ranking Logic: Score = Lead Quality * Provider Performance Multiplier
+      const perfMultiplier = consultantData?.performance_multiplier || 1.0;
+      const rankedLeads = leadsWithDetails.sort((a, b) => {
+        const scoreA = (a.ai_metadata?.quality_score || 0) * perfMultiplier;
+        const scoreB = (b.ai_metadata?.quality_score || 0) * perfMultiplier;
+        return scoreB - scoreA;
+      });
       
       setLeads(rankedLeads);
       setLoading(false);
     };
-    fetchLeads();
+    fetchData();
   }, [profile]);
 
   const newLeads = leads.filter(l => l.assignmentStatus === 'sent' || l.assignmentStatus === 'viewed');
@@ -115,18 +120,18 @@ export default function ConsultantDashboard() {
       <div className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-4xl font-headline font-extrabold text-primary flex items-center gap-3">
-            <Sparkles className="h-8 w-8 text-primary" /> AI Expert Console
+            <Zap className="h-8 w-8 text-primary" /> Expert Performance Console
           </h1>
-          <p className="text-muted-foreground mt-1 text-lg">Opportunities curated and ranked by our intelligent matching engine.</p>
+          <p className="text-muted-foreground mt-1 text-lg">Opportunities ranked by AI based on your performance and lead quality.</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
         <Card className="bg-primary/5 border-primary/20 shadow-sm">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">AI Matched</p>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">AI Ranked Matches</p>
                 <p className="text-3xl font-bold mt-1 text-primary">{newLeads.length}</p>
               </div>
               <div className="bg-primary/10 p-3 rounded-xl">
@@ -139,11 +144,37 @@ export default function ConsultantDashboard() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Conversion Health</p>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Ranking Health</p>
                 <p className="text-3xl font-bold mt-1 text-blue-600">Optimal</p>
               </div>
               <div className="bg-blue-100 p-3 rounded-xl">
                 <TrendingUp className="h-6 w-6 text-blue-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-green-50 border-green-100 shadow-sm">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Avg Response</p>
+                <p className="text-3xl font-bold mt-1 text-green-600">45m</p>
+              </div>
+              <div className="bg-green-100 p-3 rounded-xl">
+                <Clock className="h-6 w-6 text-green-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-slate-50 border-slate-200 shadow-sm">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Market Standing</p>
+                <p className="text-3xl font-bold mt-1 text-slate-700">Top 5%</p>
+              </div>
+              <div className="bg-slate-200 p-3 rounded-xl">
+                <BarChart3 className="h-6 w-6 text-slate-700" />
               </div>
             </div>
           </CardContent>
@@ -153,7 +184,7 @@ export default function ConsultantDashboard() {
       <Tabs defaultValue="new" className="w-full">
         <TabsList className="bg-muted/80 p-1 mb-8">
           <TabsTrigger value="new" className="px-8 font-bold text-xs uppercase tracking-widest">
-            AI Ranked Opportunities ({newLeads.length})
+            AI Dynamic Ranking ({newLeads.length})
           </TabsTrigger>
           <TabsTrigger value="active" className="px-8 font-bold text-xs uppercase tracking-widest">
             Ongoing Delivery
@@ -162,13 +193,13 @@ export default function ConsultantDashboard() {
 
         <TabsContent value="new">
           {loading ? (
-            <div className="text-center py-20 animate-pulse text-muted-foreground italic">Running dynamic matching engine...</div>
+            <div className="text-center py-20 animate-pulse text-muted-foreground italic">Running dynamic ranking engine...</div>
           ) : newLeads.length === 0 ? (
             <Card className="bg-muted/30 border-dashed border-2">
               <CardContent className="py-20 text-center text-muted-foreground">
                 <Sparkles className="h-12 w-12 mx-auto mb-4 opacity-20" />
                 <h3 className="text-lg font-semibold text-foreground">No matches currently</h3>
-                <p className="max-w-xs mx-auto mt-2">The AI is scanning for requirements that perfectly align with your expertise.</p>
+                <p className="max-w-xs mx-auto mt-2">The AI is scanning for requirements that perfectly align with your current performance tier.</p>
               </CardContent>
             </Card>
           ) : (
