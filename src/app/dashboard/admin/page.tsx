@@ -1,16 +1,14 @@
-
 "use client";
 
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
-import { collection, query, getDocs, orderBy, doc, updateDoc, setDoc, serverTimestamp, deleteDoc } from "firebase/firestore";
+import { collection, query, getDocs, orderBy, doc, updateDoc, serverTimestamp, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase-config";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   FileText, 
   Users, 
@@ -26,7 +24,8 @@ import {
   AlertTriangle,
   CheckCircle2,
   Trash2,
-  BookOpen
+  BookOpen,
+  ArrowRight
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -44,7 +43,6 @@ export default function AdminDashboard() {
   const [partners, setPartners] = useState<any[]>([]);
   const [assignments, setAssignments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [assigningTo, setAssigningTo] = useState<string | null>(null);
 
   const fetchData = async () => {
     if (!profile || profile.role !== 'admin') return;
@@ -78,29 +76,6 @@ export default function AdminDashboard() {
       fetchData();
     }
   }, [profile, authLoading]);
-
-  const handleManualAssign = async (reqId: string, consultantId: string) => {
-    try {
-      const assignmentId = `${reqId}_${consultantId}`;
-      await setDoc(doc(db, "leadAssignments", assignmentId), {
-        requestId: reqId,
-        consultantId: consultantId,
-        status: "sent",
-        createdAt: serverTimestamp(),
-      });
-
-      const request = requests.find(r => r.id === reqId);
-      if (request?.status === 'new') {
-        await updateDoc(doc(db, "serviceRequests", reqId), { status: 'assigned' });
-      }
-
-      toast({ title: "Matched", description: "Lead manually assigned to consultant." });
-      setAssigningTo(null);
-      fetchData();
-    } catch (error: any) {
-      toast({ title: "Assignment Failed", description: error.message, variant: "destructive" });
-    }
-  };
 
   const handleResolveConflict = async (reqId: string, action: 'keep' | 'reject') => {
     try {
@@ -260,30 +235,12 @@ export default function AdminDashboard() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          {assigningTo === req.id ? (
-                            <Select onValueChange={(val) => handleManualAssign(req.id, val)}>
-                              <SelectTrigger className="w-[150px] h-8 text-[10px] ml-auto">
-                                <SelectValue placeholder="Assign Expert" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {consultants
-                                  .filter(c => c.servicesOffered?.some((sId: string) => req.serviceIds?.includes(sId)))
-                                  .map(c => (
-                                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                                  ))
-                                }
-                              </SelectContent>
-                            </Select>
-                          ) : (
-                            <div className="flex justify-end gap-2">
-                              {req.status === 'new' && (
-                                <Button size="sm" variant="default" className="h-7 text-[10px]" onClick={() => setAssigningTo(req.id)}>Match</Button>
-                              )}
-                              <Button size="sm" variant="outline" className="h-7 text-[10px]" asChild>
-                                <Link href={`/request/${req.id}`}>View</Link>
-                              </Button>
-                            </div>
-                          )}
+                          <Button size="sm" variant="outline" className="h-8 gap-1.5" asChild>
+                            <Link href={`/request/${req.id}`}>
+                              View Details
+                              <ArrowRight className="h-3 w-3" />
+                            </Link>
+                          </Button>
                         </TableCell>
                       </TableRow>
                     );

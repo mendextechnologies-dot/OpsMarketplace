@@ -1,16 +1,32 @@
-
 "use client";
 
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, getDocs, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase-config";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Building2, MapPin, Users, Clock, CheckCircle2, Phone, Mail, UserCheck, Tag } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { 
+  ArrowLeft, 
+  Building2, 
+  MapPin, 
+  Users, 
+  Clock, 
+  CheckCircle2, 
+  Phone, 
+  Mail, 
+  UserCheck, 
+  Tag, 
+  Briefcase, 
+  ShieldCheck,
+  Search,
+  Zap
+} from "lucide-react";
 import Link from "next/link";
 import { getServiceNames, getCategoryName } from "@/lib/constants";
 
@@ -18,29 +34,81 @@ export default function RequestDetailPage() {
   const { id } = useParams();
   const { profile } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
   const [request, setRequest] = useState<any>(null);
   const [matches, setMatches] = useState<any[]>([]);
+  const [consultants, setConsultants] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [assigning, setAssigning] = useState(false);
 
   useEffect(() => {
     const fetchRequest = async () => {
       if (!id || !profile) return;
       
-      const docSnap = await getDoc(doc(db, "serviceRequests", id as string));
-      if (!docSnap.exists()) {
-        router.push("/dashboard/sme");
-        return;
-      }
-      
-      const data = docSnap.data();
-      if (data.userId !== profile.id && profile.role !== 'admin') {
-        router.push("/dashboard/sme");
-        return;
-      }
-      
-      setRequest({ id: docSnap.id, ...data });
+      try {
+        const docSnap = await getDoc(doc(db, "serviceRequests", id as string));
+        if (!docSnap.exists()) {
+          router.push("/dashboard/sme");
+          return;
+        }
+        
+        const data = docSnap.data();
+        if (data.userId !== profile.id && profile.role !== 'admin' && data.leadOwnerId !== profile.id) {
+          router.push("/dashboard");
+          return;
+        }
+        
+        setRequest({ id: docSnap.id, ...data });
 
-      // Fetch matches (lead assignments)
+        // Fetch matches (lead assignments)
+        const q = query(collection(db, "leadAssignments"), where("requestId", "==", id));
+        const matchSnap = await getDocs(q);
+        const matchData = await Promise.all(matchSnap.docs.map(async (mDoc) => {
+          const assignment = mDoc.data();
+          const consultantSnap = await getDoc(doc(db, "consultantProfiles", assignment.consultantId));
+          return {
+            id: mDoc.id,
+            ...assignment,
+            consultant: consultantSnap.data()
+          };
+        }));
+        setMatches(matchData);
+
+        // If admin, fetch all consultants for manual lookup
+        if (profile.role === 'admin') {
+          const consSnap = await getDocs(collection(db, "consultantProfiles"));
+          setConsultants(consSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+        }
+        
+        setLoading(false);
+      } catch (error: any) {
+        console.error("Fetch Detail Error:", error);
+      }
+    };
+
+    fetchRequest();
+  }, [id, profile, router]);
+
+  const handleManualAssign = async (consultantId: string) => {
+    if (!request || !consultantId) return;
+    setAssigning(true);
+    try {
+      const assignmentId = `${request.id}_${consultantId}`;
+      await setDoc(doc(db, "leadAssignments", assignmentId), {
+        requestId: request.id,
+        consultantId: consultantId,
+        status: "sent",
+        createdAt: serverTimestamp(),
+      });
+
+      if (request.status === 'new') {
+        await updateDoc(doc(db, "serviceRequests", request.id), { status: 'assigned' });
+        setRequest({ ...request, status: 'assigned' });
+      }
+
+      toast({ title: "Expert Assigned", description: "Lead has been manually matched with the selected expert." });
+      
+      // Refresh matches
       const q = query(collection(db, "leadAssignments"), where("requestId", "==", id));
       const matchSnap = await getDocs(q);
       const matchData = await Promise.all(matchSnap.docs.map(async (mDoc) => {
@@ -53,12 +121,12 @@ export default function RequestDetailPage() {
         };
       }));
       setMatches(matchData);
-      
-      setLoading(false);
-    };
-
-    fetchRequest();
-  }, [id, profile, router]);
+    } catch (error: any) {
+      toast({ title: "Assignment Failed", description: error.message, variant: "destructive" });
+    } finally {
+      setAssigning(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -70,13 +138,14 @@ export default function RequestDetailPage() {
   }
 
   const assignedConsultant = matches.find(m => m.status === 'accepted' || m.status === 'sent');
+  const isAdmin = profile?.role === 'admin';
 
   return (
-    <div className="container mx-auto px-4 py-12 max-w-4xl">
+    <div className="container mx-auto px-4 py-12 max-w-5xl">
       <Button variant="ghost" asChild className="mb-8">
-        <Link href="/dashboard/sme">
+        <Link href={isAdmin ? "/dashboard/admin" : "/dashboard/sme"}>
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Tracking
+          Back to Dashboard
         </Link>
       </Button>
 
@@ -140,28 +209,72 @@ export default function RequestDetailPage() {
                 <h4 className="font-bold text-lg flex items-center gap-2 underline decoration-primary/20 underline-offset-4">
                   Requirement Details
                 </h4>
-                <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                <div className="text-muted-foreground leading-relaxed whitespace-pre-wrap p-4 bg-muted/20 rounded-lg border border-muted/50">
                   {request.description}
-                </p>
+                </div>
               </div>
 
               {request.additionalNotes && (
                 <div className="p-4 bg-amber-50 border border-amber-100 rounded-lg">
-                  <p className="text-xs font-bold text-amber-800 uppercase mb-1">Additional Notes</p>
+                  <p className="text-xs font-bold text-amber-800 uppercase mb-1 text-[10px] tracking-wider">Additional Notes</p>
                   <p className="text-sm text-amber-900">{request.additionalNotes}</p>
                 </div>
               )}
             </CardContent>
           </Card>
 
+          {/* ADMIN ONLY: Expert Assignment Lookup */}
+          {isAdmin && (
+            <Card className="border-2 border-primary/20 shadow-md">
+              <CardHeader className="bg-primary/5">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Zap className="h-5 w-5 text-primary" />
+                  Marketplace Assignment
+                </CardTitle>
+                <CardDescription>
+                  Manually assign a verified expert to this requirement (Salesforce-style lookup).
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6 space-y-4">
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-bold uppercase text-muted-foreground tracking-widest">Select Expert Profile</label>
+                  <div className="flex gap-3">
+                    <Select onValueChange={handleManualAssign} disabled={assigning}>
+                      <SelectTrigger className="h-12 flex-1">
+                        <SelectValue placeholder="Search verified experts..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {consultants.length === 0 ? (
+                          <div className="p-4 text-center text-xs text-muted-foreground">No consultants found</div>
+                        ) : (
+                          consultants.map(c => (
+                            <SelectItem key={c.id} value={c.id}>
+                              <div className="flex flex-col">
+                                <span className="font-bold">{c.name}</span>
+                                <span className="text-[10px] opacity-70">{c.companyName} • {c.city} • {c.yearsExperience}yr Exp</span>
+                              </div>
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground italic">
+                    Note: Assigning an expert will notify them and unlock basic lead details in their console.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <Card className="shadow-md">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <UserCheck className="h-5 w-5 text-primary" />
-                {assignedConsultant ? "Assigned Expert" : "Expert Matching"}
+                {assignedConsultant ? "Assigned Expert" : "Matching Progress"}
               </CardTitle>
               <CardDescription>
-                {assignedConsultant ? "Direct support unlocked" : "Our engine is scanning 100+ verified professionals"}
+                {assignedConsultant ? "Direct professional support unlocked" : "Our engine is identifying the best regional experts"}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -169,13 +282,13 @@ export default function RequestDetailPage() {
                 <div className="text-center py-10">
                   <div className="relative w-16 h-16 mx-auto mb-6">
                     <div className="absolute inset-0 rounded-full border-4 border-primary/20 animate-ping"></div>
-                    <div className="relative z-10 bg-primary/10 w-16 h-12 rounded-full flex items-center justify-center">
+                    <div className="relative z-10 bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center">
                       <Clock className="h-8 w-8 text-primary animate-pulse" />
                     </div>
                   </div>
-                  <h5 className="font-bold mb-1">Scanning Professionals...</h5>
+                  <h5 className="font-bold mb-1">Scanning Local Professionals...</h5>
                   <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-                    We match based on state regulations and specific service expertise. This usually takes &lt; 24h.
+                    Matching for <span className="text-primary font-bold">{request.state}</span> regulations. This usually takes &lt; 24h.
                   </p>
                 </div>
               ) : (
@@ -212,38 +325,41 @@ export default function RequestDetailPage() {
         </div>
 
         <div className="space-y-6">
-          <Card className="bg-primary text-primary-foreground shadow-lg">
+          <Card className="bg-primary text-primary-foreground shadow-lg border-none">
             <CardHeader>
-              <CardTitle className="text-lg">Process Tracker</CardTitle>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Activity className="h-5 w-5" />
+                Process Tracker
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex gap-4">
                 <div className="flex flex-col items-center">
-                  <div className="bg-white text-primary h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold">1</div>
+                  <div className="bg-white text-primary h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold shadow-sm">1</div>
                   <div className="w-0.5 h-12 bg-white/20 my-1"></div>
                 </div>
                 <div>
                   <p className="text-sm font-bold">Requirement Submitted</p>
-                  <p className="text-xs opacity-80">We've logged your request successfully.</p>
+                  <p className="text-[10px] opacity-70">Successfully logged in our registry.</p>
                 </div>
               </div>
               <div className="flex gap-4">
                 <div className="flex flex-col items-center">
-                  <div className={`${assignedConsultant ? 'bg-white text-primary' : 'bg-white/20 text-white'} h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold`}>2</div>
+                  <div className={`${assignedConsultant ? 'bg-white text-primary' : 'bg-white/20 text-white'} h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold shadow-sm`}>2</div>
                   <div className="w-0.5 h-12 bg-white/20 my-1"></div>
                 </div>
                 <div>
-                  <p className={`text-sm font-bold ${!assignedConsultant && 'opacity-50'}`}>Consultant Matched</p>
-                  <p className="text-xs opacity-80">Finding experts in {request.state}.</p>
+                  <p className={`text-sm font-bold ${!assignedConsultant && 'opacity-50'}`}>Expert Matched</p>
+                  <p className="text-[10px] opacity-70">Identifying specialized talent.</p>
                 </div>
               </div>
               <div className="flex gap-4">
                 <div className="flex flex-col items-center">
-                  <div className={`${request.status === 'completed' ? 'bg-white text-primary' : 'bg-white/20 text-white'} h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold`}>3</div>
+                  <div className={`${request.status === 'completed' ? 'bg-white text-primary' : 'bg-white/20 text-white'} h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold shadow-sm`}>3</div>
                 </div>
                 <div>
-                  <p className={`text-sm font-bold ${request.status !== 'completed' && 'opacity-50'}`}>Service Completed</p>
-                  <p className="text-xs opacity-80">Project closure & handover.</p>
+                  <p className={`text-sm font-bold ${request.status !== 'completed' && 'opacity-50'}`}>Work Completed</p>
+                  <p className="text-[10px] opacity-70">Project delivery & handover.</p>
                 </div>
               </div>
             </CardContent>
@@ -267,4 +383,24 @@ export default function RequestDetailPage() {
       </div>
     </div>
   );
+}
+
+// Re-using same Activity icon from dashboard
+function Activity(props: any) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.48 12H2" />
+    </svg>
+  )
 }
