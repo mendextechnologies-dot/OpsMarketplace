@@ -34,9 +34,57 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/hooks/use-auth";
+import { cn } from "@/lib/utils";
 
 export default function Home() {
   const { user } = useAuth();
+
+  const comparisonData = [
+    {
+      feature: "Structured service workflow",
+      linkedIn: { icon: "cross" },
+      indiaMart: { icon: "warning", text: "Basic inquiry" },
+      opsMarketplace: { icon: "check", text: "Guided workflow" },
+    },
+    {
+      feature: "Exclusive lead ownership",
+      linkedIn: { icon: "cross" },
+      indiaMart: { icon: "cross", text: "Shared leads" },
+      opsMarketplace: { icon: "check", text: "Protected ownership" },
+    },
+    {
+      feature: "State-wise verified experts",
+      linkedIn: { icon: "warning" },
+      indiaMart: { icon: "warning" },
+      opsMarketplace: { icon: "check" },
+    },
+    {
+      feature: "Partner coordination workflow",
+      linkedIn: { icon: "cross" },
+      indiaMart: { icon: "cross" },
+      opsMarketplace: { icon: "check" },
+    },
+    {
+      feature: "Work progress tracking",
+      linkedIn: { icon: "cross" },
+      indiaMart: { icon: "cross" },
+      opsMarketplace: { icon: "check" },
+    },
+  ];
+
+  const renderCell = (data: { icon: string; text?: string }, isOps = false) => {
+    const Icon = data.icon === "check" ? CheckCircle2 : data.icon === "warning" ? AlertCircle : XCircle;
+    const colorClass = data.icon === "check" 
+      ? (isOps ? "text-primary" : "text-green-500") 
+      : data.icon === "warning" ? "text-amber-500" : "text-muted-foreground/30";
+    
+    return (
+      <div className="flex flex-col items-center gap-1.5 py-4">
+        <Icon className={cn("h-5 w-5", colorClass)} />
+        {data.text && <span className="text-[10px] font-bold uppercase tracking-tight opacity-70">{data.text}</span>}
+      </div>
+    );
+  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -260,8 +308,8 @@ export default function Home() {
       <section className="py-24 bg-muted/30 border-b">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold tracking-tight">Why Choose OpsMarketplace?</h2>
-            <p className="text-muted-foreground mt-2">Comparison based on typical operational service delivery.</p>
+            <h2 className="text-3xl font-bold tracking-tight">Built Differently from Traditional Platforms</h2>
+            <p className="text-muted-foreground mt-2">Designed for SMEs who need work done, not just contacts.</p>
           </div>
           <Card className="max-w-4xl mx-auto border-none shadow-xl overflow-hidden">
             <Table>
@@ -274,23 +322,17 @@ export default function Home() {
                 </TableRow>
               </TableHeader>
               <TableBody className="bg-white">
-                {[
-                  { feature: "Structured service request", l: false, i: false, o: true },
-                  { feature: "Lead Ownership Protection", l: false, i: false, o: true },
-                  { feature: "State-wise Verified Experts", l: "partial", i: "partial", o: true },
-                  { feature: "Partner Coordination Flow", l: false, i: false, o: true },
-                  { feature: "Work Progress Tracking", l: false, i: false, o: true },
-                ].map((row, i) => (
+                {comparisonData.map((row, i) => (
                   <TableRow key={i}>
                     <TableCell className="font-medium py-6 text-sm">{row.feature}</TableCell>
                     <TableCell className="text-center">
-                      {row.l === true ? <CheckCircle2 className="mx-auto h-5 w-5 text-green-500" /> : row.l === "partial" ? <AlertCircle className="mx-auto h-5 w-5 text-amber-500" /> : <XCircle className="mx-auto h-5 w-5 text-muted-foreground/30" />}
+                      {renderCell(row.linkedIn)}
                     </TableCell>
                     <TableCell className="text-center">
-                      {row.i === true ? <CheckCircle2 className="mx-auto h-5 w-5 text-green-500" /> : row.i === "partial" ? <AlertCircle className="mx-auto h-5 w-5 text-amber-500" /> : <XCircle className="mx-auto h-5 w-5 text-muted-foreground/30" />}
+                      {renderCell(row.indiaMart)}
                     </TableCell>
                     <TableCell className="text-center bg-primary/5">
-                      <CheckCircle2 className="mx-auto h-5 w-5 text-primary" />
+                      {renderCell(row.opsMarketplace, true)}
                     </TableCell>
                   </TableRow>
                 ))}
