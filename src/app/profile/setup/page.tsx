@@ -129,19 +129,17 @@ export default function ProfileSetupPage() {
                             <div 
                               key={serv.id} 
                               className={cn(
-                                "flex items-center space-x-2 p-2 rounded hover:bg-muted/30 cursor-pointer transition-colors",
-                                isChecked ? "bg-primary/5" : ""
+                                "flex items-center space-x-2 p-2 rounded cursor-pointer transition-colors",
+                                isChecked ? "bg-primary/5 border border-primary/20" : "hover:bg-muted/30"
                               )}
                               onClick={() => handleServiceToggle(serv.id)}
                             >
-                              <Checkbox 
-                                checked={isChecked}
-                                className="pointer-events-none"
-                                onCheckedChange={() => {}} // Parent div handles toggle
-                              />
-                              <span className="text-xs leading-tight flex-1 pointer-events-none">
-                                {serv.name}
-                              </span>
+                              <div className="pointer-events-none flex items-center space-x-2 w-full">
+                                <Checkbox checked={isChecked} />
+                                <span className="text-xs leading-tight flex-1">
+                                  {serv.name}
+                                </span>
+                              </div>
                             </div>
                           );
                         })}

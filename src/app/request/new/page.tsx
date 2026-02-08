@@ -249,15 +249,9 @@ export default function NewRequestPage() {
                   )}
                   onClick={() => handleToggleService(serv.id)}
                 >
-                  <Checkbox 
-                    checked={isSelected}
-                    className="h-5 w-5 pointer-events-none"
-                    onCheckedChange={() => {}} // Controlled by parent div
-                  />
-                  <div className="flex-1 pointer-events-none">
-                    <span className="text-base font-semibold block">
-                      {serv.name}
-                    </span>
+                  <div className="pointer-events-none flex items-center space-x-4 w-full">
+                    <Checkbox checked={isSelected} className="h-5 w-5" />
+                    <span className="text-base font-semibold">{serv.name}</span>
                   </div>
                 </div>
               );

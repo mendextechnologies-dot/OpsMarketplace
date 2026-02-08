@@ -14,6 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Users, Phone, MapPin, Briefcase, Zap } from "lucide-react";
 import { SERVICE_TAXONOMY } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 
 export default function PartnerOnboardingPage() {
   const { user, profile, refreshProfile } = useAuth();
@@ -122,12 +123,24 @@ export default function PartnerOnboardingPage() {
             <div className="space-y-4 pt-4 border-t">
               <Label className="text-base font-bold">Services You Focus On</Label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {SERVICE_TAXONOMY.map((cat) => (
-                  <div key={cat.id} className="flex items-center space-x-2 p-2 rounded-lg border hover:bg-muted/50 cursor-pointer" onClick={() => toggleServiceFocus(cat.id)}>
-                    <Checkbox id={cat.id} checked={formData.servicesFocus.includes(cat.id)} />
-                    <Label htmlFor={cat.id} className="text-xs cursor-pointer">{cat.name}</Label>
-                  </div>
-                ))}
+                {SERVICE_TAXONOMY.map((cat) => {
+                  const isChecked = formData.servicesFocus.includes(cat.id);
+                  return (
+                    <div 
+                      key={cat.id} 
+                      className={cn(
+                        "flex items-center space-x-2 p-3 rounded-lg border cursor-pointer transition-colors",
+                        isChecked ? "bg-primary/5 border-primary" : "hover:bg-muted/50"
+                      )}
+                      onClick={() => toggleServiceFocus(cat.id)}
+                    >
+                      <div className="pointer-events-none flex items-center space-x-2 w-full">
+                        <Checkbox checked={isChecked} />
+                        <span className="text-xs font-medium">{cat.name}</span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </CardContent>
