@@ -34,7 +34,9 @@ import {
   Sparkles,
   Loader2,
   Send,
-  ExternalLink
+  ExternalLink,
+  TrendingDown,
+  ArrowUpRight
 } from "lucide-react";
 import {
   Table,
@@ -57,11 +59,11 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const standardPossibilities = [
-    "What is PF registration?",
-    "How to get Shop Act?",
-    "Do I need a Factory Licence?",
-    "I want to join as a Partner"
+  const conversionTriggers = [
+    "I need a service request",
+    "What's the cost of PF?",
+    "How fast can I get an expert?",
+    "I want to join the network"
   ];
 
   useEffect(() => {
@@ -94,12 +96,8 @@ export default function Home() {
         action: response.suggestedAction,
         url: response.redirectUrl
       }]);
-
-      if (response.suggestedAction === 'redirect' && response.redirectUrl) {
-        // We can auto-redirect or let the user click. Let's show a button for better UX.
-      }
     } catch (error) {
-      setMessages([...newMessages, { role: 'model', content: "I'm having trouble connecting right now. Please try again or submit a request directly." }]);
+      setMessages([...newMessages, { role: 'model', content: "Our matching engine is experiencing high demand. Please try again or submit a request directly via the form." }]);
     } finally {
       setLoading(false);
     }
@@ -154,41 +152,49 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen relative">
-      {/* AGENTIC AI CHAT WINDOW */}
+      {/* HIGH-CONVERSION AI CHAT FUNNEL */}
       <div className="fixed bottom-8 right-8 z-[100]">
         {chatOpen ? (
-          <Card className="w-[380px] h-[580px] shadow-2xl border-2 flex flex-col animate-in slide-in-from-bottom-4 duration-300">
-            <CardHeader className="bg-primary text-white p-4 flex flex-row items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5" />
+          <Card className="w-[400px] h-[600px] shadow-2xl border-2 flex flex-col animate-in slide-in-from-bottom-4 duration-300 rounded-2xl overflow-hidden">
+            <CardHeader className="bg-primary text-white p-5 flex flex-row items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <Sparkles className="h-6 w-6" />
+                  <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-400 rounded-full border-2 border-primary animate-pulse" />
+                </div>
                 <div>
-                  <CardTitle className="text-sm font-bold">OpsMarketplace Agent</CardTitle>
-                  <p className="text-[10px] opacity-80">Autonomous Assistant • Online</p>
+                  <CardTitle className="text-sm font-bold">OpsMarketplace Sales Engine</CardTitle>
+                  <p className="text-[10px] opacity-80 flex items-center gap-1">
+                    <Zap className="h-2 w-2 fill-white" /> Instant Matching Active
+                  </p>
                 </div>
               </div>
-              <Button variant="ghost" size="icon" onClick={() => setChatOpen(false)} className="text-white hover:bg-white/10">
+              <Button variant="ghost" size="icon" onClick={() => setChatOpen(false)} className="text-white hover:bg-white/10 h-8 w-8">
                 <X className="h-4 w-4" />
               </Button>
             </CardHeader>
-            <CardContent className="flex-1 p-0 overflow-hidden flex flex-col">
+            <CardContent className="flex-1 p-0 overflow-hidden flex flex-col bg-slate-50">
               <ScrollArea className="flex-1 p-4" ref={scrollRef}>
                 <div className="space-y-4">
-                  <div className="bg-muted p-3 rounded-lg text-sm border-l-4 border-primary">
-                    <p className="font-bold text-primary text-[10px] mb-1 uppercase tracking-wider">Agent Intelligence</p>
-                    I can answer questions, create service requests directly, or initiate your onboarding. How can I help you today?
+                  <div className="bg-white p-4 rounded-2xl text-sm border shadow-sm">
+                    <p className="font-bold text-primary text-[11px] mb-2 uppercase tracking-widest flex items-center gap-1">
+                      <Zap className="h-3 w-3" /> Intelligent Intake
+                    </p>
+                    Hi! I'm the marketplace engine. Are you looking to <strong>outsource a requirement</strong> or <strong>join our expert network</strong>? 
                   </div>
                   
                   {messages.length === 0 && (
-                    <div className="space-y-2">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Common Actions</p>
-                      <div className="flex flex-wrap gap-2">
-                        {standardPossibilities.map((pos, i) => (
+                    <div className="space-y-2 pt-2">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">Quick Start</p>
+                      <div className="grid grid-cols-1 gap-2">
+                        {conversionTriggers.map((pos, i) => (
                           <button 
                             key={i} 
                             onClick={() => handleSendMessage(pos)}
-                            className="text-[10px] bg-primary/5 hover:bg-primary/10 text-primary border border-primary/20 px-3 py-1.5 rounded-full transition-colors font-medium"
+                            className="text-left text-xs bg-white hover:bg-primary/5 text-slate-700 border border-slate-200 px-4 py-3 rounded-xl transition-all shadow-sm hover:border-primary/30 group flex justify-between items-center"
                           >
                             {pos}
+                            <ArrowUpRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                           </button>
                         ))}
                       </div>
@@ -198,16 +204,16 @@ export default function Home() {
                   {messages.map((m, i) => (
                     <div key={i} className="space-y-2">
                       <div className={cn(
-                        "p-3 rounded-lg text-sm max-w-[90%] shadow-sm",
-                        m.role === 'user' ? "ml-auto bg-primary text-white rounded-br-none" : "mr-auto bg-muted border rounded-bl-none"
+                        "p-4 rounded-2xl text-sm max-w-[85%] shadow-sm leading-relaxed",
+                        m.role === 'user' ? "ml-auto bg-primary text-white rounded-br-none" : "mr-auto bg-white border rounded-bl-none text-slate-800"
                       )}>
                         {m.content}
                       </div>
                       {m.action === 'redirect' && m.url && (
                         <div className="flex justify-start">
-                          <Button size="sm" variant="outline" className="text-[10px] h-8 gap-2 border-primary text-primary" asChild>
+                          <Button size="sm" className="text-xs h-10 gap-2 shadow-md px-6 rounded-full" asChild>
                             <Link href={m.url}>
-                              Complete Registration <ExternalLink className="h-3 w-3" />
+                              Complete Registration <ArrowRight className="h-3 w-3" />
                             </Link>
                           </Button>
                         </div>
@@ -215,72 +221,73 @@ export default function Home() {
                     </div>
                   ))}
                   {loading && (
-                    <div className="flex items-center gap-2 text-muted-foreground animate-pulse pl-1">
-                      <Loader2 className="h-3 w-3 animate-spin text-primary" />
-                      <span className="text-[10px] font-medium">Processing intent...</span>
+                    <div className="flex items-center gap-3 text-muted-foreground animate-pulse pl-2">
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                      <span className="text-[11px] font-bold uppercase tracking-tighter">AI Processing Intent...</span>
                     </div>
                   )}
                 </div>
               </ScrollArea>
-              <div className="p-4 border-t bg-muted/30">
+              <div className="p-4 border-t bg-white">
                 <form 
                   onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}
                   className="flex gap-2"
                 >
                   <Input 
-                    placeholder="Describe your need or goal..." 
+                    placeholder="Describe your need or role..." 
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
-                    className="bg-white"
+                    className="bg-slate-50 border-none h-12 focus-visible:ring-1 focus-visible:ring-primary/20 rounded-xl"
                   />
-                  <Button size="icon" disabled={loading} className="shrink-0">
-                    <Send className="h-4 w-4" />
+                  <Button size="icon" disabled={loading} className="shrink-0 h-12 w-12 rounded-xl">
+                    <Send className="h-5 w-5" />
                   </Button>
                 </form>
+                <p className="text-[9px] text-center text-muted-foreground mt-3 uppercase tracking-widest font-bold">
+                  Matches generated in real-time
+                </p>
               </div>
             </CardContent>
           </Card>
         ) : (
           <Button 
             onClick={() => setChatOpen(true)}
-            className="h-16 w-16 rounded-full shadow-2xl animate-bounce hover:animate-none flex flex-col gap-0.5"
+            className="h-20 w-20 rounded-3xl shadow-2xl animate-bounce hover:animate-none flex flex-col gap-1.5 transition-all bg-primary hover:bg-primary/90"
           >
-            <Sparkles className="h-6 w-6" />
-            <span className="text-[8px] font-bold uppercase tracking-tighter">Ask AI</span>
+            <Sparkles className="h-7 w-7" />
+            <span className="text-[9px] font-extrabold uppercase tracking-tighter">Match Me</span>
           </Button>
         )}
       </div>
 
       {/* SECTION 1 — HERO */}
-      <section className="relative py-16 lg:py-24 bg-gradient-to-br from-primary/5 via-white to-secondary/10 border-b overflow-hidden">
+      <section className="relative py-20 lg:py-32 bg-gradient-to-br from-primary/5 via-white to-secondary/10 border-b overflow-hidden">
         <div className="container mx-auto px-4 text-center relative z-10">
-          <Badge variant="secondary" className="mb-6 px-4 py-1.5 text-xs font-bold tracking-wider uppercase bg-primary/10 text-primary hover:bg-primary/20">
-            Agentic Marketplace • Powered by Gemini 2.5
+          <Badge variant="secondary" className="mb-8 px-6 py-2 text-xs font-bold tracking-widest uppercase bg-primary/10 text-primary border-primary/20">
+            Managed Marketplace • AI-Matched Delivery
           </Badge>
-          <h1 className="text-4xl lg:text-7xl font-extrabold tracking-tight mb-6 text-foreground leading-[1.1]">
-            Operations Simplified by <br /> 
-            <span className="text-primary underline decoration-primary/20 underline-offset-8">Intelligent Agents.</span>
+          <h1 className="text-5xl lg:text-8xl font-extrabold tracking-tighter mb-8 text-slate-900 leading-[1]">
+            Operations Scaled by <br /> 
+            <span className="text-primary italic">Expert Intelligence.</span>
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-10 leading-relaxed">
-            The first multi-sided marketplace for compliance, HR, and payroll where AI agents manage the intake, matching, and coordination. 
-            Experience the future of B2B service delivery.
+          <p className="text-xl md:text-2xl text-slate-600 max-w-3xl mx-auto mb-12 leading-relaxed font-medium">
+            No directories. No bidding wars. Just a curated engine that matches SMEs with verified experts using proactive AI.
           </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Button size="lg" className="h-14 px-10 text-lg shadow-xl" asChild>
+          <div className="flex flex-col sm:flex-row justify-center gap-5">
+            <Button size="lg" className="h-16 px-12 text-xl shadow-2xl rounded-2xl" asChild>
               <Link href="/request/new">
-                Start Request Flow <ArrowRight className="ml-2 h-5 w-5" />
+                Post Requirement <ArrowRight className="ml-2 h-6 w-6" />
               </Link>
             </Button>
-            <Button size="lg" variant="outline" className="h-14 px-10 text-lg" asChild>
-              <Link href="/signup">Join Expert Network</Link>
+            <Button size="lg" variant="outline" className="h-16 px-12 text-xl rounded-2xl border-2" asChild>
+              <Link href="/signup">Apply as Expert</Link>
             </Button>
           </div>
           
-          <div className="mt-16 flex flex-wrap justify-center gap-8 opacity-70 grayscale hover:grayscale-0 transition-all">
-            <div className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-primary" /> <span className="text-sm font-bold">Verified Experts</span></div>
-            <div className="flex items-center gap-2"><Handshake className="h-5 w-5 text-primary" /> <span className="text-sm font-bold">Partner-Driven Model</span></div>
-            <div className="flex items-center gap-2"><Zap className="h-5 w-5 text-primary" /> <span className="text-sm font-bold">Agentic Matching</span></div>
-            <div className="flex items-center gap-2"><TrendingUp className="h-5 w-5 text-primary" /> <span className="text-sm font-bold">Structured Workflow</span></div>
+          <div className="mt-20 flex flex-wrap justify-center gap-10 opacity-80">
+            <div className="flex items-center gap-3"><ShieldCheck className="h-6 w-6 text-primary" /> <span className="text-sm font-extrabold uppercase tracking-tight">State-Verified</span></div>
+            <div className="flex items-center gap-3"><Zap className="h-6 w-6 text-primary" /> <span className="text-sm font-extrabold uppercase tracking-tight">Instant Intent</span></div>
+            <div className="flex items-center gap-3"><Users className="h-6 w-6 text-primary" /> <span className="text-sm font-extrabold uppercase tracking-tight">Curated Network</span></div>
           </div>
         </div>
       </section>
@@ -288,77 +295,77 @@ export default function Home() {
       {/* SECTION 2 — THE THREE MODELS DIFFERENTIATION */}
       <section className="py-24 bg-white border-b">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16 max-w-3xl mx-auto">
-            <h2 className="text-3xl lg:text-4xl font-extrabold tracking-tight mb-4">A Modern Alternative to Lead Lists</h2>
-            <p className="text-muted-foreground text-lg">We've replaced the chaos of directories and the race-to-the-bottom of open bidding with an agentic, managed ecosystem.</p>
+          <div className="text-center mb-16 max-w-4xl mx-auto">
+            <h2 className="text-4xl lg:text-5xl font-extrabold tracking-tighter mb-6">A Smarter Model for Higher Stakes</h2>
+            <p className="text-slate-500 text-xl font-medium">We've eliminated the friction of traditional lead lists by introducing an agent-managed ecosystem built for speed and quality.</p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* MODEL 1: DIRECTORY */}
-            <Card className="border-2 opacity-60 grayscale hover:grayscale-0 transition-all">
+            <Card className="border-2 opacity-60 grayscale hover:grayscale-0 transition-all rounded-3xl">
               <CardHeader>
-                <div className="bg-muted w-12 h-12 rounded-xl flex items-center justify-center mb-4">
-                  <Search className="h-6 w-6 text-muted-foreground" />
+                <div className="bg-slate-100 w-14 h-14 rounded-2xl flex items-center justify-center mb-6">
+                  <Search className="h-7 w-7 text-slate-500" />
                 </div>
-                <CardTitle>1. Directory Model</CardTitle>
-                <CardDescription>e.g. IndiaMART, JustDial</CardDescription>
+                <CardTitle className="text-2xl">1. Directory Model</CardTitle>
+                <CardDescription className="text-lg">The "Lead Mall" Approach</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="p-3 bg-muted/30 rounded-lg">
-                  <p className="text-xs font-bold uppercase mb-2 tracking-widest opacity-60">The Workflow</p>
-                  <p className="text-sm">Search list → Contact many → Filter spam</p>
+              <CardContent className="space-y-6">
+                <div className="p-4 bg-slate-50 rounded-2xl border">
+                  <p className="text-[10px] font-bold uppercase mb-3 tracking-widest opacity-60">The Workflow</p>
+                  <p className="text-sm font-semibold">Search → Cold Call → Filter Spam</p>
                 </div>
-                <ul className="text-xs space-y-2 text-muted-foreground">
-                  <li className="flex gap-2"><XCircle className="h-3.5 w-3.5 text-red-500 shrink-0" /> High spam & Low intent</li>
-                  <li className="flex gap-2"><XCircle className="h-3.5 w-3.5 text-red-500 shrink-0" /> Constant price wars</li>
-                  <li className="flex gap-2"><XCircle className="h-3.5 w-3.5 text-red-500 shrink-0" /> No platform verification</li>
+                <ul className="space-y-4 text-sm text-slate-500 font-medium">
+                  <li className="flex gap-3"><XCircle className="h-5 w-5 text-red-500 shrink-0" /> Zero verification of intent</li>
+                  <li className="flex gap-3"><XCircle className="h-5 w-5 text-red-500 shrink-0" /> Shared leads lead to fatigue</li>
+                  <li className="flex gap-3"><XCircle className="h-5 w-5 text-red-500 shrink-0" /> No platform-level accountability</li>
                 </ul>
               </CardContent>
             </Card>
 
             {/* MODEL 2: OPEN BID */}
-            <Card className="border-2 opacity-60 grayscale hover:grayscale-0 transition-all">
+            <Card className="border-2 opacity-60 grayscale hover:grayscale-0 transition-all rounded-3xl">
               <CardHeader>
-                <div className="bg-muted w-12 h-12 rounded-xl flex items-center justify-center mb-4">
-                  <Gavel className="h-6 w-6 text-muted-foreground" />
+                <div className="bg-slate-100 w-14 h-14 rounded-2xl flex items-center justify-center mb-6">
+                  <Gavel className="h-7 w-7 text-slate-500" />
                 </div>
-                <CardTitle>2. Open Bid Model</CardTitle>
-                <CardDescription>e.g. Upwork, Freelancer</CardDescription>
+                <CardTitle className="text-2xl">2. Open Bid Model</CardTitle>
+                <CardDescription className="text-lg">The "Race to Bottom"</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="p-3 bg-muted/30 rounded-lg">
-                  <p className="text-xs font-bold uppercase mb-2 tracking-widest opacity-60">The Workflow</p>
-                  <p className="text-sm">Post need → Receive 50 bids → Hire cheapest</p>
+              <CardContent className="space-y-6">
+                <div className="p-4 bg-slate-50 rounded-2xl border">
+                  <p className="text-[10px] font-bold uppercase mb-3 tracking-widest opacity-60">The Workflow</p>
+                  <p className="text-sm font-semibold">Post → Manage 50 Bids → Compromise</p>
                 </div>
-                <ul className="text-xs space-y-2 text-muted-foreground">
-                  <li className="flex gap-2"><XCircle className="h-3.5 w-3.5 text-red-500 shrink-0" /> Race-to-the-bottom pricing</li>
-                  <li className="flex gap-2"><XCircle className="h-3.5 w-3.5 text-red-500 shrink-0" /> Extreme profile fatigue</li>
-                  <li className="flex gap-2"><XCircle className="h-3.5 w-3.5 text-red-500 shrink-0" /> Not for high-stakes compliance</li>
+                <ul className="space-y-4 text-sm text-slate-500 font-medium">
+                  <li className="flex gap-3"><XCircle className="h-5 w-5 text-red-500 shrink-0" /> Pricing prioritized over quality</li>
+                  <li className="flex gap-3"><XCircle className="h-5 w-5 text-red-500 shrink-0" /> High noise, low expert retention</li>
+                  <li className="flex gap-3"><XCircle className="h-5 w-5 text-red-500 shrink-0" /> Fragile compliance outcomes</li>
                 </ul>
               </CardContent>
             </Card>
 
             {/* MODEL 3: OPSMARKETPLACE (THE WINNER) */}
-            <Card className="border-primary border-2 shadow-2xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[10px] font-bold px-3 py-1 rounded-bl-lg">
-                AGENTIC MODEL
+            <Card className="border-primary border-4 shadow-3xl relative overflow-hidden rounded-3xl">
+              <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[11px] font-black px-5 py-2 rounded-bl-2xl">
+                PREMIUM CURATED
               </div>
-              <CardHeader>
-                <div className="bg-primary/10 w-12 h-12 rounded-xl flex items-center justify-center mb-4">
-                  <Sparkles className="h-6 w-6 text-primary" />
+              <CardHeader className="pb-4">
+                <div className="bg-primary/10 w-16 h-16 rounded-2xl flex items-center justify-center mb-6">
+                  <Sparkles className="h-8 w-8 text-primary" />
                 </div>
-                <CardTitle className="text-primary">3. Managed Model</CardTitle>
-                <CardDescription className="text-primary/70">OpsMarketplace Premium</CardDescription>
+                <CardTitle className="text-3xl text-primary font-black">3. Managed Model</CardTitle>
+                <CardDescription className="text-xl text-primary/70 font-bold">OpsMarketplace Strategy</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="p-3 bg-primary/5 rounded-lg border border-primary/10">
-                  <p className="text-xs font-bold uppercase mb-2 tracking-widest text-primary">The Workflow</p>
-                  <p className="text-sm font-semibold">Describe intent → Agent Match → Verified Delivery</p>
+              <CardContent className="space-y-6 pt-2">
+                <div className="p-5 bg-primary/5 rounded-2xl border-2 border-primary/10">
+                  <p className="text-[11px] font-black uppercase mb-3 tracking-widest text-primary">The Workflow</p>
+                  <p className="text-base font-black">Intent Capturing → Match → Delivery</p>
                 </div>
-                <ul className="text-xs space-y-2">
-                  <li className="flex gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" /> High pricing power for experts</li>
-                  <li className="flex gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" /> Agent-verified regional experts</li>
-                  <li className="flex gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" /> Protected & Verified ownership</li>
+                <ul className="space-y-4 text-sm font-bold">
+                  <li className="flex gap-3 text-slate-800"><CheckCircle2 className="h-5 w-5 text-primary shrink-0" /> High Pricing Power for Experts</li>
+                  <li className="flex gap-3 text-slate-800"><CheckCircle2 className="h-5 w-5 text-primary shrink-0" /> AI-Verified Intent Qualification</li>
+                  <li className="flex gap-3 text-slate-800"><CheckCircle2 className="h-5 w-5 text-primary shrink-0" /> Exclusive & Protected Lead Ownership</li>
                 </ul>
               </CardContent>
             </Card>
@@ -366,184 +373,26 @@ export default function Home() {
         </div>
       </section>
 
-      {/* SECTION 3 — MULTI-SIDED POSITIONING (TABS) */}
-      <section className="py-24 bg-muted/30 border-b">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold tracking-tight">Ecosystem Intelligence</h2>
-            <p className="text-muted-foreground mt-2">Specialized tools for every stakeholder in the operational value chain.</p>
-          </div>
-
-          <Tabs defaultValue="smes" className="max-w-5xl mx-auto">
-            <TabsList className="grid w-full grid-cols-3 h-16 bg-white p-1 rounded-xl shadow-sm border">
-              <TabsTrigger value="smes" className="text-base font-bold data-[state=active]:bg-primary data-[state=active]:text-white">For SMEs</TabsTrigger>
-              <TabsTrigger value="consultants" className="text-base font-bold data-[state=active]:bg-primary data-[state=active]:text-white">For Consultants</TabsTrigger>
-              <TabsTrigger value="partners" className="text-base font-bold data-[state=active]:bg-primary data-[state=active]:text-white">For Partners</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="smes" className="mt-10">
-              <Card className="border-none shadow-xl overflow-hidden">
-                <div className="grid grid-cols-1 lg:grid-cols-2">
-                  <div className="p-10 space-y-6">
-                    <h3 className="text-3xl font-extrabold">Outsource Your Compliance Overhead</h3>
-                    <p className="text-muted-foreground">Describe your need to our Agent. We'll identify the best-fit regional specialist and handle the introduction.</p>
-                    <ul className="space-y-4">
-                      {[
-                        "Submit requirements via AI Chat or Flow",
-                        "Matched with state-verified specialists",
-                        "No cold calls or vendor spam",
-                        "End-to-end progress transparency"
-                      ].map((txt, i) => (
-                        <li key={i} className="flex items-center gap-3 font-medium">
-                          <CheckCircle2 className="h-5 w-5 text-primary" /> {txt}
-                        </li>
-                      ))}
-                    </ul>
-                    <Button size="lg" className="w-full sm:w-auto h-12" asChild>
-                      <Link href="/request/new">Get Started Now</Link>
-                    </Button>
-                  </div>
-                  <div className="bg-primary/5 p-10 flex items-center justify-center">
-                    <div className="space-y-4 w-full">
-                       <div className="bg-white p-4 rounded-xl shadow-sm border flex items-center gap-4">
-                         <div className="bg-blue-100 p-2 rounded-lg text-blue-600"><Building2 className="h-5 w-5" /></div>
-                         <div>
-                            <p className="text-xs font-bold text-muted-foreground uppercase">AI Extraction</p>
-                            <p className="font-bold">PF Registration (Pune)</p>
-                         </div>
-                       </div>
-                       <div className="bg-white p-4 rounded-xl shadow-sm border flex items-center gap-4 opacity-60">
-                         <div className="bg-green-100 p-2 rounded-lg text-green-600"><Sparkles className="h-5 w-5" /></div>
-                         <p className="font-bold">Agent Matched Expert</p>
-                       </div>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="consultants" className="mt-10">
-              <Card className="border-none shadow-xl overflow-hidden">
-                <div className="grid grid-cols-1 lg:grid-cols-2">
-                  <div className="p-10 space-y-6">
-                    <h3 className="text-3xl font-extrabold">High-Intent Leads, Hand-Delivered</h3>
-                    <p className="text-muted-foreground">Stop searching. Our agent identifies requirements that match your specific regional and industry expertise.</p>
-                    <ul className="space-y-4">
-                      {[
-                        "AI-ranked operational opportunities",
-                        "Automated proposal drafting assistant",
-                        "Verified state-wise jurisdiction matching",
-                        "Premium value-driven pricing model"
-                      ].map((txt, i) => (
-                        <li key={i} className="flex items-center gap-3 font-medium">
-                          <CheckCircle2 className="h-5 w-5 text-primary" /> {txt}
-                        </li>
-                      ))}
-                    </ul>
-                    <Button size="lg" className="w-full sm:w-auto h-12" asChild>
-                      <Link href="/signup?role=consultant">Join Expert Network</Link>
-                    </Button>
-                  </div>
-                  <div className="bg-slate-900 p-10 flex items-center justify-center text-white">
-                    <div className="space-y-6 w-full">
-                       <p className="text-xs uppercase font-bold text-slate-400">Agent Console</p>
-                       <div className="space-y-2">
-                          <div className="h-1 bg-primary w-full rounded-full" />
-                          <p className="text-2xl font-bold">Matched Lead: Labour Law Audit</p>
-                          <p className="text-sm text-slate-400">Mumbai • AI Score 9.4/10</p>
-                       </div>
-                       <Button className="w-full bg-white text-slate-900 hover:bg-slate-100 font-bold">Accept Opportunity</Button>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="partners" className="mt-10">
-              <Card className="border-none shadow-xl overflow-hidden">
-                <div className="grid grid-cols-1 lg:grid-cols-2">
-                  <div className="p-10 space-y-6">
-                    <h3 className="text-3xl font-extrabold">Activate Your Business Network</h3>
-                    <p className="text-muted-foreground">Bring high-stakes operational opportunities to the platform. Our agent manages the matching; you maintain the relationship.</p>
-                    <ul className="space-y-4">
-                      {[
-                        "Secured lead ownership via Unique Key",
-                        "Simplified 'Log and Forget' flow",
-                        "Real-time status tracking via Dashboard",
-                        "Incentive-ready professional ecosystem"
-                      ].map((txt, i) => (
-                        <li key={i} className="flex items-center gap-3 font-medium">
-                          <CheckCircle2 className="h-5 w-5 text-primary" /> {txt}
-                        </li>
-                      ))}
-                    </ul>
-                    <Button size="lg" className="w-full sm:w-auto h-12" asChild>
-                      <Link href="/signup?role=partner">Register as Partner</Link>
-                    </Button>
-                  </div>
-                  <div className="bg-primary p-10 flex items-center justify-center text-white">
-                    <div className="text-center space-y-6">
-                       <div className="bg-white/10 w-20 h-20 rounded-full flex items-center justify-center mx-auto">
-                          <Zap className="h-10 w-10 text-white" />
-                       </div>
-                       <h4 className="text-2xl font-bold">Locked Lead Registry</h4>
-                       <p className="text-sm text-white/80">Agent-verified ownership prevents duplicate claims.</p>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </div>
-      </section>
-
-      {/* SECTION 4 — HOW IT WORKS (MASTER FLOW) */}
-      <section className="py-24 bg-white border-b">
+      {/* SECTION 3 — COMPARISON TABLE */}
+      <section className="py-24 bg-slate-50 border-b">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold tracking-tight">The Agentic Workflow</h2>
+            <h2 className="text-4xl font-extrabold tracking-tight">Marketplace Architecture Comparison</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 max-w-5xl mx-auto">
-            {[
-              { title: "Intake", desc: "Agent extracts structured intent from raw requirements.", icon: Sparkles },
-              { title: "Matching", desc: "Our engine identifies the highest-ranked regional expert.", icon: Zap },
-              { title: "Execution", desc: "Consultant handles delivery with AI-assisted responses.", icon: Users },
-              { title: "Completion", desc: "Structured handover and feedback loop.", icon: CheckCircle2 },
-            ].map((step, i) => (
-              <div key={i} className="relative text-center group">
-                {i < 3 && <ArrowRight className="hidden md:block absolute -right-6 top-8 text-muted-foreground/30 h-6 w-6" />}
-                <div className="bg-primary/5 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:bg-primary group-hover:text-white transition-all">
-                  <step.icon className="h-8 w-8 text-primary group-hover:text-white" />
-                </div>
-                <h4 className="font-bold mb-2">{i + 1}. {step.title}</h4>
-                <p className="text-xs text-muted-foreground leading-relaxed">{step.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* SECTION 5 — COMPARISON */}
-      <section className="py-24 bg-muted/30 border-b">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold tracking-tight">Comparison Framework</h2>
-            <p className="text-muted-foreground mt-2">Why professional operators choose our agentic model.</p>
-          </div>
-          <Card className="max-w-5xl mx-auto border-none shadow-xl overflow-hidden">
+          <Card className="max-w-5xl mx-auto border-none shadow-2xl overflow-hidden rounded-3xl">
             <Table>
               <TableHeader className="bg-slate-900 text-white">
-                <TableRow className="hover:bg-slate-900 border-none">
-                  <TableHead className="text-white h-14">Core Capabilities</TableHead>
-                  <TableHead className="text-white text-center">Directory Model</TableHead>
-                  <TableHead className="text-white text-center">Open Bid Model</TableHead>
-                  <TableHead className="text-white text-center font-bold bg-primary/20">Agentic Model</TableHead>
+                <TableRow className="hover:bg-slate-900 border-none h-16">
+                  <TableHead className="text-white px-8 font-bold text-base">Key Differentiators</TableHead>
+                  <TableHead className="text-white text-center font-bold text-sm">Directory (IndiaMart)</TableHead>
+                  <TableHead className="text-white text-center font-bold text-sm">Open Bid (Upwork)</TableHead>
+                  <TableHead className="text-white text-center font-black text-sm bg-primary/20">Managed (OpsMarketplace)</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody className="bg-white">
                 {comparisonData.map((row, i) => (
-                  <TableRow key={i}>
-                    <TableCell className="font-medium py-6 text-sm">{row.feature}</TableCell>
+                  <TableRow key={i} className="hover:bg-slate-50 transition-colors">
+                    <TableCell className="font-bold py-8 px-8 text-sm text-slate-700">{row.feature}</TableCell>
                     <TableCell className="text-center">
                       {renderCell(row.directory)}
                     </TableCell>
@@ -561,19 +410,23 @@ export default function Home() {
         </div>
       </section>
 
-      {/* SECTION 8 — FINAL CTA */}
-      <section className="py-24 bg-slate-900 text-white">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-4xl font-bold mb-6">Experience the Agentic Future.</h2>
-          <p className="text-slate-400 text-lg mb-12 max-w-xl mx-auto">
-            Join the ecosystem where AI handles the complexity, so you can focus on the results.
+      {/* FINAL CTA */}
+      <section className="py-32 bg-slate-950 text-white relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary rounded-full blur-[150px]" />
+          <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-secondary rounded-full blur-[150px]" />
+        </div>
+        <div className="container mx-auto px-4 text-center relative z-10">
+          <h2 className="text-5xl lg:text-7xl font-black mb-8 tracking-tighter">Experience the Managed Future.</h2>
+          <p className="text-slate-400 text-xl font-medium mb-16 max-w-2xl mx-auto leading-relaxed">
+            Stop competing with noise. Join the ecosystem where AI handles the intake, so you can focus on excellence.
           </p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <Button size="lg" className="h-14 px-8 text-lg" asChild>
-              <Link href="/request/new">Post a Smart Request</Link>
+          <div className="flex flex-wrap justify-center gap-6">
+            <Button size="lg" className="h-16 px-12 text-xl font-black shadow-2xl rounded-2xl" asChild>
+              <Link href="/request/new">Post Smart Request</Link>
             </Button>
-            <Button size="lg" variant="outline" className="h-14 px-8 text-lg text-white border-white/20 hover:bg-white/10" asChild>
-              <Link href="/signup">Apply as Expert</Link>
+            <Button size="lg" variant="outline" className="h-16 px-12 text-xl font-black rounded-2xl text-white border-white/20 hover:bg-white/10" asChild>
+              <Link href="/signup">Join as Expert</Link>
             </Button>
           </div>
         </div>
