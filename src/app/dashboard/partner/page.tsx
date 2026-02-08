@@ -117,13 +117,11 @@ export default function PartnerDashboard() {
           ) : (
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableRow className="bg-muted/30">
-                    <TableHead>Client & Service</TableHead>
-                    <TableHead>Ownership</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
-                  </TableRow>
+                <TableRow className="bg-muted/30">
+                  <TableHead>Client & Service</TableHead>
+                  <TableHead>Ownership</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
