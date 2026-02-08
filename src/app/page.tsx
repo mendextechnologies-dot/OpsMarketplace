@@ -1,8 +1,8 @@
-
 "use client";
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -33,7 +33,8 @@ import {
   X,
   Sparkles,
   Loader2,
-  Send
+  Send,
+  ExternalLink
 } from "lucide-react";
 import {
   Table,
@@ -49,9 +50,10 @@ import { marketplaceGuide, GuideOutput } from "@/ai/flows/marketplace-guide-flow
 
 export default function Home() {
   const { user } = useAuth();
+  const router = useRouter();
   const [chatOpen, setChatOpen] = useState(false);
   const [chatInput, setChatInput] = useState("");
-  const [messages, setMessages] = useState<{ role: 'user' | 'model', content: string }[]>([]);
+  const [messages, setMessages] = useState<{ role: 'user' | 'model', content: string, action?: string, url?: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -59,14 +61,17 @@ export default function Home() {
     "What is PF registration?",
     "How to get Shop Act?",
     "Do I need a Factory Licence?",
-    "Explain Payroll outsourcing"
+    "I want to join as a Partner"
   ];
 
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      const scrollContainer = scrollRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      }
     }
-  }, [messages]);
+  }, [messages, loading]);
 
   const handleSendMessage = async (msg?: string) => {
     const text = msg || chatInput;
@@ -80,9 +85,19 @@ export default function Home() {
     try {
       const response = await marketplaceGuide({
         message: text,
-        history: messages
+        history: messages.map(m => ({ role: m.role, content: m.content }))
       });
-      setMessages([...newMessages, { role: 'model', content: response.answer }]);
+      
+      setMessages([...newMessages, { 
+        role: 'model', 
+        content: response.answer,
+        action: response.suggestedAction,
+        url: response.redirectUrl
+      }]);
+
+      if (response.suggestedAction === 'redirect' && response.redirectUrl) {
+        // We can auto-redirect or let the user click. Let's show a button for better UX.
+      }
     } catch (error) {
       setMessages([...newMessages, { role: 'model', content: "I'm having trouble connecting right now. Please try again or submit a request directly." }]);
     } finally {
@@ -139,16 +154,16 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen relative">
-      {/* AI CHAT AGENT WINDOW */}
+      {/* AGENTIC AI CHAT WINDOW */}
       <div className="fixed bottom-8 right-8 z-[100]">
         {chatOpen ? (
-          <Card className="w-[380px] h-[520px] shadow-2xl border-2 flex flex-col animate-in slide-in-from-bottom-4 duration-300">
+          <Card className="w-[380px] h-[580px] shadow-2xl border-2 flex flex-col animate-in slide-in-from-bottom-4 duration-300">
             <CardHeader className="bg-primary text-white p-4 flex flex-row items-center justify-between">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-5 w-5" />
                 <div>
-                  <CardTitle className="text-sm font-bold">Marketplace Guide</CardTitle>
-                  <p className="text-[10px] opacity-80">AI Assistant • Online</p>
+                  <CardTitle className="text-sm font-bold">OpsMarketplace Agent</CardTitle>
+                  <p className="text-[10px] opacity-80">Autonomous Assistant • Online</p>
                 </div>
               </div>
               <Button variant="ghost" size="icon" onClick={() => setChatOpen(false)} className="text-white hover:bg-white/10">
@@ -158,20 +173,20 @@ export default function Home() {
             <CardContent className="flex-1 p-0 overflow-hidden flex flex-col">
               <ScrollArea className="flex-1 p-4" ref={scrollRef}>
                 <div className="space-y-4">
-                  <div className="bg-muted p-3 rounded-lg text-sm">
-                    <p className="font-bold text-primary text-xs mb-1">Guide</p>
-                    Hello! I'm your OpsMarketplace assistant. I can help with questions about Compliance, HR, Payroll, and Registrations. How can I assist you today?
+                  <div className="bg-muted p-3 rounded-lg text-sm border-l-4 border-primary">
+                    <p className="font-bold text-primary text-[10px] mb-1 uppercase tracking-wider">Agent Intelligence</p>
+                    I can answer questions, create service requests directly, or initiate your onboarding. How can I help you today?
                   </div>
                   
                   {messages.length === 0 && (
                     <div className="space-y-2">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Standard Queries</p>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Common Actions</p>
                       <div className="flex flex-wrap gap-2">
                         {standardPossibilities.map((pos, i) => (
                           <button 
                             key={i} 
                             onClick={() => handleSendMessage(pos)}
-                            className="text-[10px] bg-primary/5 hover:bg-primary/10 text-primary border border-primary/20 px-3 py-1.5 rounded-full transition-colors"
+                            className="text-[10px] bg-primary/5 hover:bg-primary/10 text-primary border border-primary/20 px-3 py-1.5 rounded-full transition-colors font-medium"
                           >
                             {pos}
                           </button>
@@ -181,17 +196,28 @@ export default function Home() {
                   )}
 
                   {messages.map((m, i) => (
-                    <div key={i} className={cn(
-                      "p-3 rounded-lg text-sm max-w-[85%]",
-                      m.role === 'user' ? "ml-auto bg-primary text-white" : "mr-auto bg-muted"
-                    )}>
-                      {m.content}
+                    <div key={i} className="space-y-2">
+                      <div className={cn(
+                        "p-3 rounded-lg text-sm max-w-[90%] shadow-sm",
+                        m.role === 'user' ? "ml-auto bg-primary text-white rounded-br-none" : "mr-auto bg-muted border rounded-bl-none"
+                      )}>
+                        {m.content}
+                      </div>
+                      {m.action === 'redirect' && m.url && (
+                        <div className="flex justify-start">
+                          <Button size="sm" variant="outline" className="text-[10px] h-8 gap-2 border-primary text-primary" asChild>
+                            <Link href={m.url}>
+                              Complete Registration <ExternalLink className="h-3 w-3" />
+                            </Link>
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   ))}
                   {loading && (
-                    <div className="flex items-center gap-2 text-muted-foreground animate-pulse">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span className="text-[10px]">Guide is typing...</span>
+                    <div className="flex items-center gap-2 text-muted-foreground animate-pulse pl-1">
+                      <Loader2 className="h-3 w-3 animate-spin text-primary" />
+                      <span className="text-[10px] font-medium">Processing intent...</span>
                     </div>
                   )}
                 </div>
@@ -202,12 +228,12 @@ export default function Home() {
                   className="flex gap-2"
                 >
                   <Input 
-                    placeholder="Ask about PF, ESIC, Shop Act..." 
+                    placeholder="Describe your need or goal..." 
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
                     className="bg-white"
                   />
-                  <Button size="icon" disabled={loading}>
+                  <Button size="icon" disabled={loading} className="shrink-0">
                     <Send className="h-4 w-4" />
                   </Button>
                 </form>
@@ -217,9 +243,10 @@ export default function Home() {
         ) : (
           <Button 
             onClick={() => setChatOpen(true)}
-            className="h-16 w-16 rounded-full shadow-2xl animate-bounce hover:animate-none"
+            className="h-16 w-16 rounded-full shadow-2xl animate-bounce hover:animate-none flex flex-col gap-0.5"
           >
-            <MessageSquare className="h-8 w-8" />
+            <Sparkles className="h-6 w-6" />
+            <span className="text-[8px] font-bold uppercase tracking-tighter">Ask AI</span>
           </Button>
         )}
       </div>
@@ -228,31 +255,31 @@ export default function Home() {
       <section className="relative py-16 lg:py-24 bg-gradient-to-br from-primary/5 via-white to-secondary/10 border-b overflow-hidden">
         <div className="container mx-auto px-4 text-center relative z-10">
           <Badge variant="secondary" className="mb-6 px-4 py-1.5 text-xs font-bold tracking-wider uppercase bg-primary/10 text-primary hover:bg-primary/20">
-            Now in Early Access • For SMEs, Consultants & Partners
+            Agentic Marketplace • Powered by Gemini 2.5
           </Badge>
           <h1 className="text-4xl lg:text-7xl font-extrabold tracking-tight mb-6 text-foreground leading-[1.1]">
-            Get Operational Work Done Faster — <br /> 
-            <span className="text-primary">Without Endless Searching.</span>
+            Operations Simplified by <br /> 
+            <span className="text-primary underline decoration-primary/20 underline-offset-8">Intelligent Agents.</span>
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-10 leading-relaxed">
-            The multi-sided marketplace for compliance, HR, payroll, and business operations. 
-            Connect with verified experts through a structured partner-driven ecosystem.
+            The first multi-sided marketplace for compliance, HR, and payroll where AI agents manage the intake, matching, and coordination. 
+            Experience the future of B2B service delivery.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Button size="lg" className="h-14 px-10 text-lg shadow-xl" asChild>
               <Link href="/request/new">
-                Submit Request <ArrowRight className="ml-2 h-5 w-5" />
+                Start Request Flow <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
             <Button size="lg" variant="outline" className="h-14 px-10 text-lg" asChild>
-              <Link href="/signup">Join the Network</Link>
+              <Link href="/signup">Join Expert Network</Link>
             </Button>
           </div>
           
           <div className="mt-16 flex flex-wrap justify-center gap-8 opacity-70 grayscale hover:grayscale-0 transition-all">
             <div className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-primary" /> <span className="text-sm font-bold">Verified Experts</span></div>
             <div className="flex items-center gap-2"><Handshake className="h-5 w-5 text-primary" /> <span className="text-sm font-bold">Partner-Driven Model</span></div>
-            <div className="flex items-center gap-2"><Zap className="h-5 w-5 text-primary" /> <span className="text-sm font-bold">Smart Matching</span></div>
+            <div className="flex items-center gap-2"><Zap className="h-5 w-5 text-primary" /> <span className="text-sm font-bold">Agentic Matching</span></div>
             <div className="flex items-center gap-2"><TrendingUp className="h-5 w-5 text-primary" /> <span className="text-sm font-bold">Structured Workflow</span></div>
           </div>
         </div>
@@ -262,8 +289,8 @@ export default function Home() {
       <section className="py-24 bg-white border-b">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16 max-w-3xl mx-auto">
-            <h2 className="text-3xl lg:text-4xl font-extrabold tracking-tight mb-4">Not Just Another Lead Directory</h2>
-            <p className="text-muted-foreground text-lg">We moved beyond "open bidding" and "directory lists" to build a managed ecosystem that actually works for high-stakes operational services.</p>
+            <h2 className="text-3xl lg:text-4xl font-extrabold tracking-tight mb-4">A Modern Alternative to Lead Lists</h2>
+            <p className="text-muted-foreground text-lg">We've replaced the chaos of directories and the race-to-the-bottom of open bidding with an agentic, managed ecosystem.</p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -282,9 +309,9 @@ export default function Home() {
                   <p className="text-sm">Search list → Contact many → Filter spam</p>
                 </div>
                 <ul className="text-xs space-y-2 text-muted-foreground">
-                  <li className="flex gap-2"><XCircle className="h-3.5 w-3.5 text-red-500 shrink-0" /> Low quality leads & high spam</li>
-                  <li className="flex gap-2"><XCircle className="h-3.5 w-3.5 text-red-500 shrink-0" /> Extreme price competition</li>
-                  <li className="flex gap-2"><XCircle className="h-3.5 w-3.5 text-red-500 shrink-0" /> No platform-led verification</li>
+                  <li className="flex gap-2"><XCircle className="h-3.5 w-3.5 text-red-500 shrink-0" /> High spam & Low intent</li>
+                  <li className="flex gap-2"><XCircle className="h-3.5 w-3.5 text-red-500 shrink-0" /> Constant price wars</li>
+                  <li className="flex gap-2"><XCircle className="h-3.5 w-3.5 text-red-500 shrink-0" /> No platform verification</li>
                 </ul>
               </CardContent>
             </Card>
@@ -305,8 +332,8 @@ export default function Home() {
                 </div>
                 <ul className="text-xs space-y-2 text-muted-foreground">
                   <li className="flex gap-2"><XCircle className="h-3.5 w-3.5 text-red-500 shrink-0" /> Race-to-the-bottom pricing</li>
-                  <li className="flex gap-2"><XCircle className="h-3.5 w-3.5 text-red-500 shrink-0" /> High noise and profile fatigue</li>
-                  <li className="flex gap-2"><XCircle className="h-3.5 w-3.5 text-red-500 shrink-0" /> Not suitable for premium work</li>
+                  <li className="flex gap-2"><XCircle className="h-3.5 w-3.5 text-red-500 shrink-0" /> Extreme profile fatigue</li>
+                  <li className="flex gap-2"><XCircle className="h-3.5 w-3.5 text-red-500 shrink-0" /> Not for high-stakes compliance</li>
                 </ul>
               </CardContent>
             </Card>
@@ -314,11 +341,11 @@ export default function Home() {
             {/* MODEL 3: OPSMARKETPLACE (THE WINNER) */}
             <Card className="border-primary border-2 shadow-2xl relative overflow-hidden">
               <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[10px] font-bold px-3 py-1 rounded-bl-lg">
-                OUR MODEL
+                AGENTIC MODEL
               </div>
               <CardHeader>
                 <div className="bg-primary/10 w-12 h-12 rounded-xl flex items-center justify-center mb-4">
-                  <ShieldCheck className="h-6 w-6 text-primary" />
+                  <Sparkles className="h-6 w-6 text-primary" />
                 </div>
                 <CardTitle className="text-primary">3. Managed Model</CardTitle>
                 <CardDescription className="text-primary/70">OpsMarketplace Premium</CardDescription>
@@ -326,12 +353,12 @@ export default function Home() {
               <CardContent className="space-y-4">
                 <div className="p-3 bg-primary/5 rounded-lg border border-primary/10">
                   <p className="text-xs font-bold uppercase mb-2 tracking-widest text-primary">The Workflow</p>
-                  <p className="text-sm font-semibold">Describe need → Smart Match → Guided Delivery</p>
+                  <p className="text-sm font-semibold">Describe intent → Agent Match → Verified Delivery</p>
                 </div>
                 <ul className="text-xs space-y-2">
                   <li className="flex gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" /> High pricing power for experts</li>
-                  <li className="flex gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" /> Verified state-wise experts only</li>
-                  <li className="flex gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" /> Protected lead ownership</li>
+                  <li className="flex gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" /> Agent-verified regional experts</li>
+                  <li className="flex gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" /> Protected & Verified ownership</li>
                 </ul>
               </CardContent>
             </Card>
@@ -343,8 +370,8 @@ export default function Home() {
       <section className="py-24 bg-muted/30 border-b">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold tracking-tight">A Platform Built for Everyone</h2>
-            <p className="text-muted-foreground mt-2">Tailored experiences for every role in the ecosystem.</p>
+            <h2 className="text-4xl font-bold tracking-tight">Ecosystem Intelligence</h2>
+            <p className="text-muted-foreground mt-2">Specialized tools for every stakeholder in the operational value chain.</p>
           </div>
 
           <Tabs defaultValue="smes" className="max-w-5xl mx-auto">
@@ -358,14 +385,14 @@ export default function Home() {
               <Card className="border-none shadow-xl overflow-hidden">
                 <div className="grid grid-cols-1 lg:grid-cols-2">
                   <div className="p-10 space-y-6">
-                    <h3 className="text-3xl font-extrabold">Get Your Operational Work Done Faster</h3>
-                    <p className="text-muted-foreground">Stop searching through lists. Submit your requirement and get matched with verified experts who actually understand your local laws.</p>
+                    <h3 className="text-3xl font-extrabold">Outsource Your Compliance Overhead</h3>
+                    <p className="text-muted-foreground">Describe your need to our Agent. We'll identify the best-fit regional specialist and handle the introduction.</p>
                     <ul className="space-y-4">
                       {[
-                        "Submit requirements without registration",
-                        "Matched with verified state-wise experts",
-                        "No vendor spam or cold calls",
-                        "Structured tracking for every request"
+                        "Submit requirements via AI Chat or Flow",
+                        "Matched with state-verified specialists",
+                        "No cold calls or vendor spam",
+                        "End-to-end progress transparency"
                       ].map((txt, i) => (
                         <li key={i} className="flex items-center gap-3 font-medium">
                           <CheckCircle2 className="h-5 w-5 text-primary" /> {txt}
@@ -373,7 +400,7 @@ export default function Home() {
                       ))}
                     </ul>
                     <Button size="lg" className="w-full sm:w-auto h-12" asChild>
-                      <Link href="/request/new">Submit Requirement Now</Link>
+                      <Link href="/request/new">Get Started Now</Link>
                     </Button>
                   </div>
                   <div className="bg-primary/5 p-10 flex items-center justify-center">
@@ -381,13 +408,13 @@ export default function Home() {
                        <div className="bg-white p-4 rounded-xl shadow-sm border flex items-center gap-4">
                          <div className="bg-blue-100 p-2 rounded-lg text-blue-600"><Building2 className="h-5 w-5" /></div>
                          <div>
-                            <p className="text-xs font-bold text-muted-foreground uppercase">Next Step</p>
+                            <p className="text-xs font-bold text-muted-foreground uppercase">AI Extraction</p>
                             <p className="font-bold">PF Registration (Pune)</p>
                          </div>
                        </div>
                        <div className="bg-white p-4 rounded-xl shadow-sm border flex items-center gap-4 opacity-60">
-                         <div className="bg-green-100 p-2 rounded-lg text-green-600"><ShieldCheck className="h-5 w-5" /></div>
-                         <p className="font-bold">Expert Assigned</p>
+                         <div className="bg-green-100 p-2 rounded-lg text-green-600"><Sparkles className="h-5 w-5" /></div>
+                         <p className="font-bold">Agent Matched Expert</p>
                        </div>
                     </div>
                   </div>
@@ -399,14 +426,14 @@ export default function Home() {
               <Card className="border-none shadow-xl overflow-hidden">
                 <div className="grid grid-cols-1 lg:grid-cols-2">
                   <div className="p-10 space-y-6">
-                    <h3 className="text-3xl font-extrabold">Get High-Intent Leads, Not Spam</h3>
-                    <p className="text-muted-foreground">Stop chasing random contacts. Receive curated opportunities through our trusted partner network and focus on delivery.</p>
+                    <h3 className="text-3xl font-extrabold">High-Intent Leads, Hand-Delivered</h3>
+                    <p className="text-muted-foreground">Stop searching. Our agent identifies requirements that match your specific regional and industry expertise.</p>
                     <ul className="space-y-4">
                       {[
-                        "Pre-qualified operational requirements",
-                        "Partner-managed client coordination",
-                        "Clear scope and location details",
-                        "Zero commission during early access"
+                        "AI-ranked operational opportunities",
+                        "Automated proposal drafting assistant",
+                        "Verified state-wise jurisdiction matching",
+                        "Premium value-driven pricing model"
                       ].map((txt, i) => (
                         <li key={i} className="flex items-center gap-3 font-medium">
                           <CheckCircle2 className="h-5 w-5 text-primary" /> {txt}
@@ -414,18 +441,18 @@ export default function Home() {
                       ))}
                     </ul>
                     <Button size="lg" className="w-full sm:w-auto h-12" asChild>
-                      <Link href="/signup?role=consultant">Join as Consultant</Link>
+                      <Link href="/signup?role=consultant">Join Expert Network</Link>
                     </Button>
                   </div>
                   <div className="bg-slate-900 p-10 flex items-center justify-center text-white">
                     <div className="space-y-6 w-full">
-                       <p className="text-xs uppercase font-bold text-slate-400">Expert Console</p>
+                       <p className="text-xs uppercase font-bold text-slate-400">Agent Console</p>
                        <div className="space-y-2">
-                          <div className="h-1 bg-primary w-2/3 rounded-full" />
-                          <p className="text-2xl font-bold">New Lead: Factory License</p>
-                          <p className="text-sm text-slate-400">Mumbai, Maharashtra • 50 Employees</p>
+                          <div className="h-1 bg-primary w-full rounded-full" />
+                          <p className="text-2xl font-bold">Matched Lead: Labour Law Audit</p>
+                          <p className="text-sm text-slate-400">Mumbai • AI Score 9.4/10</p>
                        </div>
-                       <Button className="w-full bg-white text-slate-900 hover:bg-slate-100">Accept Lead</Button>
+                       <Button className="w-full bg-white text-slate-900 hover:bg-slate-100 font-bold">Accept Opportunity</Button>
                     </div>
                   </div>
                 </div>
@@ -436,14 +463,14 @@ export default function Home() {
               <Card className="border-none shadow-xl overflow-hidden">
                 <div className="grid grid-cols-1 lg:grid-cols-2">
                   <div className="p-10 space-y-6">
-                    <h3 className="text-3xl font-extrabold">Monetize Your Professional Network</h3>
-                    <p className="text-muted-foreground">Help your clients get operational work done by experts. You log the lead; our platform handles the rest.</p>
+                    <h3 className="text-3xl font-extrabold">Activate Your Business Network</h3>
+                    <p className="text-muted-foreground">Bring high-stakes operational opportunities to the platform. Our agent manages the matching; you maintain the relationship.</p>
                     <ul className="space-y-4">
                       {[
-                        "Maintain client ownership",
-                        "Submit leads via simple dashboard",
-                        "Earn incentives on successful completion",
-                        "No execution responsibility required"
+                        "Secured lead ownership via Unique Key",
+                        "Simplified 'Log and Forget' flow",
+                        "Real-time status tracking via Dashboard",
+                        "Incentive-ready professional ecosystem"
                       ].map((txt, i) => (
                         <li key={i} className="flex items-center gap-3 font-medium">
                           <CheckCircle2 className="h-5 w-5 text-primary" /> {txt}
@@ -451,7 +478,7 @@ export default function Home() {
                       ))}
                     </ul>
                     <Button size="lg" className="w-full sm:w-auto h-12" asChild>
-                      <Link href="/signup?role=partner">Become a Partner</Link>
+                      <Link href="/signup?role=partner">Register as Partner</Link>
                     </Button>
                   </div>
                   <div className="bg-primary p-10 flex items-center justify-center text-white">
@@ -459,8 +486,8 @@ export default function Home() {
                        <div className="bg-white/10 w-20 h-20 rounded-full flex items-center justify-center mx-auto">
                           <Zap className="h-10 w-10 text-white" />
                        </div>
-                       <h4 className="text-2xl font-bold">Secure Your Lead Ownership</h4>
-                       <p className="text-sm text-white/80">First submission wins primary ownership and incentives.</p>
+                       <h4 className="text-2xl font-bold">Locked Lead Registry</h4>
+                       <p className="text-sm text-white/80">Agent-verified ownership prevents duplicate claims.</p>
                     </div>
                   </div>
                 </div>
@@ -474,14 +501,14 @@ export default function Home() {
       <section className="py-24 bg-white border-b">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold tracking-tight">The Modern Operational Workflow</h2>
+            <h2 className="text-3xl font-bold tracking-tight">The Agentic Workflow</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 max-w-5xl mx-auto">
             {[
-              { title: "Bring Opportunity", desc: "SME or Partner submits a structured request.", icon: FileText },
-              { title: "Smart Matching", desc: "Our engine finds the best state-wise expert.", icon: Zap },
-              { title: "Coordination", desc: "Consultant works directly with the owner.", icon: Users },
-              { title: "Work Delivered", desc: "Structured completion and reporting.", icon: CheckCircle2 },
+              { title: "Intake", desc: "Agent extracts structured intent from raw requirements.", icon: Sparkles },
+              { title: "Matching", desc: "Our engine identifies the highest-ranked regional expert.", icon: Zap },
+              { title: "Execution", desc: "Consultant handles delivery with AI-assisted responses.", icon: Users },
+              { title: "Completion", desc: "Structured handover and feedback loop.", icon: CheckCircle2 },
             ].map((step, i) => (
               <div key={i} className="relative text-center group">
                 {i < 3 && <ArrowRight className="hidden md:block absolute -right-6 top-8 text-muted-foreground/30 h-6 w-6" />}
@@ -500,8 +527,8 @@ export default function Home() {
       <section className="py-24 bg-muted/30 border-b">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold tracking-tight">Built Differently from Traditional Platforms</h2>
-            <p className="text-muted-foreground mt-2">Designed for quality delivery, not just contact sharing.</p>
+            <h2 className="text-3xl font-bold tracking-tight">Comparison Framework</h2>
+            <p className="text-muted-foreground mt-2">Why professional operators choose our agentic model.</p>
           </div>
           <Card className="max-w-5xl mx-auto border-none shadow-xl overflow-hidden">
             <Table>
@@ -510,7 +537,7 @@ export default function Home() {
                   <TableHead className="text-white h-14">Core Capabilities</TableHead>
                   <TableHead className="text-white text-center">Directory Model</TableHead>
                   <TableHead className="text-white text-center">Open Bid Model</TableHead>
-                  <TableHead className="text-white text-center font-bold bg-primary/20">OpsMarketplace</TableHead>
+                  <TableHead className="text-white text-center font-bold bg-primary/20">Agentic Model</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody className="bg-white">
@@ -534,83 +561,19 @@ export default function Home() {
         </div>
       </section>
 
-      {/* SECTION 6 — PRICING / EARLY ACCESS */}
-      <section className="py-24 bg-primary text-primary-foreground relative overflow-hidden">
-        <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-96 h-96 bg-accent/20 rounded-full blur-3xl opacity-50"></div>
-        <div className="container mx-auto px-4 text-center relative z-10">
-          <h2 className="text-4xl lg:text-5xl font-bold mb-6">Early Access Campaign</h2>
-          <p className="opacity-80 max-w-2xl mx-auto mb-16 text-lg">
-            Join the elite group of SMEs, Experts, and Partners during our India launch phase.
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {[
-              { role: "SME", desc: "For businesses", perks: ["Unlimited requests", "Expert matching", "Tracking dashboard"] },
-              { role: "Consultant", desc: "For verified experts", perks: ["Free profile listing", "Curated opportunities", "Zero commission"] },
-              { role: "Partner", desc: "For network owners", perks: ["Unlimited lead logging", "Ownership protection", "Incentive eligibility"] },
-            ].map((pkg, i) => (
-              <Card key={i} className="bg-white/10 border-white/20 text-white backdrop-blur-md">
-                <CardHeader>
-                  <CardTitle className="text-2xl">{pkg.role} Access</CardTitle>
-                  <CardDescription className="text-white/60">{pkg.desc}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4 text-left">
-                  {pkg.perks.map((p, j) => (
-                    <div key={j} className="flex items-center gap-3 text-sm font-medium">
-                      <CheckCircle2 className="h-4 w-4 text-accent" /> <span>{p}</span>
-                    </div>
-                  ))}
-                  <div className="pt-8 text-center">
-                    <p className="text-4xl font-extrabold mb-1">FREE</p>
-                    <p className="text-[10px] opacity-60 uppercase tracking-widest">First 6 Months</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* SECTION 7 — INSIGHTS */}
-      <section className="py-24 bg-white border-b">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold tracking-tight">Operational Insights for Growing Businesses</h2>
-            <p className="text-muted-foreground mt-2">Latest from our knowledge hub.</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              { title: "Understanding Shop Act Registration", tag: "Compliance" },
-              { title: "Best Practices for SME Payroll", tag: "HR Ops" },
-              { title: "The Future of Partner-Led Marketplaces", tag: "Growth" },
-            ].map((post, i) => (
-              <Card key={i} className="group cursor-pointer hover:shadow-lg transition-all">
-                <div className="h-48 bg-muted animate-pulse" />
-                <CardContent className="pt-6">
-                  <Badge variant="outline" className="mb-4">{post.tag}</Badge>
-                  <h4 className="font-bold text-lg mb-4 group-hover:text-primary transition-colors">{post.title}</h4>
-                  <div className="flex items-center gap-2 text-primary font-bold text-sm">
-                    Read More <ArrowRight className="h-4 w-4" />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* SECTION 8 — FINAL CTA */}
       <section className="py-24 bg-slate-900 text-white">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-4xl font-bold mb-6">Start Faster. Deliver Better. Grow Together.</h2>
+          <h2 className="text-4xl font-bold mb-6">Experience the Agentic Future.</h2>
           <p className="text-slate-400 text-lg mb-12 max-w-xl mx-auto">
-            Join 500+ businesses and professionals streamlining operations today.
+            Join the ecosystem where AI handles the complexity, so you can focus on the results.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Button size="lg" className="h-14 px-8 text-lg" asChild>
-              <Link href="/request/new">Submit Request</Link>
+              <Link href="/request/new">Post a Smart Request</Link>
             </Button>
             <Button size="lg" variant="outline" className="h-14 px-8 text-lg text-white border-white/20 hover:bg-white/10" asChild>
-              <Link href="/signup">Join the Network</Link>
+              <Link href="/signup">Apply as Expert</Link>
             </Button>
           </div>
         </div>
