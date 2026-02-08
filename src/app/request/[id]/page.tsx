@@ -4,7 +4,7 @@
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { doc, getDoc, collection, query, where, getDocs, setDoc, updateDoc, serverTimestamp, limit } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, getDocs, setDoc, updateDoc, serverTimestamp, limit, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase-config";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -67,7 +67,11 @@ export default function RequestDetailPage() {
         }
         
         const data = docSnap.data();
-        if (data.userId !== profile.id && profile.role !== 'admin' && data.leadOwnerId !== profile.id) {
+        // Permission check
+        const isOwner = data.userId === profile.id || data.leadOwnerId === profile.id;
+        const isAdmin = profile.role === 'admin';
+        
+        if (!isOwner && !isAdmin) {
           router.push("/dashboard");
           return;
         }
@@ -77,7 +81,7 @@ export default function RequestDetailPage() {
         // Trigger AI Pricing Intelligence
         fetchPricing(getCategoryName(data.categoryId), data.city);
 
-        // Fetch matches (lead assignments)
+        // 1. Fetch existing assignments (actual matches)
         const q = query(collection(db, "leadAssignments"), where("requestId", "==", id));
         const matchSnap = await getDocs(q);
         const matchData = await Promise.all(matchSnap.docs.map(async (mDoc) => {
@@ -91,7 +95,8 @@ export default function RequestDetailPage() {
         }));
         setMatches(matchData);
 
-        // Fetch top 5 potential matches based on services
+        // 2. Fetch Potential AI Matches (Expert Identification)
+        // We look for experts who handle these services
         if (data.serviceIds && data.serviceIds.length > 0) {
           const potentialQuery = query(
             collection(db, "consultantProfiles"),
@@ -99,11 +104,24 @@ export default function RequestDetailPage() {
             limit(5)
           );
           const potentialSnap = await getDocs(potentialQuery);
-          setPotentialMatches(potentialSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+          const potential = potentialSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+          
+          // If no specific service matches, fallback to category matches or general state experts
+          if (potential.length === 0) {
+             const fallbackQuery = query(
+               collection(db, "consultantProfiles"),
+               where("statesCovered", "array-contains", data.state),
+               limit(5)
+             );
+             const fallbackSnap = await getDocs(fallbackQuery);
+             setPotentialMatches(fallbackSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+          } else {
+             setPotentialMatches(potential);
+          }
         }
 
-        // If admin, fetch all consultants for manual lookup
-        if (profile.role === 'admin') {
+        // 3. Admin: fetch all consultants for manual override
+        if (isAdmin) {
           const consSnap = await getDocs(collection(db, "consultantProfiles"));
           setConsultants(consSnap.docs.map(d => ({ id: d.id, ...d.data() })));
         }
@@ -177,7 +195,8 @@ export default function RequestDetailPage() {
     );
   }
 
-  const assignedConsultant = matches.find(m => m.status === 'accepted' || m.status === 'sent');
+  // The 'active' match is the one that has been accepted, or the first one sent
+  const activeAssignment = matches.find(m => m.status === 'accepted' || m.status === 'completed') || matches.find(m => m.status === 'sent');
   const isAdmin = profile?.role === 'admin';
 
   return (
@@ -191,7 +210,8 @@ export default function RequestDetailPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
-          <Card className="border-2">
+          {/* Main Requirement Card */}
+          <Card className="border-2 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between border-b pb-6">
               <div>
                 <CardTitle className="text-2xl font-bold text-primary">{getCategoryName(request.categoryId)}</CardTitle>
@@ -199,8 +219,8 @@ export default function RequestDetailPage() {
                   <Clock className="h-3 w-3" /> Submitted {new Date(request.createdAt?.seconds * 1000).toLocaleDateString()}
                 </CardDescription>
               </div>
-              <Badge variant={request.status === 'new' ? 'secondary' : 'default'} className="px-4 py-1">
-                {request.status.toUpperCase()}
+              <Badge variant={request.status === 'new' ? 'secondary' : 'default'} className="px-4 py-1 uppercase text-[10px] font-bold tracking-widest">
+                {request.status}
               </Badge>
             </CardHeader>
             <CardContent className="space-y-8 pt-8">
@@ -208,115 +228,121 @@ export default function RequestDetailPage() {
                 <div className="flex items-start gap-3">
                   <Tag className="h-5 w-5 text-primary shrink-0 mt-1" />
                   <div>
-                    <h4 className="text-sm font-bold text-muted-foreground uppercase">Services Requested</h4>
-                    <p className="text-lg font-semibold">{getServiceNames(request.serviceIds)}</p>
+                    <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Services Requested</h4>
+                    <p className="text-lg font-bold leading-tight mt-1">{getServiceNames(request.serviceIds)}</p>
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-muted/30 p-6 rounded-xl">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-muted/30 p-6 rounded-xl border">
                 <div className="space-y-4">
                   <div className="flex items-center gap-3 text-sm">
-                    <div className="bg-white p-2 rounded-lg shadow-sm"><Building2 className="h-4 w-4 text-primary" /></div>
+                    <div className="bg-white p-2 rounded-lg shadow-sm border"><Building2 className="h-4 w-4 text-primary" /></div>
                     <div>
                       <p className="text-muted-foreground text-[10px] uppercase font-bold">Company</p>
-                      <span className="font-semibold">{request.companyName}</span>
+                      <span className="font-bold">{request.companyName}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 text-sm">
-                    <div className="bg-white p-2 rounded-lg shadow-sm"><Users className="h-4 w-4 text-primary" /></div>
+                    <div className="bg-white p-2 rounded-lg shadow-sm border"><Users className="h-4 w-4 text-primary" /></div>
                     <div>
                       <p className="text-muted-foreground text-[10px] uppercase font-bold">Employees</p>
-                      <span className="font-semibold">{request.employeeCount}</span>
+                      <span className="font-bold">{request.employeeCount}</span>
                     </div>
                   </div>
                 </div>
                 <div className="space-y-4">
                   <div className="flex items-center gap-3 text-sm">
-                    <div className="bg-white p-2 rounded-lg shadow-sm"><MapPin className="h-4 w-4 text-primary" /></div>
+                    <div className="bg-white p-2 rounded-lg shadow-sm border"><MapPin className="h-4 w-4 text-primary" /></div>
                     <div>
                       <p className="text-muted-foreground text-[10px] uppercase font-bold">Location</p>
-                      <span className="font-semibold">{request.city}, {request.state}</span>
+                      <span className="font-bold">{request.city}, {request.state}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="capitalize">Urgency: {request.urgency}</Badge>
+                    <Badge variant="outline" className="capitalize text-[10px] font-bold bg-white">Urgency: {request.urgency}</Badge>
                   </div>
                 </div>
               </div>
               
               <div className="space-y-3">
-                <h4 className="font-bold text-lg flex items-center gap-2 underline decoration-primary/20 underline-offset-4">
-                  Requirement Details
-                </h4>
-                <div className="text-muted-foreground leading-relaxed whitespace-pre-wrap p-4 bg-muted/20 rounded-lg border border-muted/50">
+                <h4 className="font-bold text-sm uppercase tracking-widest text-muted-foreground">Requirement Narrative</h4>
+                <div className="text-slate-700 leading-relaxed whitespace-pre-wrap p-5 bg-white rounded-xl border-2 shadow-inner min-h-[100px]">
                   {request.description}
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {isAdmin && (
-            <Card className="border-2 border-primary/20 shadow-md">
-              <CardHeader className="bg-primary/5">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Zap className="h-5 w-5 text-primary" />
-                  Marketplace Assignment
-                </CardTitle>
-                <CardDescription>
-                  Manually assign a verified expert to this requirement.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-6 space-y-4">
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-bold uppercase text-muted-foreground tracking-widest">Select Expert Profile</label>
-                  <Select onValueChange={handleManualAssign} disabled={assigning}>
-                    <SelectTrigger className="h-12 w-full">
-                      <SelectValue placeholder="Search verified experts..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {consultants.map(c => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.name} ({c.companyName})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          <Card className="shadow-md">
-            <CardHeader>
+          {/* Expert Identification / Match Preview Card */}
+          <Card className="shadow-md border-2 overflow-hidden">
+            <CardHeader className="bg-slate-50 border-b">
               <CardTitle className="text-lg flex items-center gap-2">
-                <UserCheck className="h-5 w-5 text-primary" />
-                {assignedConsultant ? "Assigned Expert" : "Expert Identification"}
+                <Sparkles className="h-5 w-5 text-primary" />
+                {activeAssignment?.status === 'accepted' ? "Your Assigned Expert" : "AI Expert Identification"}
               </CardTitle>
               <CardDescription>
-                {assignedConsultant ? "Direct professional support unlocked" : "Top verified experts matching your requirement"}
+                {activeAssignment?.status === 'accepted' 
+                  ? "Direct support from a verified specialist is now active." 
+                  : "We are currently ranking the top 5 experts for your specific requirement."}
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              {!assignedConsultant ? (
+            <CardContent className="pt-6">
+              {activeAssignment?.status === 'accepted' ? (
+                /* VIEW: Expert Assigned & Accepted */
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between p-6 border-2 border-primary/20 rounded-2xl bg-primary/5">
+                    <div className="flex items-center gap-4">
+                      <div className="bg-primary text-primary-foreground h-14 w-14 rounded-2xl flex items-center justify-center font-bold text-xl shadow-lg">
+                        {activeAssignment.consultant?.name?.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="font-black text-xl text-primary">{activeAssignment.consultant?.name}</p>
+                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{activeAssignment.consultant?.companyName}</p>
+                      </div>
+                    </div>
+                    <Badge className="bg-green-600 px-4 py-1 text-[10px] font-black">VERIFIED PARTNER</Badge>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Button className="h-14 gap-2 text-base font-bold shadow-md" variant="default" asChild>
+                      <a href={`tel:${activeAssignment.consultant?.phone}`}>
+                        <Phone className="h-5 w-5" /> Call Primary Expert
+                      </a>
+                    </Button>
+                    <Button className="h-14 gap-2 text-base font-bold" variant="outline" asChild>
+                      <a href={`mailto:${activeAssignment.consultant?.email || 'expert@opsmarketplace.com'}`}>
+                        <Mail className="h-5 w-5" /> Send Brief
+                      </a>
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                /* VIEW: Matching in Progress / Discovery */
                 <div className="space-y-6">
                   {potentialMatches.length > 0 ? (
                     <div className="space-y-4">
+                      <div className="flex items-center justify-between mb-2">
+                         <p className="text-[10px] font-black text-primary uppercase tracking-widest">Matched Candidates ({potentialMatches.length})</p>
+                         <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground">
+                            <Loader2 className="h-3 w-3 animate-spin text-primary" /> RANKING IN PROGRESS
+                         </div>
+                      </div>
                       {potentialMatches.map((expert) => (
-                        <div key={expert.id} className="flex items-center justify-between p-4 bg-white rounded-xl border-2 hover:border-primary/30 transition-all shadow-sm">
+                        <div key={expert.id} className="flex items-center justify-between p-4 bg-white rounded-xl border-2 hover:border-primary/30 transition-all shadow-sm group">
                           <div className="flex items-center gap-4">
                             <div className="relative">
-                              <div className="h-12 w-12 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold">
+                              <div className="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary font-black group-hover:bg-primary group-hover:text-white transition-colors">
                                 {expert.name?.charAt(0)}
                               </div>
-                              <div className="absolute -bottom-1 -right-1 bg-green-500 h-4 w-4 rounded-full border-2 border-white" />
+                              <div className="absolute -bottom-1 -right-1 bg-green-500 h-4 w-4 rounded-full border-2 border-white shadow-sm" />
                             </div>
                             <div>
                               <div className="flex items-center gap-2">
-                                <p className="text-sm font-bold">{expert.name}</p>
-                                <Badge variant="outline" className="text-[8px] h-4 bg-green-50 text-green-700 border-green-200">98% MATCH</Badge>
+                                <p className="text-sm font-black">{expert.name}</p>
+                                <Badge variant="outline" className="text-[9px] h-4 bg-green-50 text-green-700 border-green-200">HIGH MATCH</Badge>
                               </div>
-                              <p className="text-[10px] text-muted-foreground uppercase tracking-widest">{expert.companyName}</p>
+                              <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">{expert.companyName}</p>
                             </div>
                           </div>
                           <div className="flex flex-col items-end gap-1">
@@ -327,68 +353,63 @@ export default function RequestDetailPage() {
                               <Star className="h-3 w-3 fill-current" />
                               <Star className="h-3 w-3 fill-current" />
                             </div>
-                            <span className="text-[10px] font-bold text-muted-foreground">{expert.city}</span>
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">{expert.city}</span>
                           </div>
                         </div>
                       ))}
-                      <div className="pt-4 flex items-center justify-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                        Awaiting consultant acceptance...
-                      </div>
                     </div>
                   ) : (
-                    <div className="text-center py-10">
-                      <div className="relative w-16 h-16 mx-auto mb-6">
+                    /* Initial Discovery State */
+                    <div className="text-center py-16">
+                      <div className="relative w-20 h-20 mx-auto mb-6">
                         <div className="absolute inset-0 rounded-full border-4 border-primary/20 animate-ping"></div>
-                        <div className="relative z-10 bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center">
-                          <Clock className="h-8 w-8 text-primary animate-pulse" />
+                        <div className="relative z-10 bg-primary/10 w-20 h-20 rounded-full flex items-center justify-center shadow-inner">
+                          <Zap className="h-10 w-10 text-primary animate-pulse" />
                         </div>
                       </div>
-                      <h5 className="font-bold mb-1">Scanning Specialized Experts...</h5>
-                      <p className="text-sm text-muted-foreground max-w-xs mx-auto italic">
-                        Ranking providers based on performance tiers and location.
+                      <h5 className="font-black text-lg mb-2 text-primary">Scanning Specialized Expert Network...</h5>
+                      <p className="text-sm text-muted-foreground max-w-xs mx-auto italic font-medium">
+                        Applying "Uber-style" dynamic ranking based on location and historical response speed.
                       </p>
                     </div>
                   )}
                 </div>
-              ) : (
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between p-6 border-2 border-primary/20 rounded-xl bg-primary/5">
-                    <div className="flex items-center gap-4">
-                      <div className="bg-primary text-primary-foreground h-12 w-12 rounded-full flex items-center justify-center font-bold text-lg">
-                        {assignedConsultant.consultant?.name?.charAt(0)}
-                      </div>
-                      <div>
-                        <p className="font-extrabold text-lg">{assignedConsultant.consultant?.name}</p>
-                        <p className="text-sm text-muted-foreground">{assignedConsultant.consultant?.companyName}</p>
-                      </div>
-                    </div>
-                    <Badge className="bg-green-600">VERIFIED</Badge>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Button className="h-12 gap-2" variant="default" asChild>
-                      <a href={`tel:${assignedConsultant.consultant?.phone}`}>
-                        <Phone className="h-4 w-4" /> Call Expert
-                      </a>
-                    </Button>
-                    <Button className="h-12 gap-2" variant="outline" asChild>
-                      <a href={`mailto:expert@opsmarketplace.com`}>
-                        <Mail className="h-4 w-4" /> Send Email
-                      </a>
-                    </Button>
-                  </div>
-                </div>
               )}
             </CardContent>
           </Card>
+          
+          {/* Admin Override Section */}
+          {isAdmin && (
+            <Card className="border-2 border-dashed border-primary/40 bg-primary/5">
+              <CardHeader>
+                <CardTitle className="text-sm flex items-center gap-2 uppercase tracking-widest">
+                  <UserCheck className="h-4 w-4" /> Admin Manual Assignment
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Select onValueChange={handleManualAssign} disabled={assigning}>
+                  <SelectTrigger className="h-12 w-full bg-white">
+                    <SelectValue placeholder="Override and Assign Expert..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {consultants.map(c => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name} — {c.companyName} ({c.city})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
+        {/* Sidebar Insights */}
         <div className="space-y-6">
           {/* AI PRICING INTELLIGENCE CARD */}
           <Card className="border-amber-200 bg-amber-50/50 shadow-sm overflow-hidden">
             <CardHeader className="bg-amber-100/50 pb-4">
-              <CardTitle className="text-base flex items-center gap-2 text-amber-900">
+              <CardTitle className="text-base flex items-center gap-2 text-amber-900 font-black">
                 <Coins className="h-4 w-4 text-amber-600" />
                 AI Pricing Intelligence
               </CardTitle>
@@ -397,25 +418,25 @@ export default function RequestDetailPage() {
               {loadingPricing ? (
                 <div className="flex items-center gap-2 text-amber-700 animate-pulse">
                   <Loader2 className="h-3 w-3 animate-spin" />
-                  <span className="text-xs font-bold uppercase tracking-widest">Analyzing Market Data...</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest">Analyzing Market Signals...</span>
                 </div>
               ) : pricing ? (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <div>
-                    <p className="text-[10px] font-bold text-amber-800 uppercase tracking-tighter">Typical Price Range</p>
-                    <p className="text-2xl font-black text-amber-950">
-                      ₹{pricing.typicalRange.min.toLocaleString()} - ₹{pricing.typicalRange.max.toLocaleString()}
+                    <p className="text-[10px] font-black text-amber-800 uppercase tracking-tighter">Typical Price Range</p>
+                    <p className="text-3xl font-black text-amber-950 mt-1">
+                      ₹{pricing.typicalRange.min.toLocaleString()} – ₹{pricing.typicalRange.max.toLocaleString()}
                     </p>
                   </div>
-                  <div className="p-3 bg-white/60 border border-amber-200 rounded-lg">
-                    <p className="text-[10px] font-bold text-amber-800 uppercase mb-1">Market Sentiment</p>
-                    <p className="text-xs text-amber-900 leading-relaxed italic">"{pricing.marketSentiment}"</p>
+                  <div className="p-4 bg-white/80 border border-amber-200 rounded-2xl shadow-sm">
+                    <p className="text-[10px] font-black text-amber-800 uppercase mb-2">Market Sentiment</p>
+                    <p className="text-xs text-amber-900 leading-relaxed italic font-medium">"{pricing.marketSentiment}"</p>
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-bold text-amber-800 uppercase">Cost Factors</p>
-                    <div className="flex flex-wrap gap-1">
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-black text-amber-800 uppercase">Pricing Factors</p>
+                    <div className="flex flex-wrap gap-1.5">
                       {pricing.factors.map((f, i) => (
-                        <Badge key={i} variant="outline" className="text-[9px] bg-white border-amber-200 text-amber-800">
+                        <Badge key={i} variant="outline" className="text-[9px] font-bold bg-white border-amber-200 text-amber-800">
                           {f}
                         </Badge>
                       ))}
@@ -423,48 +444,39 @@ export default function RequestDetailPage() {
                   </div>
                 </div>
               ) : (
-                <p className="text-xs text-amber-700">Select more details to see pricing guidance.</p>
+                <p className="text-xs text-amber-700">Pricing intelligence is gathering data...</p>
               )}
             </CardContent>
           </Card>
 
-          <Card className="bg-primary text-primary-foreground shadow-lg border-none">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
+          {/* Process Tracker */}
+          <Card className="bg-primary text-primary-foreground shadow-xl border-none rounded-2xl overflow-hidden">
+            <div className="p-6 bg-white/10 border-b border-white/10">
+               <CardTitle className="text-lg flex items-center gap-2 font-black">
                 <TrendingUp className="h-5 w-5" />
-                Process Tracker
+                Platform Lifecycle
               </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex gap-4">
-                <div className="flex flex-col items-center">
-                  <div className="bg-white text-primary h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold shadow-sm">1</div>
-                  <div className="w-0.5 h-12 bg-white/20 my-1"></div>
+            </div>
+            <CardContent className="p-8 space-y-8">
+              {[
+                { step: 1, title: "Intent Logged", sub: "Requirement building complete.", active: true },
+                { step: 2, title: "Expert Matching", sub: "Ranking specialized providers.", active: !!activeAssignment },
+                { step: 3, title: "Project Delivery", sub: "Expert execution & compliance.", active: request.status === 'completed' }
+              ].map((item, i) => (
+                <div key={i} className="flex gap-5">
+                  <div className="flex flex-col items-center">
+                    <div className={cn(
+                      "h-8 w-8 rounded-xl flex items-center justify-center text-xs font-black shadow-lg transition-all duration-500",
+                      item.active ? "bg-white text-primary scale-110" : "bg-white/20 text-white/50"
+                    )}>{item.step}</div>
+                    {i < 2 && <div className={cn("w-0.5 h-12 my-1 transition-colors duration-500", item.active && i === 0 && !!activeAssignment ? "bg-white" : "bg-white/20")}></div>}
+                  </div>
+                  <div className={cn("transition-opacity duration-500", !item.active && "opacity-40")}>
+                    <p className="text-sm font-black uppercase tracking-tight">{item.title}</p>
+                    <p className="text-[10px] font-medium opacity-80 mt-0.5">{item.sub}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-bold">Requirement Submitted</p>
-                  <p className="text-[10px] opacity-70">Successfully logged in registry.</p>
-                </div>
-              </div>
-              <div className="flex gap-4">
-                <div className="flex flex-col items-center">
-                  <div className={`${assignedConsultant ? 'bg-white text-primary' : 'bg-white/20 text-white'} h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold shadow-sm`}>2</div>
-                  <div className="w-0.5 h-12 bg-white/20 my-1"></div>
-                </div>
-                <div>
-                  <p className={`text-sm font-bold ${!assignedConsultant && 'opacity-50'}`}>Expert Matched</p>
-                  <p className="text-[10px] opacity-70">Uber-style dynamic ranking applied.</p>
-                </div>
-              </div>
-              <div className="flex gap-4">
-                <div className="flex flex-col items-center">
-                  <div className={`${request.status === 'completed' ? 'bg-white text-primary' : 'bg-white/20 text-white'} h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold shadow-sm`}>3</div>
-                </div>
-                <div>
-                  <p className={`text-sm font-bold ${request.status !== 'completed' && 'opacity-50'}`}>Work Completed</p>
-                  <p className="text-[10px] opacity-70">Project delivery & handover.</p>
-                </div>
-              </div>
+              ))}
             </CardContent>
           </Card>
         </div>
