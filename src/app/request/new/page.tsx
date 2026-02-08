@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle2, ArrowRight, ArrowLeft, ChevronRight, Building2, User, Phone, Mail, MapPin, Sparkles, Loader2, ListChecks } from "lucide-react";
+import { CheckCircle2, ArrowRight, ArrowLeft, Building2, MapPin, Sparkles, Loader2 } from "lucide-react";
 import { SERVICE_TAXONOMY, getServiceNames } from "@/lib/constants";
 import { cn, generateCompanyKey } from "@/lib/utils";
 import { extractIntent } from "@/ai/flows/intent-flow";
@@ -65,16 +65,42 @@ export default function NewRequestPage() {
     setAiProcessing(true);
     try {
       const intent = await extractIntent(aiPrompt);
+      
+      // Fuzzy match category
+      const matchedCategory = SERVICE_TAXONOMY.find(cat => 
+        cat.id === intent.serviceCategory || 
+        cat.name.toLowerCase().includes(intent.serviceCategory.toLowerCase()) ||
+        intent.serviceCategory.toLowerCase().includes(cat.name.toLowerCase())
+      );
+
+      // Fuzzy match specific services
+      const matchedServiceIds: string[] = [];
+      if (intent.specificServices && intent.specificServices.length > 0) {
+        SERVICE_TAXONOMY.forEach(cat => {
+          cat.services.forEach(serv => {
+            const isMatch = intent.specificServices.some(s => 
+              s.toLowerCase().includes(serv.name.toLowerCase()) || 
+              serv.name.toLowerCase().includes(s.toLowerCase())
+            );
+            if (isMatch) {
+              matchedServiceIds.push(serv.id);
+            }
+          });
+        });
+      }
+
       setFormData(prev => ({
         ...prev,
-        categoryId: intent.serviceCategory,
+        categoryId: matchedCategory?.id || prev.categoryId,
+        serviceIds: matchedServiceIds.length > 0 ? matchedServiceIds : prev.serviceIds,
         description: aiPrompt,
         urgency: intent.urgency,
         city: intent.location || prev.city,
       }));
+      
       setMode('manual');
       setStep(2);
-      toast({ title: "AI Intent Extracted", description: "Requirement details filled from your text." });
+      toast({ title: "AI Intent Extracted", description: "Requirement details and services auto-filled." });
     } catch (error) {
       toast({ title: "AI Busy", description: "Could not process request. Falling back to manual.", variant: "destructive" });
       setMode('manual');
@@ -100,7 +126,6 @@ export default function NewRequestPage() {
       const isGuestRequest = !user;
       const companyKey = generateCompanyKey(formData.companyName, formData.city);
 
-      // AI Lead Quality Scoring
       const leadQuality = await scoreLead({ 
         description: formData.description, 
         companyName: formData.companyName 
@@ -263,6 +288,11 @@ export default function NewRequestPage() {
                 <span className="text-base font-semibold">{serv.name}</span>
               </label>
             ))}
+            {!selectedCategory && (
+              <div className="py-10 text-center text-muted-foreground italic border-2 border-dashed rounded-xl">
+                No category selected. Please go back and choose a category.
+              </div>
+            )}
           </div>
           
           <div className="pt-10">
