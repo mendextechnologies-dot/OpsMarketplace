@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
-import { collection, query, getDocs, orderBy, doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { collection, query, getDocs, orderBy, doc, updateDoc, deleteDoc, where } from "firebase/firestore";
 import { db } from "@/lib/firebase-config";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -29,13 +29,17 @@ import {
   ShieldCheck,
   Building2,
   UserCheck,
-  ArrowRight
+  ArrowRight,
+  Handshake,
+  BarChart3,
+  Search,
+  History
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { getServiceNames, getCategoryName } from "@/lib/constants";
 
-type AdminView = 'dashboard' | 'requests' | 'consultants' | 'pipeline' | 'conflicts' | 'risk';
+type AdminView = 'dashboard' | 'requests' | 'consultants' | 'partners' | 'pipeline' | 'conflicts' | 'risk';
 
 export default function AdminDashboard() {
   const { profile, loading: authLoading } = useAuth();
@@ -44,6 +48,7 @@ export default function AdminDashboard() {
   const [activeView, setActiveView] = useState<AdminView>('dashboard');
   const [requests, setRequests] = useState<any[]>([]);
   const [consultants, setConsultants] = useState<any[]>([]);
+  const [partners, setPartners] = useState<any[]>([]);
   const [assignments, setAssignments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -51,14 +56,16 @@ export default function AdminDashboard() {
     if (!profile || profile.role !== 'admin') return;
     setLoading(true);
     try {
-      const [reqSnap, consSnap, assignSnap] = await Promise.all([
+      const [reqSnap, consSnap, partnerSnap, assignSnap] = await Promise.all([
         getDocs(query(collection(db, "serviceRequests"), orderBy("createdAt", "desc"))),
         getDocs(collection(db, "consultantProfiles")),
+        getDocs(collection(db, "partnerProfiles")),
         getDocs(query(collection(db, "leadAssignments"), orderBy("createdAt", "desc")))
       ]);
 
       setRequests(reqSnap.docs.map(d => ({ id: d.id, ...d.data() })));
       setConsultants(consSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setPartners(partnerSnap.docs.map(d => ({ id: d.id, ...d.data() })));
       setAssignments(assignSnap.docs.map(d => ({ id: d.id, ...d.data() })));
     } catch (error: any) {
       console.error("Admin Sync Error:", error);
@@ -134,22 +141,26 @@ export default function AdminDashboard() {
       <aside className="w-72 border-r bg-white p-6 hidden lg:flex flex-col">
         <div className="flex items-center gap-2 mb-10 px-2 text-primary">
           <Zap className="h-6 w-6 fill-primary" />
-          <h1 className="text-xl font-bold tracking-tight text-foreground">OpsAdmin</h1>
+          <h1 className="text-xl font-bold tracking-tight text-foreground">SuperAdmin</h1>
         </div>
 
         <div className="space-y-1 flex-1">
-          <NavItem view="dashboard" icon={LayoutDashboard} label="Dashboard" />
-          <NavItem view="requests" icon={FileText} label="Requests" count={requests.length} />
-          <NavItem view="consultants" icon={Users} label="Consultants" />
-          <NavItem view="pipeline" icon={Activity} label="Lead Pipeline" />
-          <NavItem view="conflicts" icon={AlertTriangle} label="Ownership Conflicts" count={conflicts.length} />
-          <NavItem view="risk" icon={ShieldEllipsis} label="Risk Monitoring" count={riskyConsultants.length} />
+          <NavItem view="dashboard" icon={LayoutDashboard} label="Insights Dashboard" />
+          <NavItem view="requests" icon={FileText} label="Service Requests" count={requests.length} />
+          <NavItem view="consultants" icon={Users} label="Consultant Network" count={consultants.length} />
+          <NavItem view="partners" icon={Handshake} label="Channel Partners" count={partners.length} />
+          <NavItem view="pipeline" icon={Activity} label="Active Pipeline" />
+          <div className="pt-4 pb-2 px-2">
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Market Integrity</p>
+          </div>
+          <NavItem view="conflicts" icon={AlertTriangle} label="Lead Conflicts" count={conflicts.length} />
+          <NavItem view="risk" icon={ShieldEllipsis} label="Risk Monitor" count={riskyConsultants.length} />
         </div>
 
         <div className="pt-6 border-t space-y-2">
           <Button asChild variant="default" className="w-full justify-start gap-2 shadow-sm">
             <Link href="/admin/create-lead">
-              <PlusCircle className="h-4 w-4" /> New Lead
+              <PlusCircle className="h-4 w-4" /> New Outbound Lead
             </Link>
           </Button>
           <Button asChild variant="outline" className="w-full justify-start gap-2 border-primary/20 text-primary hover:bg-primary/5">
@@ -159,42 +170,49 @@ export default function AdminDashboard() {
           </Button>
           <div className="mt-6 px-2">
             <p className="text-xs font-bold">{profile?.name}</p>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium">Marketplace Operator</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium">Platform Architect</p>
           </div>
         </div>
       </aside>
 
       <main className="flex-1 p-8 lg:p-12 overflow-y-auto">
         <header className="mb-10 flex justify-between items-center">
-          <h2 className="text-3xl font-extrabold tracking-tight capitalize">
-            {activeView === 'conflicts' ? 'Ownership Resolution' : 
-             activeView === 'risk' ? 'Integrity Management' : activeView}
-          </h2>
+          <div>
+            <h2 className="text-3xl font-extrabold tracking-tight capitalize">
+              {activeView === 'dashboard' ? 'Marketplace Insights' : 
+               activeView === 'conflicts' ? 'Ownership Resolution' : 
+               activeView === 'risk' ? 'Integrity Management' : activeView}
+            </h2>
+            <p className="text-muted-foreground text-sm mt-1">Real-time supervision of the AI-curated ecosystem.</p>
+          </div>
           <Button onClick={fetchData} variant="outline" size="sm" className="gap-2">
-            <Activity className="h-3 w-3" /> Refresh Data
+            <History className="h-3 w-3" /> Refresh Snapshot
           </Button>
         </header>
 
         {activeView === 'dashboard' && (
           <div className="space-y-10">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* TOP STATS GRID */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
               {[
-                { label: "Total Requests", val: requests.length, icon: FileText, color: "text-blue-600" },
-                { label: "Conflict Leads", val: conflicts.length, icon: AlertTriangle, color: "text-red-600" },
-                { label: "Active Pipeline", val: assignments.filter(a => a.status === 'sent' || a.status === 'accepted').length, icon: Activity, color: "text-primary" },
-                { label: "Risky Profiles", val: riskyConsultants.length, icon: ShieldEllipsis, color: "text-orange-600" },
+                { label: "SME Requests", val: requests.length, icon: FileText, color: "text-blue-600", bg: "bg-blue-50" },
+                { label: "Experts", val: consultants.length, icon: Users, color: "text-indigo-600", bg: "bg-indigo-50" },
+                { label: "Partners", val: partners.length, icon: Handshake, color: "text-amber-600", bg: "bg-amber-50" },
+                { label: "Conflicts", val: conflicts.length, icon: AlertTriangle, color: "text-red-600", bg: "bg-red-50" },
+                { label: "Risk Score", val: avgQualityScore, icon: Sparkles, color: "text-primary", bg: "bg-primary/5" },
               ].map((stat, i) => (
-                <Card key={i} className="border-none shadow-sm">
+                <Card key={i} className={cn("border-none shadow-sm", stat.bg)}>
                   <CardContent className="pt-6">
-                    <stat.icon className={cn("h-5 w-5 mb-4", stat.color)} />
-                    <p className="text-sm text-muted-foreground uppercase font-bold tracking-tighter">{stat.label}</p>
-                    <h3 className="text-2xl font-bold mt-1">{stat.val}</h3>
+                    <stat.icon className={cn("h-4 w-4 mb-3", stat.color)} />
+                    <p className="text-[10px] text-muted-foreground uppercase font-black tracking-tighter">{stat.label}</p>
+                    <h3 className="text-2xl font-black mt-1">{stat.val}</h3>
                   </CardContent>
                 </Card>
               ))}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* PLATFORM HEALTH CARD */}
               <Card className="border-none shadow-sm bg-primary/5">
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
@@ -202,52 +220,78 @@ export default function AdminDashboard() {
                   </CardTitle>
                   <CardDescription>Synthesized metrics from the intake and integrity engines.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="flex items-center justify-between">
+                <CardContent className="space-y-8">
+                  <div className="flex items-center justify-between bg-white p-6 rounded-2xl shadow-sm">
                     <div>
-                      <p className="text-xs font-bold text-muted-foreground uppercase">Avg Quality Score</p>
-                      <h4 className="text-3xl font-black text-primary">{avgQualityScore} / 10</h4>
+                      <p className="text-[10px] font-black text-muted-foreground uppercase">Network Compliance</p>
+                      <h4 className="text-4xl font-black text-primary">{(100 - (riskyConsultants.length / (consultants.length || 1) * 100)).toFixed(0)}%</h4>
                     </div>
-                    <div className="bg-primary/10 p-4 rounded-xl">
-                      <TrendingUp className="h-8 w-8 text-primary" />
+                    <div className="p-4 bg-primary/10 rounded-xl">
+                      <ShieldCheck className="h-8 w-8 text-primary" />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-[10px] font-bold uppercase">
-                      <span>Network Integrity</span>
-                      <span>{consultants.length > 0 ? (100 - (riskyConsultants.length / consultants.length * 100)).toFixed(0) : 100}%</span>
+                  
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-end">
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase">Average Lead Quality</p>
+                        <p className="text-xl font-bold">{avgQualityScore} / 10</p>
+                      </div>
+                      <Badge variant="outline" className="text-[9px] bg-green-50 text-green-700 border-green-200">OPTIMAL</Badge>
                     </div>
-                    <div className="h-2 bg-muted rounded-full overflow-hidden">
-                      <div className="bg-primary h-full w-[94%]" />
+                    <div className="h-2.5 bg-muted rounded-full overflow-hidden">
+                      <div className="bg-primary h-full transition-all duration-1000" style={{ width: `${(parseFloat(avgQualityScore) * 10)}%` }} />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 bg-white rounded-xl border">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase">Conversion Engine</p>
+                      <p className="text-sm font-bold mt-1">High Intent</p>
+                    </div>
+                    <div className="p-4 bg-white rounded-xl border">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase">Pipeline Velocity</p>
+                      <p className="text-sm font-bold mt-1">1.2 Leads/Day</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
+              {/* PRICING SIGNALS CARD */}
               <Card className="border-none shadow-sm">
                 <CardHeader>
-                  <CardTitle className="text-lg">Recent Pricing Signals</CardTitle>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Coins className="h-5 w-5 text-amber-600" /> Market Pricing Signals
+                  </CardTitle>
                   <CardDescription>Learned market ranges from AI intelligence.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     {[
-                      { cat: "PF Registration", loc: "Pune", range: "₹2,500 - ₹5,000" },
-                      { cat: "Shop Act", loc: "Mumbai", range: "₹1,500 - ₹3,000" },
-                      { cat: "Labour Audit", loc: "Maharashtra", range: "₹15,000 - ₹25,000" }
+                      { cat: "PF Registration", loc: "Pune", range: "₹2,500 - ₹5,000", trend: "up" },
+                      { cat: "Shop Act", loc: "Mumbai", range: "₹1,500 - ₹3,500", trend: "stable" },
+                      { cat: "Labour Audit", loc: "Maharashtra", range: "₹15,000 - ₹25,000", trend: "stable" },
+                      { cat: "GST Filing", loc: "Bangalore", range: "₹1,200 - ₹2,500", trend: "up" }
                     ].map((sig, i) => (
-                      <div key={i} className="flex items-center gap-4 p-3 bg-muted/30 rounded-lg">
-                        <div className="h-8 w-8 rounded bg-white flex items-center justify-center border">
-                          <Coins className="h-4 w-4 text-amber-600" />
+                      <div key={i} className="flex items-center gap-4 p-4 bg-muted/20 rounded-xl hover:bg-muted/30 transition-colors cursor-default">
+                        <div className="h-10 w-10 rounded-lg bg-white flex items-center justify-center border shadow-sm">
+                          <Coins className="h-5 w-5 text-amber-600" />
                         </div>
                         <div className="flex-1">
-                          <p className="text-xs font-bold truncate">{sig.cat} • {sig.loc}</p>
-                          <p className="text-[10px] text-muted-foreground">{sig.range}</p>
+                          <p className="text-xs font-black truncate">{sig.cat} • {sig.loc}</p>
+                          <p className="text-[10px] text-muted-foreground font-medium">{sig.range}</p>
                         </div>
-                        <Badge variant="outline" className="text-[9px] uppercase">Stable</Badge>
+                        {sig.trend === 'up' ? (
+                          <TrendingUp className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <Activity className="h-4 w-4 text-blue-600" />
+                        )}
                       </div>
                     ))}
                   </div>
+                  <Button variant="ghost" size="sm" className="w-full mt-6 text-[10px] font-bold uppercase tracking-widest">
+                    View Full Intelligence Report
+                  </Button>
                 </CardContent>
               </Card>
             </div>
@@ -256,9 +300,15 @@ export default function AdminDashboard() {
 
         {activeView === 'requests' && (
           <Card className="border-none shadow-sm">
-            <CardHeader>
-              <CardTitle>Marketplace Service Requests</CardTitle>
-              <CardDescription>All active and historic requirements from SMEs and Partners.</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Marketplace Service Requests</CardTitle>
+                <CardDescription>Managing the demand side of the ecosystem.</CardDescription>
+              </div>
+              <div className="relative">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                <input className="pl-9 h-10 border rounded-lg text-xs w-[250px]" placeholder="Search by company or category..." />
+              </div>
             </CardHeader>
             <CardContent>
               <Table>
@@ -277,14 +327,16 @@ export default function AdminDashboard() {
                       <TableCell>
                         <div className="space-y-1">
                           <p className="font-bold text-sm">{req.companyName}</p>
-                          <p className="text-[10px] text-primary">{getCategoryName(req.categoryId)}</p>
+                          <p className="text-[10px] text-primary font-bold">{getCategoryName(req.categoryId)}</p>
                         </div>
                       </TableCell>
                       <TableCell className="text-xs">{req.city}, {req.state}</TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="text-[10px] bg-primary/5">
-                          Score: {req.ai_metadata?.quality_score || 'N/A'}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-[10px] bg-primary/5 border-primary/20">
+                            Score: {req.ai_metadata?.quality_score || 'N/A'}
+                          </Badge>
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Badge variant="secondary" className="capitalize text-[10px]">{req.status}</Badge>
@@ -306,7 +358,7 @@ export default function AdminDashboard() {
           <Card className="border-none shadow-sm">
             <CardHeader>
               <CardTitle>Verified Consultant Network</CardTitle>
-              <CardDescription>Managing the supply side of the marketplace.</CardDescription>
+              <CardDescription>Managing the specialist supply side.</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
@@ -314,7 +366,7 @@ export default function AdminDashboard() {
                   <TableRow>
                     <TableHead>Expert / Firm</TableHead>
                     <TableHead>Location</TableHead>
-                    <TableHead>Specializations</TableHead>
+                    <TableHead>Performance</TableHead>
                     <TableHead className="text-right">Action</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -329,13 +381,13 @@ export default function AdminDashboard() {
                       </TableCell>
                       <TableCell className="text-xs">{cons.city}</TableCell>
                       <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {(cons.servicesOffered || []).slice(0, 2).map((sId: string, idx: number) => (
-                            <Badge key={idx} variant="outline" className="text-[8px] truncate max-w-[100px]">
-                              {sId}
-                            </Badge>
-                          ))}
-                          {(cons.servicesOffered || []).length > 2 && <span className="text-[8px] text-muted-foreground">+{(cons.servicesOffered || []).length - 2}</span>}
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                             <Badge variant="outline" className="text-[9px] bg-green-50 text-green-700 border-green-200">
+                               {cons.completionRate || 100}% Success
+                             </Badge>
+                             <span className="text-[9px] text-muted-foreground">{cons.avgResponseTime || 45}m Response</span>
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
@@ -349,20 +401,72 @@ export default function AdminDashboard() {
           </Card>
         )}
 
+        {activeView === 'partners' && (
+          <Card className="border-none shadow-sm">
+            <CardHeader>
+              <CardTitle>Channel Partner Registry</CardTitle>
+              <CardDescription>Key network owners bringing high-trust leads.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Partner Firm</TableHead>
+                    <TableHead>City</TableHead>
+                    <TableHead>Service Focus</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {partners.map((partner) => (
+                    <TableRow key={partner.id}>
+                      <TableCell>
+                        <div className="space-y-1">
+                          <p className="font-bold text-sm">{partner.partnerName}</p>
+                          <p className="text-[10px] text-muted-foreground font-mono">{partner.id.slice(0, 8)}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-xs">{partner.city}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {(partner.servicesFocus || []).map((s: string, idx: number) => (
+                            <Badge key={idx} variant="outline" className="text-[8px] border-amber-200 bg-amber-50 text-amber-700">
+                              {s.replace('cat_', '').replace('_', ' ')}
+                            </Badge>
+                          ))}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={partner.status === 'active' ? 'default' : 'secondary'} className="capitalize text-[10px]">
+                          {partner.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="sm" className="h-8 text-xs">Reports</Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+
         {activeView === 'pipeline' && (
           <Card className="border-none shadow-sm">
             <CardHeader>
               <CardTitle>Active Lead Pipeline</CardTitle>
-              <CardDescription>Tracking real-time assignments and acceptance rates.</CardDescription>
+              <CardDescription>Tracking real-time assignments and ecosystem velocity.</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Company (Request)</TableHead>
-                    <TableHead>Expert</TableHead>
+                    <TableHead>Assigned Expert</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Timeline</TableHead>
+                    <TableHead>Assignment Date</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -403,13 +507,13 @@ export default function AdminDashboard() {
 
         {activeView === 'conflicts' && (
           <div className="space-y-6">
-            <div className="bg-red-50 border border-red-200 p-6 rounded-xl flex gap-4">
+            <div className="bg-red-50 border border-red-200 p-6 rounded-2xl flex gap-4">
               <AlertTriangle className="h-6 w-6 text-red-600 shrink-0" />
               <div>
-                <h4 className="font-bold text-red-900">Lead Ownership Conflicts</h4>
+                <h4 className="font-bold text-red-900">Lead Ownership Resolution</h4>
                 <p className="text-sm text-red-800 opacity-80 mt-1">
-                  The following leads have been flagged by the uniqueness engine. A company with the same name and city already exists in the registry. 
-                  Please resolve these to maintain lead ownership integrity.
+                  The uniqueness engine has flagged these entries. Multiple leads exist for the same company and city. 
+                  Maintenance of lead exclusivity is critical for marketplace trust.
                 </p>
               </div>
             </div>
@@ -436,7 +540,7 @@ export default function AdminDashboard() {
                           <TableCell>
                             <div className="space-y-1">
                               <p className="font-bold text-sm">{req.companyName}</p>
-                              <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">KEY: {req.companyUniqueKey}</p>
+                              <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-black">KEY: {req.companyUniqueKey}</p>
                             </div>
                           </TableCell>
                           <TableCell>
@@ -463,13 +567,13 @@ export default function AdminDashboard() {
 
         {activeView === 'risk' && (
           <div className="space-y-6">
-            <div className="bg-orange-50 border border-orange-200 p-6 rounded-xl flex gap-4">
+            <div className="bg-orange-50 border border-orange-200 p-6 rounded-2xl flex gap-4">
               <ShieldEllipsis className="h-6 w-6 text-orange-600 shrink-0" />
               <div>
-                <h4 className="font-bold text-orange-900">Expert Integrity Monitor</h4>
+                <h4 className="font-bold text-orange-900">Expert Network Integrity Monitor</h4>
                 <p className="text-sm text-orange-800 opacity-80 mt-1">
-                  Profiles flagged for suspicious patterns, poor response speed, or high complaint rates. 
-                  High risk profiles should be suspended to maintain marketplace trust.
+                  Profiles flagged for suspicious activity, poor engagement, or complaint spikes. 
+                  High-risk profiles should be audited or suspended to preserve platform quality.
                 </p>
               </div>
             </div>
@@ -503,7 +607,7 @@ export default function AdminDashboard() {
                               <Badge variant="destructive" className="text-[9px] w-fit">
                                 Risk Score: {cons.ai_risk_score}
                               </Badge>
-                              <span className="text-[9px] text-muted-foreground">Flags: {cons.ai_risk_reason || 'Low engagement'}</span>
+                              <span className="text-[9px] text-muted-foreground">Flags: {cons.ai_risk_reason || 'Inconsistent response speed'}</span>
                             </div>
                           </TableCell>
                           <TableCell>
