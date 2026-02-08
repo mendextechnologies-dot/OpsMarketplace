@@ -10,6 +10,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { 
+  AreaChart, 
+  Area, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell
+} from 'recharts';
 import {
   Dialog,
   DialogContent,
@@ -28,28 +40,25 @@ import {
   MapPin,
   AlertTriangle,
   CheckCircle2,
-  Trash2,
-  BookOpen,
-  Sparkles,
-  TrendingUp,
   ShieldEllipsis,
   Coins,
   ShieldCheck,
   Building2,
-  UserCheck,
-  ArrowRight,
   Handshake,
-  BarChart3,
+  TrendingUp,
   Search,
   History,
   Briefcase,
   Globe,
-  PieChart,
-  Target
+  Target,
+  ArrowRight,
+  Sparkles,
+  Calendar
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { getServiceNames, getCategoryName, getServiceName } from "@/lib/constants";
+import { getCategoryName, getServiceName } from "@/lib/constants";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 type AdminView = 'dashboard' | 'requests' | 'consultants' | 'partners' | 'pipeline' | 'conflicts' | 'risk';
 
@@ -82,37 +91,15 @@ export default function AdminDashboard() {
       setPartners(partnerSnap.docs.map(d => ({ id: d.id, ...d.data() })));
       setAssignments(assignSnap.docs.map(d => ({ id: d.id, ...d.data() })));
     } catch (error: any) {
-      console.error("Admin Sync Error:", error);
-      toast({
-        title: "Sync Failed",
-        description: "Could not sync marketplace data.",
-        variant: "destructive",
-      });
+      toast({ title: "Sync Failed", description: "Could not sync marketplace data.", variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (!authLoading && profile?.role === 'admin') {
-      fetchData();
-    }
+    if (!authLoading && profile?.role === 'admin') fetchData();
   }, [profile, authLoading]);
-
-  const handleResolveConflict = async (reqId: string, action: 'keep' | 'reject') => {
-    try {
-      if (action === 'reject') {
-        await deleteDoc(doc(db, "serviceRequests", reqId));
-        toast({ title: "Lead Rejected", description: "Conflict resolved by removing duplicate lead." });
-      } else {
-        await updateDoc(doc(db, "serviceRequests", reqId), { duplicateFlag: false });
-        toast({ title: "Lead Verified", description: "Lead flagged as verified and duplicate warning removed." });
-      }
-      fetchData();
-    } catch (error: any) {
-      toast({ title: "Resolution Failed", description: error.message, variant: "destructive" });
-    }
-  };
 
   if (authLoading || loading) {
     return (
@@ -122,28 +109,38 @@ export default function AdminDashboard() {
     );
   }
 
+  const chartData = [
+    { name: 'Jan', value: 400 },
+    { name: 'Feb', value: 300 },
+    { name: 'Mar', value: 600 },
+    { name: 'Apr', value: 800 },
+    { name: 'May', value: 500 },
+    { name: 'Jun', value: 900 },
+  ];
+
+  const pieData = [
+    { name: 'Full-time', value: 70, color: 'hsl(var(--primary))' },
+    { name: 'Contract', value: 20, color: '#f97316' },
+    { name: 'Part-time', value: 10, color: '#3b82f6' },
+  ];
+
   const conflicts = requests.filter(r => r.duplicateFlag === true);
   const riskyConsultants = consultants.filter(c => (c.ai_risk_score || 0) > 60);
-  const avgQualityScore = requests.length > 0 
-    ? (requests.reduce((acc, r) => acc + (r.ai_metadata?.quality_score || 0), 0) / requests.length).toFixed(1)
-    : "0";
 
   const NavItem = ({ view, icon: Icon, label, count }: { view: AdminView, icon: any, label: string, count?: number }) => (
     <button
       onClick={() => setActiveView(view)}
       className={cn(
-        "w-full flex items-center justify-between px-4 py-3 text-sm font-medium transition-colors rounded-lg",
+        "flex items-center gap-2 px-4 py-2 text-sm font-bold transition-all rounded-xl",
         activeView === view 
-          ? "bg-primary text-primary-foreground shadow-md" 
+          ? "bg-primary text-white shadow-lg" 
           : "text-muted-foreground hover:bg-muted"
       )}
     >
-      <div className="flex items-center gap-3">
-        <Icon className="h-4 w-4" />
-        {label}
-      </div>
+      <Icon className="h-4 w-4" />
+      {label}
       {count !== undefined && count > 0 && (
-        <Badge variant={view === 'conflicts' || view === 'risk' ? 'destructive' : 'secondary'} className="h-5 px-1.5 text-[10px]">
+        <Badge variant="secondary" className="bg-white/20 text-white border-none ml-1">
           {count}
         </Badge>
       )}
@@ -151,198 +148,278 @@ export default function AdminDashboard() {
   );
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <aside className="w-72 border-r bg-white p-6 hidden lg:flex flex-col">
-        <div className="flex items-center gap-2 mb-10 px-2 text-primary">
-          <Zap className="h-6 w-6 fill-primary" />
-          <h1 className="text-xl font-bold tracking-tight text-foreground">SuperAdmin</h1>
-        </div>
-
-        <div className="space-y-1 flex-1">
-          <NavItem view="dashboard" icon={LayoutDashboard} label="Insights Dashboard" />
-          <NavItem view="requests" icon={FileText} label="Service Requests" count={requests.length} />
-          <NavItem view="consultants" icon={Users} label="Consultant Network" count={consultants.length} />
-          <NavItem view="partners" icon={Handshake} label="Channel Partners" count={partners.length} />
-          <NavItem view="pipeline" icon={Activity} label="Active Pipeline" />
-          <div className="pt-4 pb-2 px-2">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Market Integrity</p>
-          </div>
-          <NavItem view="conflicts" icon={AlertTriangle} label="Lead Conflicts" count={conflicts.length} />
-          <NavItem view="risk" icon={ShieldEllipsis} label="Risk Monitor" count={riskyConsultants.length} />
-        </div>
-
-        <div className="pt-6 border-t space-y-2">
-          <Button asChild variant="default" className="w-full justify-start gap-2 shadow-sm">
-            <Link href="/admin/create-lead">
-              <PlusCircle className="h-4 w-4" /> New Outbound Lead
-            </Link>
-          </Button>
-          <Button asChild variant="outline" className="w-full justify-start gap-2 border-primary/20 text-primary hover:bg-primary/5">
-            <Link href="/growth-playbook">
-              <BookOpen className="h-4 w-4" /> Growth Playbook
-            </Link>
-          </Button>
-          <div className="mt-6 px-2">
-            <p className="text-xs font-bold">{profile?.name}</p>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium">Platform Architect</p>
-          </div>
-        </div>
-      </aside>
-
-      <main className="flex-1 p-8 lg:p-12 overflow-y-auto">
-        <header className="mb-10 flex justify-between items-center">
+    <div className="min-h-screen bg-[#F8F9FC] pb-20">
+      <div className="container mx-auto px-4 py-8">
+        <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-10">
           <div>
-            <h2 className="text-3xl font-extrabold tracking-tight capitalize">
-              {activeView === 'dashboard' ? 'Marketplace Insights' : 
-               activeView === 'conflicts' ? 'Ownership Resolution' : 
-               activeView === 'risk' ? 'Integrity Management' : activeView}
-            </h2>
-            <p className="text-muted-foreground text-sm mt-1">Real-time supervision of the AI-curated ecosystem.</p>
+            <h1 className="text-3xl font-black tracking-tight text-slate-900">
+              Hello, {profile?.name} 👋
+            </h1>
+            <p className="text-muted-foreground text-sm mt-1 font-medium">Here is the current status for today.</p>
           </div>
-          <Button onClick={fetchData} variant="outline" size="sm" className="gap-2">
-            <History className="h-3 w-3" /> Refresh Snapshot
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button variant="outline" className="rounded-xl font-bold bg-white border-none shadow-sm h-11" onClick={fetchData}>
+              <History className="h-4 w-4 mr-2" /> Refresh
+            </Button>
+            <Button asChild className="rounded-xl font-bold h-11 shadow-lg bg-primary hover:bg-primary/90">
+              <Link href="/admin/create-lead">
+                <PlusCircle className="h-4 w-4 mr-2" /> Log Requirement
+              </Link>
+            </Button>
+          </div>
         </header>
 
-        {activeView === 'dashboard' && (
-          <div className="space-y-10">
-            {/* TOP STATS GRID */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-              {[
-                { label: "SME Requests", val: requests.length, icon: FileText, color: "text-blue-600", bg: "bg-blue-50" },
-                { label: "Experts", val: consultants.length, icon: Users, color: "text-indigo-600", bg: "bg-indigo-50" },
-                { label: "Partners", val: partners.length, icon: Handshake, color: "text-amber-600", bg: "bg-amber-50" },
-                { label: "Conflicts", val: conflicts.length, icon: AlertTriangle, color: "text-red-600", bg: "bg-red-50" },
-                { label: "Risk Score", val: avgQualityScore, icon: Sparkles, color: "text-primary", bg: "bg-primary/5" },
-              ].map((stat, i) => (
-                <Card key={i} className={cn("border-none shadow-sm", stat.bg)}>
-                  <CardContent className="pt-6">
-                    <stat.icon className={cn("h-4 w-4 mb-3", stat.color)} />
-                    <p className="text-[10px] text-muted-foreground uppercase font-black tracking-tighter">{stat.label}</p>
-                    <h3 className="text-2xl font-black mt-1">{stat.val}</h3>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+        <div className="flex flex-wrap gap-2 mb-8 bg-white p-2 rounded-2xl shadow-sm border overflow-x-auto">
+          <NavItem view="dashboard" icon={LayoutDashboard} label="Overview" />
+          <NavItem view="requests" icon={FileText} label="SME Requests" count={requests.length} />
+          <NavItem view="consultants" icon={Users} label="Consultants" count={consultants.length} />
+          <NavItem view="partners" icon={Handshake} label="Partners" count={partners.length} />
+          <NavItem view="pipeline" icon={Activity} label="Live Pipeline" />
+          <NavItem view="conflicts" icon={AlertTriangle} label="Conflicts" count={conflicts.length} />
+        </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* PLATFORM HEALTH CARD */}
-              <Card className="border-none shadow-sm bg-primary/5">
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Sparkles className="h-5 w-5 text-primary" /> AI Platform Health
-                  </CardTitle>
-                  <CardDescription>Synthesized metrics from the intake and integrity engines.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-8">
-                  <div className="flex items-center justify-between bg-white p-6 rounded-2xl shadow-sm">
-                    <div>
-                      <p className="text-[10px] font-black text-muted-foreground uppercase">Network Compliance</p>
-                      <h4 className="text-4xl font-black text-primary">{(100 - (riskyConsultants.length / (consultants.length || 1) * 100)).toFixed(0)}%</h4>
-                    </div>
-                    <div className="p-4 bg-primary/10 rounded-xl">
-                      <ShieldCheck className="h-8 w-8 text-primary" />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-end">
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase">Average Lead Quality</p>
-                        <p className="text-xl font-bold">{avgQualityScore} / 10</p>
+        {activeView === 'dashboard' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* COLUMN 1: ANALYTICS */}
+            <div className="lg:col-span-2 space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {[
+                  { label: "SME Requests", val: requests.length, trend: "+12%", icon: FileText, color: "text-blue-500", bg: "bg-blue-50" },
+                  { label: "Network Health", val: "94%", trend: "+2%", icon: ShieldCheck, color: "text-primary", bg: "bg-primary/5" },
+                  { label: "Active Pipeline", val: assignments.length, trend: "Stable", icon: Activity, color: "text-orange-500", bg: "bg-orange-50" },
+                ].map((stat, i) => (
+                  <Card key={i} className="border-none shadow-sm rounded-3xl">
+                    <CardContent className="pt-6">
+                      <div className="flex justify-between items-start mb-4">
+                        <div className={cn("p-3 rounded-2xl", stat.bg)}>
+                          <stat.icon className={cn("h-5 w-5", stat.color)} />
+                        </div>
+                        <Badge variant="outline" className="text-[10px] font-bold border-green-100 text-green-600 bg-green-50">
+                          {stat.trend}
+                        </Badge>
                       </div>
-                      <Badge variant="outline" className="text-[9px] bg-green-50 text-green-700 border-green-200">OPTIMAL</Badge>
-                    </div>
-                    <div className="h-2.5 bg-muted rounded-full overflow-hidden">
-                      <div className="bg-primary h-full transition-all duration-1000" style={{ width: `${(parseFloat(avgQualityScore) * 10)}%` }} />
-                    </div>
-                  </div>
+                      <p className="text-[11px] font-black text-muted-foreground uppercase tracking-widest">{stat.label}</p>
+                      <h3 className="text-3xl font-black mt-1 text-slate-900">{stat.val}</h3>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              <Card className="border-none shadow-sm rounded-3xl overflow-hidden">
+                <CardHeader>
+                  <CardTitle className="text-lg font-black text-slate-900">Marketplace Velocity</CardTitle>
+                  <CardDescription className="text-xs font-medium">Growth in service requests over time.</CardDescription>
+                </CardHeader>
+                <CardContent className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData}>
+                      <defs>
+                        <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fontWeight: 500}} dy={10} />
+                      <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fontWeight: 500}} />
+                      <Tooltip 
+                        contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                      />
+                      <Area type="monotone" dataKey="value" stroke="hsl(var(--primary))" strokeWidth={4} fillOpacity={1} fill="url(#colorValue)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
                 </CardContent>
               </Card>
 
-              {/* PRICING SIGNALS CARD */}
-              <Card className="border-none shadow-sm">
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Coins className="h-5 w-5 text-amber-600" /> Market Pricing Signals
-                  </CardTitle>
-                  <CardDescription>Learned market ranges from AI intelligence.</CardDescription>
+              <Card className="border-none shadow-sm rounded-3xl">
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle className="text-lg font-black text-slate-900">Recent Expert Activity</CardTitle>
+                  <Button variant="ghost" size="sm" className="font-bold text-primary hover:bg-primary/5">View All</Button>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {[
-                      { cat: "PF Registration", loc: "Pune", range: "₹2,500 - ₹5,000", trend: "up" },
-                      { cat: "Shop Act", loc: "Mumbai", range: "₹1,500 - ₹3,500", trend: "stable" },
-                      { cat: "Labour Audit", loc: "Maharashtra", range: "₹15,000 - ₹25,000", trend: "stable" },
-                      { cat: "GST Filing", loc: "Bangalore", range: "₹1,200 - ₹2,500", trend: "up" }
-                    ].map((sig, i) => (
-                      <div key={i} className="flex items-center gap-4 p-4 bg-muted/20 rounded-xl hover:bg-muted/30 transition-colors cursor-default">
-                        <div className="h-10 w-10 rounded-lg bg-white flex items-center justify-center border shadow-sm">
-                          <Coins className="h-5 w-5 text-amber-600" />
+                  <Table>
+                    <TableHeader className="bg-slate-50/50">
+                      <TableRow className="border-none">
+                        <TableHead className="font-bold text-[11px] uppercase tracking-wider">Expert</TableHead>
+                        <TableHead className="font-bold text-[11px] uppercase tracking-wider">Status</TableHead>
+                        <TableHead className="font-bold text-[11px] uppercase tracking-wider">Rating</TableHead>
+                        <TableHead className="text-right"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {consultants.slice(0, 4).map((cons) => (
+                        <TableRow key={cons.id} className="border-none hover:bg-slate-50 transition-colors">
+                          <TableCell className="py-4">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-9 w-9 rounded-xl">
+                                <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${cons.name}`} />
+                                <AvatarFallback>{cons.name?.charAt(0)}</AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-bold text-sm text-slate-900">{cons.name}</p>
+                                <p className="text-[10px] text-muted-foreground font-medium uppercase">{cons.companyName}</p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className="bg-primary/10 text-primary hover:bg-primary/20 border-none font-bold text-[10px] rounded-lg">
+                              ACTIVE
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="font-black text-slate-700">4.8</TableCell>
+                          <TableCell className="text-right">
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setViewingConsultant(cons)}>
+                              <ArrowRight className="h-4 w-4 text-slate-400" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* COLUMN 2: SIDEBAR METRICS */}
+            <div className="space-y-8">
+              <Card className="border-none shadow-sm rounded-3xl overflow-hidden">
+                <CardHeader>
+                  <CardTitle className="text-lg font-black text-slate-900">Network Breakdown</CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col items-center">
+                  <div className="h-[200px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={pieData}
+                          innerRadius={60}
+                          outerRadius={80}
+                          paddingAngle={5}
+                          dataKey="value"
+                        >
+                          {pieData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="space-y-3 w-full mt-4">
+                    {pieData.map((p, i) => (
+                      <div key={i} className="flex justify-between items-center bg-slate-50 p-3 rounded-2xl">
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 w-2 rounded-full" style={{ backgroundColor: p.color }} />
+                          <span className="text-sm font-bold text-slate-700">{p.name}</span>
                         </div>
-                        <div className="flex-1">
-                          <p className="text-xs font-black truncate">{sig.cat} • {sig.loc}</p>
-                          <p className="text-[10px] text-muted-foreground font-medium">{sig.range}</p>
-                        </div>
-                        {sig.trend === 'up' ? (
-                          <TrendingUp className="h-4 w-4 text-green-600" />
-                        ) : (
-                          <Activity className="h-4 w-4 text-blue-600" />
-                        )}
+                        <span className="text-sm font-black text-slate-900">{p.value}%</span>
                       </div>
                     ))}
                   </div>
                 </CardContent>
+              </Card>
+
+              <Card className="border-none shadow-sm rounded-3xl">
+                <CardHeader>
+                  <CardTitle className="text-lg font-black text-slate-900">Recent Assignments</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {assignments.slice(0, 4).map((asgn, i) => (
+                    <div key={i} className="flex items-start gap-4 p-4 rounded-2xl border-l-4 border-primary bg-white shadow-sm">
+                      <div className="flex-1">
+                        <p className="text-sm font-black text-slate-900">New Match Confirmed</p>
+                        <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mt-1">
+                          Expert: {consultants.find(c => c.id === asgn.consultantId)?.name}
+                        </p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${asgn.id}`} />
+                          </Avatar>
+                          <span className="text-[10px] font-bold text-slate-500 uppercase">Awaiting Action</span>
+                        </div>
+                      </div>
+                      <Badge className="bg-orange-50 text-orange-600 border-none font-black text-[9px] uppercase">URGENT</Badge>
+                    </div>
+                  ))}
+                  <Button variant="outline" className="w-full rounded-xl font-bold py-6 text-primary hover:bg-primary/5 border-primary/20">
+                    View Full Pipeline
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card className="border-none shadow-sm rounded-3xl bg-primary text-white p-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <Sparkles className="h-6 w-6" />
+                  <h4 className="font-black text-xl tracking-tight">Growth Playbook</h4>
+                </div>
+                <p className="text-sm font-medium text-white/80 leading-relaxed mb-6">
+                  Standard operating guide for onboarding partners and generating leads.
+                </p>
+                <Button asChild variant="secondary" className="w-full rounded-xl font-black py-6 bg-white text-primary hover:bg-white/90 border-none">
+                  <Link href="/growth-playbook">Open Playbook</Link>
+                </Button>
               </Card>
             </div>
           </div>
         )}
 
         {activeView === 'requests' && (
-          <Card className="border-none shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between">
+          <Card className="border-none shadow-sm rounded-3xl">
+            <CardHeader className="flex flex-row items-center justify-between p-8 border-b">
               <div>
-                <CardTitle>Marketplace Service Requests</CardTitle>
-                <CardDescription>Managing the demand side of the ecosystem.</CardDescription>
+                <CardTitle className="text-2xl font-black text-slate-900">SME Service Requests</CardTitle>
+                <CardDescription className="text-sm font-medium mt-1">Managing the demand side of the ecosystem.</CardDescription>
               </div>
               <div className="relative">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                <input className="pl-9 h-10 border rounded-lg text-xs w-[250px]" placeholder="Search by company or category..." />
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <input className="pl-9 h-11 border bg-[#F8F9FC] rounded-xl text-sm w-[300px] outline-none focus:ring-2 focus:ring-primary/20" placeholder="Search requests..." />
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Client & Service</TableHead>
-                    <TableHead>Location</TableHead>
-                    <TableHead>AI Quality</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
+                <TableHeader className="bg-slate-50/50">
+                  <TableRow className="border-none h-14">
+                    <TableHead className="px-8 font-black text-[11px] uppercase tracking-wider">Client & Service</TableHead>
+                    <TableHead className="font-black text-[11px] uppercase tracking-wider">Location</TableHead>
+                    <TableHead className="font-black text-[11px] uppercase tracking-wider text-center">AI Quality</TableHead>
+                    <TableHead className="font-black text-[11px] uppercase tracking-wider text-center">Status</TableHead>
+                    <TableHead className="text-right px-8"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {requests.map((req) => (
-                    <TableRow key={req.id}>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <p className="font-bold text-sm">{req.companyName}</p>
-                          <p className="text-[10px] text-primary font-bold">{getCategoryName(req.categoryId)}</p>
+                    <TableRow key={req.id} className="border-none hover:bg-slate-50 transition-colors h-20">
+                      <TableCell className="px-8">
+                        <div className="flex items-center gap-4">
+                          <div className="h-10 w-10 bg-primary/10 text-primary rounded-xl flex items-center justify-center font-black">
+                            {req.companyName?.charAt(0)}
+                          </div>
+                          <div>
+                            <p className="font-bold text-sm text-slate-900">{req.companyName}</p>
+                            <p className="text-[10px] text-primary font-black uppercase tracking-widest">{getCategoryName(req.categoryId)}</p>
+                          </div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-xs">{req.city}, {req.state}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="text-[10px] bg-primary/5 border-primary/20">
-                            Score: {req.ai_metadata?.quality_score || 'N/A'}
-                          </Badge>
+                      <TableCell className="text-sm font-medium text-slate-600">
+                        <div className="flex items-center gap-1.5">
+                          <MapPin className="h-3 w-3" /> {req.city}
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className="capitalize text-[10px]">{req.status}</Badge>
+                      <TableCell className="text-center">
+                        <Badge variant="outline" className="text-[10px] font-black border-primary/20 bg-primary/5 text-primary">
+                          {req.ai_metadata?.quality_score || '0'} / 10
+                        </Badge>
                       </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="sm" asChild>
+                      <TableCell className="text-center">
+                        <Badge className={cn(
+                          "capitalize text-[10px] font-black rounded-lg px-3",
+                          req.status === 'new' ? "bg-orange-50 text-orange-600 border-none" : "bg-blue-50 text-blue-600 border-none"
+                        )}>
+                          {req.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right px-8">
+                        <Button variant="ghost" size="sm" asChild className="rounded-xl font-bold">
                           <Link href={`/request/${req.id}`}>Details</Link>
                         </Button>
                       </TableCell>
@@ -355,101 +432,53 @@ export default function AdminDashboard() {
         )}
 
         {activeView === 'consultants' && (
-          <Card className="border-none shadow-sm">
-            <CardHeader>
-              <CardTitle>Verified Consultant Network</CardTitle>
-              <CardDescription>Managing the specialist supply side.</CardDescription>
+          <Card className="border-none shadow-sm rounded-3xl">
+            <CardHeader className="p-8 border-b">
+              <CardTitle className="text-2xl font-black text-slate-900">Verified Expert Network</CardTitle>
+              <CardDescription className="text-sm font-medium mt-1">Managing the specialist supply side.</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Expert / Firm</TableHead>
-                    <TableHead>Location</TableHead>
-                    <TableHead>Performance</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
+                <TableHeader className="bg-slate-50/50">
+                  <TableRow className="border-none h-14">
+                    <TableHead className="px-8 font-black text-[11px] uppercase tracking-wider">Expert / Firm</TableHead>
+                    <TableHead className="font-black text-[11px] uppercase tracking-wider">Specialization</TableHead>
+                    <TableHead className="font-black text-[11px] uppercase tracking-wider text-center">Performance</TableHead>
+                    <TableHead className="text-right px-8"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {consultants.map((cons) => (
-                    <TableRow key={cons.id}>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <p className="font-bold text-sm">{cons.name}</p>
-                          <p className="text-[10px] text-muted-foreground">{cons.companyName}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-xs">{cons.city}</TableCell>
-                      <TableCell>
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center gap-2">
-                             <Badge variant="outline" className="text-[9px] bg-green-50 text-green-700 border-green-200">
-                               {cons.completionRate || 100}% Success
-                             </Badge>
-                             <span className="text-[9px] text-muted-foreground">{cons.avgResponseTime || 45}m Response</span>
+                    <TableRow key={cons.id} className="border-none hover:bg-slate-50 transition-colors h-20">
+                      <TableCell className="px-8">
+                        <div className="flex items-center gap-4">
+                          <Avatar className="h-10 w-10 rounded-xl">
+                            <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${cons.name}`} />
+                          </Avatar>
+                          <div>
+                            <p className="font-bold text-sm text-slate-900">{cons.name}</p>
+                            <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">{cons.companyName}</p>
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setViewingConsultant(cons)}>Profile</Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        )}
-
-        {activeView === 'partners' && (
-          <Card className="border-none shadow-sm">
-            <CardHeader>
-              <CardTitle>Channel Partner Registry</CardTitle>
-              <CardDescription>Key network owners bringing high-trust leads.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Partner Firm</TableHead>
-                    <TableHead>City</TableHead>
-                    <TableHead>Service Focus</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {partners.map((partner) => (
-                    <TableRow key={partner.id}>
                       <TableCell>
-                        <div className="space-y-1">
-                          <p className="font-bold text-sm">{partner.partnerName}</p>
-                          <p className="text-[10px] text-muted-foreground font-mono">{partner.id.slice(0, 8)}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-xs">{partner.city}</TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {(partner.servicesFocus || []).map((s: string, idx: number) => (
-                            <Badge key={idx} variant="outline" className="text-[8px] border-amber-200 bg-amber-50 text-amber-700">
-                              {s.replace('cat_', '').replace('_', ' ')}
+                        <div className="flex flex-wrap gap-1 max-w-[250px]">
+                          {(cons.servicesOffered || []).slice(0, 2).map((sId: string, idx: number) => (
+                            <Badge key={idx} variant="outline" className="text-[8px] font-black border-slate-200">
+                              {getServiceName(sId)}
                             </Badge>
                           ))}
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <Badge variant={partner.status === 'active' ? 'default' : 'secondary'} className="capitalize text-[10px]">
-                          {partner.status}
-                        </Badge>
+                      <TableCell className="text-center">
+                        <div className="flex flex-col items-center gap-1">
+                          <span className="text-xs font-black text-slate-900">{cons.completionRate || 100}% Success</span>
+                          <span className="text-[10px] text-muted-foreground uppercase font-medium">{cons.avgResponseTime || 45}m Response</span>
+                        </div>
                       </TableCell>
-                      <TableCell className="text-right">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-8 text-xs"
-                          onClick={() => setViewingPartner(partner)}
-                        >
-                          Reports
+                      <TableCell className="text-right px-8">
+                        <Button variant="outline" size="sm" className="rounded-xl font-bold border-slate-200 hover:bg-slate-50" onClick={() => setViewingConsultant(cons)}>
+                          View Profile
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -459,303 +488,54 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
         )}
+      </div>
 
-        {activeView === 'pipeline' && (
-          <Card className="border-none shadow-sm">
-            <CardHeader>
-              <CardTitle>Active Lead Pipeline</CardTitle>
-              <CardDescription>Tracking real-time assignments and ecosystem velocity.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Company (Request)</TableHead>
-                    <TableHead>Assigned Expert</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Assignment Date</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {assignments.map((asgn) => {
-                    const req = requests.find(r => r.id === asgn.requestId);
-                    const cons = consultants.find(c => c.id === asgn.consultantId);
-                    
-                    return (
-                      <TableRow key={asgn.id}>
-                        <TableCell>
-                          <div className="space-y-1">
-                            <p className="text-xs font-bold">{req?.companyName || "Unknown Request"}</p>
-                            <p className="text-[10px] font-mono text-muted-foreground">{asgn.requestId.slice(0, 8)}...</p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="space-y-1">
-                            <p className="text-xs font-medium">{cons?.name || "Unknown Expert"}</p>
-                            <p className="text-[10px] text-muted-foreground">{cons?.companyName}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={asgn.status === 'accepted' ? 'default' : 'outline'} className="capitalize text-[10px]">
-                            {asgn.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-[10px] text-muted-foreground">
-                          {asgn.createdAt?.seconds ? new Date(asgn.createdAt.seconds * 1000).toLocaleDateString() : 'Pending'}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        )}
-
-        {activeView === 'conflicts' && (
-          <div className="space-y-6">
-            <div className="bg-red-50 border border-red-200 p-6 rounded-2xl flex gap-4">
-              <AlertTriangle className="h-6 w-6 text-red-600 shrink-0" />
-              <div>
-                <h4 className="font-bold text-red-900">Lead Ownership Resolution</h4>
-                <p className="text-sm text-red-800 opacity-80 mt-1">
-                  Exclusivity conflicts identified by the unique key generator.
-                </p>
-              </div>
-            </div>
-
-            <Card className="border-none shadow-sm">
-              <CardContent className="pt-6">
-                {conflicts.length === 0 ? (
-                  <div className="py-20 text-center">
-                    <CheckCircle2 className="h-10 w-10 text-green-500 mx-auto mb-4 opacity-20" />
-                    <p className="text-muted-foreground">No ownership conflicts currently detected.</p>
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Conflicted Lead</TableHead>
-                        <TableHead>Market Context</TableHead>
-                        <TableHead className="text-right">Resolution</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {conflicts.map((req) => (
-                        <TableRow key={req.id}>
-                          <TableCell>
-                            <div className="space-y-1">
-                              <p className="font-bold text-sm">{req.companyName}</p>
-                              <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-black">KEY: {req.companyUniqueKey}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <p className="text-[10px]"><strong>Source:</strong> {req.leadSource || 'Manual'}</p>
-                            <p className="text-[10px]"><strong>City:</strong> {req.city}</p>
-                          </TableCell>
-                          <TableCell className="text-right space-x-2">
-                            <Button size="sm" variant="outline" className="h-8 text-xs border-green-200 text-green-700" onClick={() => handleResolveConflict(req.id, 'keep')}>
-                              Keep Both
-                            </Button>
-                            <Button size="sm" variant="outline" className="h-8 text-xs border-red-200 text-red-700" onClick={() => handleResolveConflict(req.id, 'reject')}>
-                              Reject Duplicate
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {activeView === 'risk' && (
-          <div className="space-y-6">
-            <Card className="border-none shadow-sm">
-              <CardContent className="pt-6">
-                {riskyConsultants.length === 0 ? (
-                  <div className="py-20 text-center">
-                    <CheckCircle2 className="h-10 w-10 text-green-500 mx-auto mb-4 opacity-20" />
-                    <p className="text-muted-foreground">No integrity issues detected currently.</p>
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Expert Profile</TableHead>
-                        <TableHead>Risk Signal</TableHead>
-                        <TableHead>Performance</TableHead>
-                        <TableHead className="text-right">Action</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {riskyConsultants.map((cons) => (
-                        <TableRow key={cons.id}>
-                          <TableCell>
-                            <p className="font-bold text-sm">{cons.name}</p>
-                            <p className="text-[10px] text-muted-foreground">{cons.companyName}</p>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-col gap-1">
-                              <Badge variant="destructive" className="text-[9px] w-fit">
-                                Risk Score: {cons.ai_risk_score}
-                              </Badge>
-                              <span className="text-[9px] text-muted-foreground">Flags: {cons.ai_risk_reason || 'Inconsistent response speed'}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <p className="text-[10px] font-medium">Completion: {cons.completionRate || 0}%</p>
-                            <p className="text-[10px] text-muted-foreground">Response: {cons.avgResponseTime || 'N/A'} mins</p>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button size="sm" variant="outline" className="h-8 text-xs text-red-600 border-red-200 hover:bg-red-50">
-                              Suspend Profile
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        )}
-      </main>
-
-      {/* CONSULTANT PROFILE DIALOG */}
+      {/* DIALOGS */}
       <Dialog open={!!viewingConsultant} onOpenChange={() => setViewingConsultant(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader className="border-b pb-4">
-            <div className="flex items-center gap-4">
-              <div className="bg-primary/10 h-16 w-16 rounded-2xl flex items-center justify-center text-primary">
-                <Users className="h-8 w-8" />
-              </div>
+        <DialogContent className="max-w-2xl rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
+          <div className="bg-primary p-8 text-white relative">
+            <div className="flex items-center gap-6">
+              <Avatar className="h-20 w-20 rounded-2xl border-4 border-white/20 shadow-xl">
+                <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${viewingConsultant?.name}`} />
+              </Avatar>
               <div>
-                <DialogTitle className="text-xl font-bold">{viewingConsultant?.name}</DialogTitle>
-                <DialogDescription className="text-sm">
+                <h3 className="text-2xl font-black">{viewingConsultant?.name}</h3>
+                <p className="text-white/80 font-bold uppercase text-[10px] tracking-widest mt-1">
                   {viewingConsultant?.companyName} • {viewingConsultant?.city}
-                </DialogDescription>
-              </div>
-            </div>
-          </DialogHeader>
-          
-          {viewingConsultant && (
-            <div className="space-y-6 pt-4">
-              <div className="p-4 bg-muted/30 rounded-xl border">
-                <p className="text-[10px] font-black uppercase text-muted-foreground mb-2 flex items-center gap-1">
-                  <Briefcase className="h-3 w-3" /> Professional Bio
-                </p>
-                <p className="text-sm leading-relaxed text-slate-700 italic">
-                  "{viewingConsultant.description}"
                 </p>
               </div>
-
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <p className="text-[10px] font-black uppercase text-muted-foreground mb-1">Services Offered</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {viewingConsultant.servicesOffered?.map((sId: any, i: number) => (
-                      <Badge key={i} variant="secondary" className="text-[9px] bg-primary/5 text-primary border-none">
-                        {getServiceName(sId)}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-[10px] font-black uppercase text-muted-foreground mb-1">State Jurisdictions</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {viewingConsultant.statesCovered?.map((state: string, i: number) => (
-                      <Badge key={i} variant="outline" className="text-[9px] border-slate-200">
-                        <Globe className="h-2 w-2 mr-1" /> {state}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-6 border-t flex items-center justify-between">
-                <div className="flex gap-6">
-                  <div>
-                    <p className="text-[10px] font-black uppercase text-muted-foreground">Experience</p>
-                    <p className="text-sm font-bold">{viewingConsultant.yearsExperience} Years</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-black uppercase text-muted-foreground">Mobile</p>
-                    <p className="text-sm font-bold">{viewingConsultant.phone}</p>
-                  </div>
-                </div>
-                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 py-1.5 px-3">
-                  <ShieldCheck className="h-3 w-3 mr-1" /> Verified Platform Expert
-                </Badge>
+            </div>
+          </div>
+          <div className="p-8 space-y-8 bg-white">
+            <div className="space-y-3">
+              <p className="text-[11px] font-black text-muted-foreground uppercase tracking-widest">Professional Identity</p>
+              <div className="bg-slate-50 p-5 rounded-3xl border border-slate-100 italic text-slate-700 text-sm leading-relaxed">
+                "{viewingConsultant?.description}"
               </div>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* PARTNER REPORT DIALOG */}
-      <Dialog open={!!viewingPartner} onOpenChange={() => setViewingPartner(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader className="border-b pb-4">
-            <div className="flex items-center gap-4">
-              <div className="bg-amber-100 h-16 w-16 rounded-2xl flex items-center justify-center text-amber-600">
-                <Handshake className="h-8 w-8" />
-              </div>
-              <div>
-                <DialogTitle className="text-xl font-bold">Partner Intelligence Report</DialogTitle>
-                <DialogDescription className="text-sm">
-                  {viewingPartner?.partnerName} • Network Analytics
-                </DialogDescription>
-              </div>
-            </div>
-          </DialogHeader>
-          
-          {viewingPartner && (
-            <div className="space-y-6 pt-6">
-              <div className="grid grid-cols-3 gap-4">
-                <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl text-center">
-                  <p className="text-[10px] font-black text-blue-700 uppercase">Total Leads</p>
-                  <p className="text-2xl font-black text-blue-900 mt-1">
-                    {requests.filter(r => r.leadOwnerId === viewingPartner.userId).length}
-                  </p>
-                </div>
-                <div className="p-4 bg-green-50 border border-green-100 rounded-xl text-center">
-                  <p className="text-[10px] font-black text-green-700 uppercase">Active</p>
-                  <p className="text-2xl font-black text-green-900 mt-1">
-                    {requests.filter(r => r.leadOwnerId === viewingPartner.userId && r.status !== 'completed').length}
-                  </p>
-                </div>
-                <div className="p-4 bg-primary/5 border border-primary/10 rounded-xl text-center">
-                  <p className="text-[10px] font-black text-primary uppercase">Conversion</p>
-                  <p className="text-2xl font-black text-primary mt-1">
-                    {((requests.filter(r => r.leadOwnerId === viewingPartner.userId && r.status === 'completed').length / 
-                      (requests.filter(r => r.leadOwnerId === viewingPartner.userId).length || 1)) * 100).toFixed(0)}%
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <p className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-2">
-                  <Target className="h-3 w-3" /> Service Focus Area
-                </p>
+            <div className="grid grid-cols-2 gap-8">
+              <div className="space-y-4">
+                <p className="text-[11px] font-black text-muted-foreground uppercase tracking-widest">Core Expertise</p>
                 <div className="flex flex-wrap gap-2">
-                  {viewingPartner.servicesFocus?.map((s: string, i: number) => (
-                    <Badge key={i} variant="secondary" className="bg-amber-50 text-amber-700 border-amber-200">
-                      {s.replace('cat_', '').replace('_', ' ')}
+                  {viewingConsultant?.servicesOffered?.map((sId: any, i: number) => (
+                    <Badge key={i} variant="secondary" className="bg-primary/5 text-primary border-none text-[9px] font-black py-1.5 px-3 rounded-xl">
+                      {getServiceName(sId)}
                     </Badge>
                   ))}
                 </div>
               </div>
-
-              <div className="pt-6 border-t flex justify-between items-center text-[10px] text-muted-foreground font-medium uppercase tracking-widest">
-                <span>Account Status: {viewingPartner.status}</span>
-                <span>Partner ID: {viewingPartner.userId?.slice(0, 8)}</span>
+              <div className="space-y-4">
+                <p className="text-[11px] font-black text-muted-foreground uppercase tracking-widest">Regional Focus</p>
+                <div className="flex flex-wrap gap-2">
+                  {viewingConsultant?.statesCovered?.map((state: string, i: number) => (
+                    <Badge key={i} variant="outline" className="text-[9px] font-bold border-slate-200 rounded-xl px-3 py-1.5">
+                      <Globe className="h-2 w-2 mr-1" /> {state}
+                    </Badge>
+                  ))}
+                </div>
               </div>
             </div>
-          )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
