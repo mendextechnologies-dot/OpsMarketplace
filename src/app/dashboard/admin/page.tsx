@@ -125,7 +125,6 @@ export default function AdminDashboard() {
   ];
 
   const conflicts = requests.filter(r => r.duplicateFlag === true);
-  const riskyConsultants = consultants.filter(c => (c.ai_risk_score || 0) > 60);
 
   const NavItem = ({ view, icon: Icon, label, count }: { view: AdminView, icon: any, label: string, count?: number }) => (
     <button
@@ -234,7 +233,6 @@ export default function AdminDashboard() {
               <Card className="border-none shadow-sm rounded-3xl">
                 <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle className="text-lg font-black text-slate-900">Recent Expert Activity</CardTitle>
-                  <Button variant="ghost" size="sm" className="font-bold text-primary hover:bg-primary/5">View All</Button>
                 </CardHeader>
                 <CardContent>
                   <Table>
@@ -242,7 +240,7 @@ export default function AdminDashboard() {
                       <TableRow className="border-none">
                         <TableHead className="font-bold text-[11px] uppercase tracking-wider">Expert</TableHead>
                         <TableHead className="font-bold text-[11px] uppercase tracking-wider">Status</TableHead>
-                        <TableHead className="font-bold text-[11px] uppercase tracking-wider">Rating</TableHead>
+                        <TableHead className="font-bold text-[11px] uppercase tracking-wider text-center">Completion</TableHead>
                         <TableHead className="text-right"></TableHead>
                       </TableRow>
                     </TableHeader>
@@ -266,7 +264,7 @@ export default function AdminDashboard() {
                               ACTIVE
                             </Badge>
                           </TableCell>
-                          <TableCell className="font-black text-slate-700">4.8</TableCell>
+                          <TableCell className="text-center font-black text-slate-700">98%</TableCell>
                           <TableCell className="text-right">
                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setViewingConsultant(cons)}>
                               <ArrowRight className="h-4 w-4 text-slate-400" />
@@ -319,34 +317,6 @@ export default function AdminDashboard() {
                 </CardContent>
               </Card>
 
-              <Card className="border-none shadow-sm rounded-3xl">
-                <CardHeader>
-                  <CardTitle className="text-lg font-black text-slate-900">Recent Assignments</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {assignments.slice(0, 4).map((asgn, i) => (
-                    <div key={i} className="flex items-start gap-4 p-4 rounded-2xl border-l-4 border-primary bg-white shadow-sm">
-                      <div className="flex-1">
-                        <p className="text-sm font-black text-slate-900">New Match Confirmed</p>
-                        <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mt-1">
-                          Expert: {consultants.find(c => c.id === asgn.consultantId)?.name}
-                        </p>
-                        <div className="flex items-center gap-2 mt-2">
-                          <Avatar className="h-6 w-6">
-                            <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${asgn.id}`} />
-                          </Avatar>
-                          <span className="text-[10px] font-bold text-slate-500 uppercase">Awaiting Action</span>
-                        </div>
-                      </div>
-                      <Badge className="bg-orange-50 text-orange-600 border-none font-black text-[9px] uppercase">URGENT</Badge>
-                    </div>
-                  ))}
-                  <Button variant="outline" className="w-full rounded-xl font-bold py-6 text-primary hover:bg-primary/5 border-primary/20">
-                    View Full Pipeline
-                  </Button>
-                </CardContent>
-              </Card>
-
               <Card className="border-none shadow-sm rounded-3xl bg-primary text-white p-6">
                 <div className="flex items-center gap-3 mb-6">
                   <Sparkles className="h-6 w-6" />
@@ -369,10 +339,6 @@ export default function AdminDashboard() {
               <div>
                 <CardTitle className="text-2xl font-black text-slate-900">SME Service Requests</CardTitle>
                 <CardDescription className="text-sm font-medium mt-1">Managing the demand side of the ecosystem.</CardDescription>
-              </div>
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <input className="pl-9 h-11 border bg-[#F8F9FC] rounded-xl text-sm w-[300px] outline-none focus:ring-2 focus:ring-primary/20" placeholder="Search requests..." />
               </div>
             </CardHeader>
             <CardContent className="p-0">
@@ -463,7 +429,7 @@ export default function AdminDashboard() {
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1 max-w-[250px]">
-                          {(cons.servicesOffered || []).slice(0, 2).map((sId: string, idx: number) => (
+                          {(cons.servicesOffered || []).slice(0, 2).map((sId: any, idx: number) => (
                             <Badge key={idx} variant="outline" className="text-[8px] font-black border-slate-200">
                               {getServiceName(sId)}
                             </Badge>
@@ -480,6 +446,133 @@ export default function AdminDashboard() {
                         <Button variant="outline" size="sm" className="rounded-xl font-bold border-slate-200 hover:bg-slate-50" onClick={() => setViewingConsultant(cons)}>
                           View Profile
                         </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+
+        {activeView === 'partners' && (
+          <Card className="border-none shadow-sm rounded-3xl">
+            <CardHeader className="p-8 border-b">
+              <CardTitle className="text-2xl font-black text-slate-900">Channel Partner Registry</CardTitle>
+              <CardDescription className="text-sm font-medium mt-1">Managing lead-generating nodes in the ecosystem.</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader className="bg-slate-50/50">
+                  <TableRow className="border-none h-14">
+                    <TableHead className="px-8 font-black text-[11px] uppercase tracking-wider">Partner / Firm</TableHead>
+                    <TableHead className="font-black text-[11px] uppercase tracking-wider">City</TableHead>
+                    <TableHead className="font-black text-[11px] uppercase tracking-wider text-center">Focus</TableHead>
+                    <TableHead className="text-right px-8"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {partners.map((partner) => (
+                    <TableRow key={partner.id} className="border-none hover:bg-slate-50 transition-colors h-20">
+                      <TableCell className="px-8">
+                        <div className="flex items-center gap-4">
+                          <div className="h-10 w-10 bg-amber-500/10 text-amber-600 rounded-xl flex items-center justify-center font-black">
+                            {partner.partnerName?.charAt(0)}
+                          </div>
+                          <div>
+                            <p className="font-bold text-sm text-slate-900">{partner.partnerName}</p>
+                            <p className="text-[10px] text-muted-foreground font-medium uppercase">{partner.phone}</p>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm font-medium text-slate-600">{partner.city}</TableCell>
+                      <TableCell className="text-center">
+                        <div className="flex flex-wrap justify-center gap-1 max-w-[200px] mx-auto">
+                          {(partner.servicesFocus || []).map((sId: string, idx: number) => (
+                            <Badge key={idx} variant="outline" className="text-[8px] font-black border-slate-200">
+                              {getCategoryName(sId)}
+                            </Badge>
+                          ))}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right px-8">
+                        <Button variant="outline" size="sm" className="rounded-xl font-bold" onClick={() => setViewingPartner(partner)}>
+                          Reports
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+
+        {activeView === 'pipeline' && (
+          <Card className="border-none shadow-sm rounded-3xl">
+            <CardHeader className="p-8 border-b">
+              <CardTitle className="text-2xl font-black text-slate-900">Marketplace Pipeline</CardTitle>
+              <CardDescription className="text-sm font-medium mt-1">Tracking movement of live service deals.</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader className="bg-slate-50/50">
+                  <TableRow className="border-none h-14">
+                    <TableHead className="px-8 font-black text-[11px] uppercase tracking-wider">Company</TableHead>
+                    <TableHead className="font-black text-[11px] uppercase tracking-wider">Expert Assigned</TableHead>
+                    <TableHead className="font-black text-[11px] uppercase tracking-wider">Status</TableHead>
+                    <TableHead className="text-right px-8">Match Date</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {assignments.map((asgn) => {
+                    const req = requests.find(r => r.id === asgn.requestId);
+                    const cons = consultants.find(c => c.id === asgn.consultantId);
+                    return (
+                      <TableRow key={asgn.id} className="border-none h-16">
+                        <TableCell className="px-8 font-bold">{req?.companyName || 'Unknown Company'}</TableCell>
+                        <TableCell className="font-bold text-primary">{cons?.name || 'Expert'}</TableCell>
+                        <TableCell>
+                           <Badge className="bg-blue-50 text-blue-700 border-none font-black text-[10px] uppercase">{asgn.status}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right px-8 text-xs font-medium text-muted-foreground">
+                          {asgn.createdAt ? new Date(asgn.createdAt.seconds * 1000).toLocaleDateString() : 'Just now'}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+
+        {activeView === 'conflicts' && (
+          <Card className="border-none shadow-sm rounded-3xl">
+            <CardHeader className="p-8 border-b">
+              <CardTitle className="text-2xl font-black text-slate-900">Lead Ownership Conflicts</CardTitle>
+              <CardDescription className="text-sm font-medium mt-1">Resolving duplicate entries and ownership disputes.</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader className="bg-slate-50/50">
+                  <TableRow className="border-none h-14">
+                    <TableHead className="px-8 font-black text-[11px] uppercase tracking-wider">Company Key</TableHead>
+                    <TableHead className="font-black text-[11px] uppercase tracking-wider">Logged By</TableHead>
+                    <TableHead className="font-black text-[11px] uppercase tracking-wider">Conflict Status</TableHead>
+                    <TableHead className="text-right px-8"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {conflicts.map((req) => (
+                    <TableRow key={req.id} className="border-none h-16 bg-red-50/10">
+                      <TableCell className="px-8 font-mono text-[10px] font-bold">{req.companyUniqueKey}</TableCell>
+                      <TableCell className="font-bold">{req.companyName}</TableCell>
+                      <TableCell>
+                        <Badge variant="destructive" className="font-black text-[9px] uppercase">DUPLICATE DETECTED</Badge>
+                      </TableCell>
+                      <TableCell className="text-right px-8">
+                        <Button variant="ghost" size="sm" className="font-bold text-red-600 hover:bg-red-50">Review Conflict</Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -533,6 +626,39 @@ export default function AdminDashboard() {
                     </Badge>
                   ))}
                 </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!viewingPartner} onOpenChange={() => setViewingPartner(null)}>
+        <DialogContent className="max-w-xl rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
+          <div className="bg-amber-500 p-8 text-white">
+            <h3 className="text-2xl font-black">{viewingPartner?.partnerName}</h3>
+            <p className="text-white/80 font-bold uppercase text-[10px] tracking-widest mt-1">
+              Channel Partner • {viewingPartner?.city}
+            </p>
+          </div>
+          <div className="p-8 space-y-6 bg-white">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-slate-50 p-4 rounded-2xl">
+                <p className="text-[10px] font-black text-muted-foreground uppercase mb-1">Total Referrals</p>
+                <p className="text-2xl font-black">{requests.filter(r => r.leadOwnerId === viewingPartner?.id).length}</p>
+              </div>
+              <div className="bg-slate-50 p-4 rounded-2xl">
+                <p className="text-[10px] font-black text-muted-foreground uppercase mb-1">Status</p>
+                <p className="text-2xl font-black text-green-600 uppercase">{viewingPartner?.status || 'Active'}</p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <p className="text-[11px] font-black text-muted-foreground uppercase tracking-widest">Service Focus</p>
+              <div className="flex flex-wrap gap-2">
+                {viewingPartner?.servicesFocus?.map((sId: string, i: number) => (
+                  <Badge key={i} variant="secondary" className="bg-amber-50 text-amber-700 border-none font-black px-3 py-1.5 rounded-xl">
+                    {getCategoryName(sId)}
+                  </Badge>
+                ))}
               </div>
             </div>
           </div>

@@ -25,9 +25,6 @@ export function Navbar() {
 
   const navItems = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Market", href: "/marketplace", icon: Search },
-    { name: "Experts", href: "/experts", icon: Users },
-    { name: "Requests", href: "/dashboard/sme", icon: FileText },
   ];
 
   return (
