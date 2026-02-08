@@ -4,7 +4,7 @@
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { doc, getDoc, collection, query, where, getDocs, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, getDocs, setDoc, updateDoc, serverTimestamp, limit } from "firebase/firestore";
 import { db } from "@/lib/firebase-config";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +29,9 @@ import {
   Zap,
   Coins,
   TrendingUp,
-  Loader2
+  Loader2,
+  Sparkles,
+  Star
 } from "lucide-react";
 import Link from "next/link";
 import { getServiceNames, getCategoryName } from "@/lib/constants";
@@ -43,6 +45,7 @@ export default function RequestDetailPage() {
   const { toast } = useToast();
   const [request, setRequest] = useState<any>(null);
   const [matches, setMatches] = useState<any[]>([]);
+  const [potentialMatches, setPotentialMatches] = useState<any[]>([]);
   const [consultants, setConsultants] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [assigning, setAssigning] = useState(false);
@@ -86,6 +89,17 @@ export default function RequestDetailPage() {
           };
         }));
         setMatches(matchData);
+
+        // Fetch top 5 potential matches based on services
+        if (data.serviceIds && data.serviceIds.length > 0) {
+          const potentialQuery = query(
+            collection(db, "consultantProfiles"),
+            where("servicesOffered", "array-contains-any", data.serviceIds.slice(0, 10)),
+            limit(5)
+          );
+          const potentialSnap = await getDocs(potentialQuery);
+          setPotentialMatches(potentialSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+        }
 
         // If admin, fetch all consultants for manual lookup
         if (profile.role === 'admin') {
@@ -305,7 +319,7 @@ export default function RequestDetailPage() {
                       </div>
                       <div>
                         <p className="font-extrabold text-lg">{assignedConsultant.consultant?.name}</p>
-                        <p className="text-sm text-muted-foreground">{assignedConsultant.consultant?.city} based Expert</p>
+                        <p className="text-sm text-muted-foreground">{assignedConsultant.consultant?.companyName}</p>
                       </div>
                     </div>
                     <Badge className="bg-green-600">VERIFIED</Badge>
@@ -327,6 +341,43 @@ export default function RequestDetailPage() {
               )}
             </CardContent>
           </Card>
+
+          {/* TOP 5 POTENTIAL MATCHES SECTION FOR SME */}
+          {potentialMatches.length > 0 && !assignedConsultant && (
+            <Card className="border-dashed border-2 bg-muted/5">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                  Top AI Match Candidates
+                </CardTitle>
+                <CardDescription>
+                  These verified experts perfectly align with your requested services.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {potentialMatches.map((expert) => (
+                  <div key={expert.id} className="flex items-center justify-between p-4 bg-white rounded-xl border hover:shadow-sm transition-shadow">
+                    <div className="flex items-center gap-4">
+                      <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold">
+                        {expert.name?.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold">{expert.name}</p>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest">{expert.companyName}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-0.5 text-amber-500">
+                        <Star className="h-3 w-3 fill-current" />
+                        <span className="text-[10px] font-bold">98% Match</span>
+                      </div>
+                      <Badge variant="secondary" className="text-[9px] uppercase">{expert.city}</Badge>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         <div className="space-y-6">

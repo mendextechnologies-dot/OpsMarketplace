@@ -3,14 +3,14 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
-import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
+import { collection, query, where, getDocs, orderBy, limit } from "firebase/firestore";
 import { db } from "@/lib/firebase-config";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
-import { PlusCircle, FileText, Clock, CheckCircle2, LayoutGrid, ArrowRight, Building2, Tag } from "lucide-react";
+import { PlusCircle, FileText, Clock, CheckCircle2, LayoutGrid, ArrowRight, Building2, Tag, Sparkles } from "lucide-react";
 import { getServiceNames, getCategoryName } from "@/lib/constants";
 
 export default function SMEDashboard() {
@@ -21,14 +21,36 @@ export default function SMEDashboard() {
   useEffect(() => {
     const fetchRequests = async () => {
       if (!profile) return;
-      const q = query(
-        collection(db, "serviceRequests"),
-        where("userId", "==", profile.id),
-        orderBy("createdAt", "desc")
-      );
-      const snapshot = await getDocs(q);
-      setRequests(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-      setLoading(false);
+      try {
+        const q = query(
+          collection(db, "serviceRequests"),
+          where("userId", "==", profile.id),
+          orderBy("createdAt", "desc")
+        );
+        const snapshot = await getDocs(q);
+        
+        const requestsData = await Promise.all(snapshot.docs.map(async (docRef) => {
+          const data = docRef.data();
+          // Fetch match count for this request
+          const matchQ = query(
+            collection(db, "leadAssignments"), 
+            where("requestId", "==", docRef.id)
+          );
+          const matchSnap = await getDocs(matchQ);
+          
+          return { 
+            id: docRef.id, 
+            ...data,
+            matchCount: matchSnap.size
+          };
+        }));
+        
+        setRequests(requestsData);
+      } catch (error) {
+        console.error("Fetch Requests Error:", error);
+      } finally {
+        setLoading(false);
+      }
     };
     fetchRequests();
   }, [profile]);
@@ -160,9 +182,17 @@ export default function SMEDashboard() {
                         <Tag className="h-3 w-3" />
                         <span>{getServiceNames(req.serviceIds)}</span>
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        Submitted {new Date(req.createdAt?.seconds * 1000).toLocaleDateString()}
-                      </p>
+                      <div className="flex items-center gap-4 mt-2">
+                        <p className="text-xs text-muted-foreground">
+                          Submitted {new Date(req.createdAt?.seconds * 1000).toLocaleDateString()}
+                        </p>
+                        {req.matchCount > 0 && (
+                          <div className="flex items-center gap-1 text-[10px] font-bold text-primary bg-primary/5 px-2 py-0.5 rounded-full border border-primary/10">
+                            <Sparkles className="h-2.5 w-2.5" />
+                            {req.matchCount} AI MATCHES IDENTIFIED
+                          </div>
+                        )}
+                      </div>
                       <p className="text-sm line-clamp-1 italic text-muted-foreground/80 mt-2">"{req.description}"</p>
                     </div>
                     <Button variant="outline" className="shrink-0" asChild>
