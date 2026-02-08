@@ -28,7 +28,8 @@ import {
   Coins,
   ShieldCheck,
   Building2,
-  UserCheck
+  UserCheck,
+  ArrowRight
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -358,27 +359,42 @@ export default function AdminDashboard() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Request ID</TableHead>
+                    <TableHead>Company (Request)</TableHead>
                     <TableHead>Expert</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Timeline</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {assignments.map((asgn) => (
-                    <TableRow key={asgn.id}>
-                      <TableCell className="font-mono text-[10px]">{asgn.requestId.slice(0, 8)}...</TableCell>
-                      <TableCell className="text-xs font-medium">{asgn.consultantId}</TableCell>
-                      <TableCell>
-                        <Badge variant={asgn.status === 'accepted' ? 'default' : 'outline'} className="capitalize text-[10px]">
-                          {asgn.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-[10px] text-muted-foreground">
-                        {asgn.createdAt?.seconds ? new Date(asgn.createdAt.seconds * 1000).toLocaleDateString() : 'Pending'}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {assignments.map((asgn) => {
+                    const req = requests.find(r => r.id === asgn.requestId);
+                    const cons = consultants.find(c => c.id === asgn.consultantId);
+                    
+                    return (
+                      <TableRow key={asgn.id}>
+                        <TableCell>
+                          <div className="space-y-1">
+                            <p className="text-xs font-bold">{req?.companyName || "Unknown Request"}</p>
+                            <p className="text-[10px] font-mono text-muted-foreground">{asgn.requestId.slice(0, 8)}...</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            <p className="text-xs font-medium">{cons?.name || "Unknown Expert"}</p>
+                            <p className="text-[10px] text-muted-foreground">{cons?.companyName}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={asgn.status === 'accepted' ? 'default' : 'outline'} className="capitalize text-[10px]">
+                            {asgn.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-[10px] text-muted-foreground">
+                          {asgn.createdAt?.seconds ? new Date(asgn.createdAt.seconds * 1000).toLocaleDateString() : 'Pending'}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </CardContent>
