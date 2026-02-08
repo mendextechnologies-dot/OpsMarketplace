@@ -14,10 +14,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Building2, MapPin, ListChecks, Zap } from "lucide-react";
+import { ArrowLeft, Building2, MapPin, ListChecks, Zap, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { SERVICE_TAXONOMY } from "@/lib/constants";
-import { cn } from "@/lib/utils";
+import { cn, generateCompanyKey } from "@/lib/utils";
 
 export default function PartnerCreateLeadPage() {
   const { profile } = useAuth();
@@ -67,18 +67,42 @@ export default function PartnerCreateLeadPage() {
     setLoading(true);
 
     try {
+      const companyKey = generateCompanyKey(formData.companyName, formData.city);
+
+      // Duplicate Check Rule 1: First valid submission wins
+      const dupQuery = query(
+        collection(db, "serviceRequests"),
+        where("companyUniqueKey", "==", companyKey),
+        where("status", "!=", "completed")
+      );
+      const dupSnap = await getDocs(dupQuery);
+
+      if (!dupSnap.empty) {
+        toast({
+          title: "Potential Duplicate",
+          description: "This company already has an active request in the system. Contact admin for ownership disputes.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
       const leadData = {
         categoryId: formData.categoryId,
         serviceIds: formData.serviceIds,
         companyName: formData.companyName,
         state: formData.state,
         city: formData.city,
+        companyUniqueKey: companyKey,
         description: formData.description,
         additionalNotes: formData.notes,
         urgency: formData.urgency,
         
         leadOwnerType: "partner",
-        leadPartnerId: profile.id,
+        leadOwnerId: profile.id,
+        leadPartnerId: profile.id, // for backwards compat
+        ownershipStatus: "active",
+        duplicateFlag: false,
         consultantCommunicatesWith: "partner",
         
         status: "new",
@@ -111,7 +135,7 @@ export default function PartnerCreateLeadPage() {
 
       toast({
         title: "Lead Logged Successfully",
-        description: "Our matching engine has been notified.",
+        description: "Ownership assigned to your account.",
       });
 
       router.push("/dashboard/partner");
@@ -133,9 +157,9 @@ export default function PartnerCreateLeadPage() {
 
       <div className="mb-8">
         <h1 className="text-3xl font-extrabold tracking-tight text-primary flex items-center gap-3">
-          <PlusCircle className="h-8 w-8" /> Log Channel Lead
+          <Zap className="h-8 w-8" /> Log Channel Lead
         </h1>
-        <p className="text-muted-foreground">Submit a requirement on behalf of your client. You will remain the primary point of contact.</p>
+        <p className="text-muted-foreground">Submit a requirement on behalf of your client. You will be established as the lead owner.</p>
       </div>
 
       <Card className="border-2 shadow-sm">
@@ -212,7 +236,7 @@ export default function PartnerCreateLeadPage() {
             </div>
 
             <div className="space-y-6 pt-6 border-t">
-              <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">3. Client Details & Requirement</Label>
+              <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">3. Client Details & Ownership</Label>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="md:col-span-1 space-y-2">
                   <Label>Client Company Name</Label>
@@ -260,19 +284,18 @@ export default function PartnerCreateLeadPage() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label>Internal Partner Notes (Optional)</Label>
-                <Input
-                  placeholder="Anything specific for our admin team to know?"
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                />
+              <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg flex gap-3">
+                <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />
+                <div className="text-xs text-amber-800">
+                  <p className="font-bold mb-1">Ownership Rule</p>
+                  <p>By logging this lead, you establish primary ownership. If this company is already in our system, the submission will be flagged for admin review.</p>
+                </div>
               </div>
             </div>
           </CardContent>
           <CardFooter className="bg-muted/30 p-8">
             <Button className="w-full h-14 text-lg font-bold shadow-lg" type="submit" disabled={loading || formData.serviceIds.length === 0}>
-              {loading ? "Submitting Lead..." : "Log Channel Opportunity"}
+              {loading ? "Verifying Ownership..." : "Secure Lead Ownership"}
             </Button>
           </CardFooter>
         </form>

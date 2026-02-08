@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { db } from "@/lib/firebase-config";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, query, where, getDocs } from "firebase/firestore";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,10 +14,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Building2, User, Phone, Mail, Tag, ListChecks } from "lucide-react";
+import { ArrowLeft, Building2, User, Phone, Mail, Tag, ListChecks, ShieldAlert } from "lucide-react";
 import Link from "next/link";
 import { SERVICE_TAXONOMY } from "@/lib/constants";
-import { cn } from "@/lib/utils";
+import { cn, generateCompanyKey } from "@/lib/utils";
 
 const SOURCES = [
   { id: "admin_manual", label: "Admin Manual" },
@@ -79,6 +79,17 @@ export default function AdminCreateLeadPage() {
     setLoading(true);
 
     try {
+      const companyKey = generateCompanyKey(formData.companyName, formData.city);
+      
+      // Duplicate Check for Admin
+      const dupQuery = query(
+        collection(db, "serviceRequests"),
+        where("companyUniqueKey", "==", companyKey),
+        where("status", "!=", "completed")
+      );
+      const dupSnap = await getDocs(dupQuery);
+      const isDuplicate = !dupSnap.empty;
+
       const leadData = {
         categoryId: formData.categoryId,
         serviceIds: formData.serviceIds,
@@ -89,11 +100,16 @@ export default function AdminCreateLeadPage() {
         employeeCount: parseInt(formData.employeeCount) || 0,
         state: formData.state,
         city: formData.city,
+        companyUniqueKey: companyKey,
+        duplicateFlag: isDuplicate,
         description: formData.description,
         status: "new",
         urgency: formData.urgency,
         leadSource: formData.leadSource,
         leadType: "outbound",
+        leadOwnerType: "admin",
+        leadOwnerId: profile.id,
+        ownershipStatus: "active",
         createdByAdmin: true,
         createdAt: serverTimestamp(),
       };
@@ -101,8 +117,9 @@ export default function AdminCreateLeadPage() {
       await addDoc(collection(db, "serviceRequests"), leadData);
 
       toast({
-        title: "Manual Lead Created",
-        description: "The lead has been added and matches will be calculated.",
+        title: isDuplicate ? "Manual Lead Created (Duplicate Flagged)" : "Manual Lead Created",
+        description: isDuplicate ? "Lead exists in system. Review in Conflicts panel." : "The lead has been added successfully.",
+        variant: isDuplicate ? "destructive" : "default"
       });
 
       router.push("/dashboard/admin");
@@ -127,8 +144,8 @@ export default function AdminCreateLeadPage() {
       </Button>
 
       <div className="mb-8">
-        <h1 className="text-3xl font-extrabold tracking-tight text-primary">Create Manual Lead</h1>
-        <p className="text-muted-foreground">Log outbound opportunities or manual referrals into the platform.</p>
+        <h1 className="text-3xl font-extrabold tracking-tight text-primary">Log Market Intelligence</h1>
+        <p className="text-muted-foreground">Add manually sourced outbound leads to the platform pipeline.</p>
       </div>
 
       <Card className="border-2 shadow-sm">
@@ -314,7 +331,7 @@ export default function AdminCreateLeadPage() {
           </CardContent>
           <CardFooter className="bg-muted/30 p-8 rounded-b-xl">
             <Button className="w-full h-14 text-lg shadow-lg" type="submit" disabled={loading || formData.serviceIds.length === 0}>
-              {loading ? "Creating lead..." : "Log Manual Lead"}
+              {loading ? "Verifying data..." : "Create Outbound Lead"}
             </Button>
           </CardFooter>
         </form>

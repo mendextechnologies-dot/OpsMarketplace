@@ -10,7 +10,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import Link from "next/link";
-import { PlusCircle, FileText, Clock, CheckCircle2, LayoutGrid, ArrowRight, Building2, Tag, Zap } from "lucide-react";
+import { PlusCircle, FileText, Clock, CheckCircle2, LayoutGrid, ArrowRight, Building2, Tag, Zap, ShieldCheck, AlertCircle } from "lucide-react";
 import { getServiceNames, getCategoryName } from "@/lib/constants";
 
 export default function PartnerDashboard() {
@@ -23,7 +23,7 @@ export default function PartnerDashboard() {
       if (!profile) return;
       const q = query(
         collection(db, "serviceRequests"),
-        where("leadPartnerId", "==", profile.id),
+        where("leadOwnerId", "==", profile.id),
         orderBy("createdAt", "desc")
       );
       const snapshot = await getDocs(q);
@@ -41,7 +41,7 @@ export default function PartnerDashboard() {
             <Zap className="h-8 w-8 fill-primary" /> Partner Console
           </h1>
           <p className="text-muted-foreground mt-1 text-lg">
-            Logged in as {profile?.name}. Track your channel leads and their matching progress.
+            Logged in as {profile?.name}. Managing your secured lead ownership.
           </p>
         </div>
         <Button size="lg" className="shadow-lg" asChild>
@@ -57,7 +57,7 @@ export default function PartnerDashboard() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Total Referred</p>
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Total referred</p>
                 <p className="text-3xl font-bold mt-1">{leads.length}</p>
               </div>
               <div className="bg-primary/10 p-3 rounded-xl">
@@ -70,13 +70,13 @@ export default function PartnerDashboard() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Active Assignments</p>
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Active Ownership</p>
                 <p className="text-3xl font-bold mt-1 text-blue-600">
-                  {leads.filter(l => l.status === 'assigned').length}
+                  {leads.filter(l => l.ownershipStatus === 'active').length}
                 </p>
               </div>
               <div className="bg-blue-100 p-3 rounded-xl">
-                <Clock className="h-6 w-6 text-blue-600" />
+                <ShieldCheck className="h-6 w-6 text-blue-600" />
               </div>
             </div>
           </CardContent>
@@ -85,13 +85,13 @@ export default function PartnerDashboard() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Completed Deals</p>
-                <p className="text-3xl font-bold mt-1 text-green-600">
-                  {leads.filter(l => l.status === 'completed').length}
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Duplicate Flags</p>
+                <p className="text-3xl font-bold mt-1 text-red-600">
+                  {leads.filter(l => l.duplicateFlag === true).length}
                 </p>
               </div>
-              <div className="bg-green-100 p-3 rounded-xl">
-                <CheckCircle2 className="h-6 w-6 text-green-600" />
+              <div className="bg-red-100 p-3 rounded-xl">
+                <AlertCircle className="h-6 w-6 text-red-600" />
               </div>
             </div>
           </CardContent>
@@ -100,8 +100,8 @@ export default function PartnerDashboard() {
 
       <Card className="border-none shadow-sm">
         <CardHeader>
-          <CardTitle>My Channel Leads</CardTitle>
-          <CardDescription>Monitor progress of business requirements you've brought to the platform.</CardDescription>
+          <CardTitle>My Lead Registry</CardTitle>
+          <CardDescription>Track the status and matching progress of leads you own.</CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -120,32 +120,46 @@ export default function PartnerDashboard() {
                 <TableRow>
                   <TableRow className="bg-muted/30">
                     <TableHead>Client & Service</TableHead>
-                    <TableHead>Location</TableHead>
+                    <TableHead>Ownership</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Submitted On</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
                   </TableRow>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {leads.map((lead) => (
-                  <TableRow key={lead.id}>
+                  <TableRow key={lead.id} className={lead.duplicateFlag ? "bg-red-50/20" : ""}>
                     <TableCell>
                       <div className="space-y-1">
-                        <p className="font-bold text-sm">{lead.companyName}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold text-sm">{lead.companyName}</p>
+                          {lead.duplicateFlag && (
+                            <Badge variant="destructive" className="text-[8px] h-4">Potential Duplicate</Badge>
+                          )}
+                        </div>
                         <p className="text-[10px] text-primary font-medium">{getCategoryName(lead.categoryId)}</p>
                         <p className="text-[9px] text-muted-foreground line-clamp-1">{getServiceNames(lead.serviceIds)}</p>
                       </div>
                     </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {lead.city}, {lead.state}
+                    <TableCell>
+                      <div className="flex flex-col gap-1">
+                        <Badge variant="outline" className="text-[9px] w-fit border-green-200 bg-green-50 text-green-700">
+                          <ShieldCheck className="h-2 w-2 mr-1" /> Owned by You
+                        </Badge>
+                        <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-bold">
+                          Key: {lead.companyUniqueKey}
+                        </span>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge variant={lead.status === 'new' ? 'secondary' : 'default'} className="capitalize text-[9px]">
                         {lead.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right text-[10px] text-muted-foreground">
-                      {lead.createdAt?.seconds ? new Date(lead.createdAt.seconds * 1000).toLocaleDateString() : 'Just now'}
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="sm" className="h-8 text-[10px]" asChild>
+                         <Link href={`/request/${lead.id}`}>View Details</Link>
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}

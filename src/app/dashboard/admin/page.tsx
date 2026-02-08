@@ -3,7 +3,7 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
-import { collection, query, getDocs, orderBy, doc, updateDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { collection, query, getDocs, orderBy, doc, updateDoc, setDoc, serverTimestamp, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase-config";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -22,13 +22,16 @@ import {
   Zap,
   MapPin,
   Briefcase,
-  Share2
+  Share2,
+  AlertTriangle,
+  CheckCircle2,
+  Trash2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { getServiceNames, getCategoryName } from "@/lib/constants";
 
-type AdminView = 'dashboard' | 'requests' | 'consultants' | 'pipeline';
+type AdminView = 'dashboard' | 'requests' | 'consultants' | 'pipeline' | 'conflicts';
 
 export default function AdminDashboard() {
   const { profile, loading: authLoading } = useAuth();
@@ -97,6 +100,21 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleResolveConflict = async (reqId: string, action: 'keep' | 'reject') => {
+    try {
+      if (action === 'reject') {
+        await deleteDoc(doc(db, "serviceRequests", reqId));
+        toast({ title: "Lead Rejected", description: "Conflict resolved by removing duplicate lead." });
+      } else {
+        await updateDoc(doc(db, "serviceRequests", reqId), { duplicateFlag: false });
+        toast({ title: "Lead Verified", description: "Lead flagged as verified and duplicate warning removed." });
+      }
+      fetchData();
+    } catch (error: any) {
+      toast({ title: "Resolution Failed", description: error.message, variant: "destructive" });
+    }
+  };
+
   if (authLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-muted/30">
@@ -105,18 +123,27 @@ export default function AdminDashboard() {
     );
   }
 
-  const NavItem = ({ view, icon: Icon, label }: { view: AdminView, icon: any, label: string }) => (
+  const conflicts = requests.filter(r => r.duplicateFlag === true);
+
+  const NavItem = ({ view, icon: Icon, label, count }: { view: AdminView, icon: any, label: string, count?: number }) => (
     <button
       onClick={() => setActiveView(view)}
       className={cn(
-        "w-full flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors rounded-lg",
+        "w-full flex items-center justify-between px-4 py-3 text-sm font-medium transition-colors rounded-lg",
         activeView === view 
           ? "bg-primary text-primary-foreground" 
           : "text-muted-foreground hover:bg-muted"
       )}
     >
-      <Icon className="h-4 w-4" />
-      {label}
+      <div className="flex items-center gap-3">
+        <Icon className="h-4 w-4" />
+        {label}
+      </div>
+      {count !== undefined && count > 0 && (
+        <Badge variant={view === 'conflicts' ? 'destructive' : 'secondary'} className="h-5 px-1.5 text-[10px]">
+          {count}
+        </Badge>
+      )}
     </button>
   );
 
@@ -130,9 +157,10 @@ export default function AdminDashboard() {
 
         <div className="space-y-1 flex-1">
           <NavItem view="dashboard" icon={LayoutDashboard} label="Dashboard" />
-          <NavItem view="requests" icon={FileText} label="Requests" />
+          <NavItem view="requests" icon={FileText} label="Requests" count={requests.filter(r => r.status === 'new').length} />
           <NavItem view="consultants" icon={Users} label="Consultants" />
           <NavItem view="pipeline" icon={Activity} label="Lead Pipeline" />
+          <NavItem view="conflicts" icon={AlertTriangle} label="Ownership Conflicts" count={conflicts.length} />
         </div>
 
         <div className="pt-6 border-t">
@@ -148,7 +176,9 @@ export default function AdminDashboard() {
 
       <main className="flex-1 p-8 lg:p-12 overflow-y-auto">
         <header className="mb-10 flex justify-between items-center">
-          <h2 className="text-3xl font-extrabold tracking-tight capitalize">{activeView}</h2>
+          <h2 className="text-3xl font-extrabold tracking-tight capitalize">
+            {activeView === 'conflicts' ? 'Ownership Resolution' : activeView}
+          </h2>
           <Button onClick={fetchData} variant="outline" size="sm" className="gap-2">
             <Activity className="h-3 w-3" /> Refresh Data
           </Button>
@@ -158,7 +188,7 @@ export default function AdminDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
               { label: "Total Requests", val: requests.length, icon: FileText, color: "text-blue-600" },
-              { label: "New Requests", val: requests.filter(r => r.status === 'new').length, icon: ShieldAlert, color: "text-amber-600" },
+              { label: "Conflict Leads", val: conflicts.length, icon: AlertTriangle, color: "text-red-600" },
               { label: "Active Pipeline", val: assignments.filter(a => a.status === 'sent' || a.status === 'accepted').length, icon: Activity, color: "text-primary" },
               { label: "Verified Experts", val: consultants.length, icon: Users, color: "text-green-600" },
             ].map((stat, i) => (
@@ -187,11 +217,14 @@ export default function AdminDashboard() {
                 </TableHeader>
                 <TableBody>
                   {requests.map((req) => {
-                    const partner = req.leadOwnerType === 'partner' ? partners.find(p => p.id === req.leadPartnerId) : null;
+                    const partner = req.leadOwnerType === 'partner' ? partners.find(p => p.id === req.leadOwnerId) : null;
                     return (
-                      <TableRow key={req.id}>
+                      <TableRow key={req.id} className={req.duplicateFlag ? "bg-red-50/30" : ""}>
                         <TableCell>
-                          <p className="font-bold text-sm">{getCategoryName(req.categoryId)}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-bold text-sm">{getCategoryName(req.categoryId)}</p>
+                            {req.duplicateFlag && <AlertTriangle className="h-3 w-3 text-red-600" />}
+                          </div>
                           <p className="text-[10px] text-muted-foreground italic line-clamp-1">{getServiceNames(req.serviceIds)}</p>
                         </TableCell>
                         <TableCell>
@@ -250,6 +283,77 @@ export default function AdminDashboard() {
               </Table>
             </CardContent>
           </Card>
+        )}
+
+        {activeView === 'conflicts' && (
+          <div className="space-y-6">
+            <div className="bg-amber-50 border border-amber-200 p-6 rounded-xl flex gap-4">
+              <ShieldAlert className="h-6 w-6 text-amber-600 shrink-0" />
+              <div>
+                <h4 className="font-bold text-amber-900">Duplicate Prevention Framework</h4>
+                <p className="text-sm text-amber-800 opacity-80 mt-1">
+                  The following requests share a company signature (Name + City) with another active lead. 
+                  Review them to maintain data integrity and resolve partner ownership disputes.
+                </p>
+              </div>
+            </div>
+
+            <Card className="border-none shadow-sm">
+              <CardContent className="pt-6">
+                {conflicts.length === 0 ? (
+                  <div className="py-20 text-center">
+                    <CheckCircle2 className="h-10 w-10 text-green-500 mx-auto mb-4 opacity-20" />
+                    <p className="text-muted-foreground">No ownership conflicts detected.</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Conflicting Lead</TableHead>
+                        <TableHead>Owner & Source</TableHead>
+                        <TableHead>Signature Key</TableHead>
+                        <TableHead className="text-right">Resolution</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {conflicts.map((req) => {
+                         const partner = req.leadOwnerType === 'partner' ? partners.find(p => p.id === req.leadOwnerId) : null;
+                         return (
+                          <TableRow key={req.id}>
+                            <TableCell>
+                              <p className="font-bold text-sm">{req.companyName}</p>
+                              <p className="text-[10px] text-muted-foreground">{getCategoryName(req.categoryId)}</p>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="secondary" className="text-[9px] capitalize">
+                                  {req.leadOwnerType}
+                                </Badge>
+                                <p className="text-[10px] font-medium">{partner?.partnerName || 'Platform Direct'}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <code className="text-[9px] bg-muted px-1.5 py-0.5 rounded">{req.companyUniqueKey}</code>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button size="sm" variant="outline" className="h-8 text-xs text-green-700 border-green-200 hover:bg-green-50" onClick={() => handleResolveConflict(req.id, 'keep')}>
+                                  Verify Lead
+                                </Button>
+                                <Button size="sm" variant="destructive" className="h-8 text-xs" onClick={() => handleResolveConflict(req.id, 'reject')}>
+                                  <Trash2 className="h-3 w-3 mr-1" /> Reject Duplicate
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                         );
+                      })}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {activeView === 'consultants' && (

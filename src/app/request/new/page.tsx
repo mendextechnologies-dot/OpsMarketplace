@@ -17,7 +17,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { CheckCircle2, ArrowRight, ArrowLeft, ChevronRight, Tags, Building2, User, Phone, Mail, MapPin } from "lucide-react";
 import { SERVICE_TAXONOMY, getServiceNames } from "@/lib/constants";
-import { cn } from "@/lib/utils";
+import { cn, generateCompanyKey } from "@/lib/utils";
 
 export default function NewRequestPage() {
   const { user, profile, orgProfile } = useAuth();
@@ -74,6 +74,17 @@ export default function NewRequestPage() {
 
     try {
       const isGuestRequest = !user;
+      const companyKey = generateCompanyKey(formData.companyName, formData.city);
+
+      // Duplicate detection Rule: Check for active conflicts
+      const dupQuery = query(
+        collection(db, "serviceRequests"),
+        where("companyUniqueKey", "==", companyKey),
+        where("status", "!=", "completed")
+      );
+      const dupSnap = await getDocs(dupQuery);
+      const isDuplicate = !dupSnap.empty;
+
       const requestData = {
         userId: user ? user.uid : null,
         isGuestRequest: isGuestRequest,
@@ -89,8 +100,13 @@ export default function NewRequestPage() {
         employeeCount: parseInt(formData.employeeCount) || 0,
         state: formData.state,
         city: formData.city,
+        companyUniqueKey: companyKey,
+        duplicateFlag: isDuplicate,
+        leadOwnerType: user ? (profile?.role === 'sme' ? 'sme' : 'admin') : 'sme',
+        leadOwnerId: user ? user.uid : null,
+        ownershipStatus: "active",
         status: "new",
-        leadType: isGuestRequest ? "inbound" : "inbound", // keeping inbound for platform submissions
+        leadType: "inbound",
         leadSource: "platform",
         createdAt: serverTimestamp(),
       };
@@ -119,7 +135,7 @@ export default function NewRequestPage() {
       }
 
       setStep(user ? 4 : 5); // 4 for auth success, 5 for guest success
-      toast({ title: "Request Submitted", description: "Finding matching experts..." });
+      toast({ title: "Request Submitted", description: isDuplicate ? "Lead logged (potential duplicate flagged)" : "Finding matching experts..." });
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
