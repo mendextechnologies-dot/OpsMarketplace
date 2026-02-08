@@ -6,14 +6,12 @@ import { useAuth } from "@/hooks/use-auth";
 import { db } from "@/lib/firebase-config";
 import { collection, addDoc, serverTimestamp, query, where, getDocs } from "firebase/firestore";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Building2, MapPin, ListChecks, Zap, AlertTriangle } from "lucide-react";
 import Link from "next/link";
@@ -70,7 +68,6 @@ export default function PartnerCreateLeadPage() {
     try {
       const companyKey = generateCompanyKey(formData.companyName, formData.city);
 
-      // Duplicate Check Rule 1: First valid submission wins
       const dupQuery = query(
         collection(db, "serviceRequests"),
         where("companyUniqueKey", "==", companyKey),
@@ -101,7 +98,7 @@ export default function PartnerCreateLeadPage() {
         
         leadOwnerType: "partner",
         leadOwnerId: profile.id,
-        leadPartnerId: profile.id, // for backwards compat
+        leadPartnerId: profile.id,
         ownershipStatus: "active",
         duplicateFlag: false,
         consultantCommunicatesWith: "partner",
@@ -114,7 +111,6 @@ export default function PartnerCreateLeadPage() {
 
       const docRef = await addDoc(collection(db, "serviceRequests"), leadData);
 
-      // Trigger Basic Matching
       const consultantsQuery = query(
         collection(db, "consultantProfiles"),
         where("statesCovered", "array-contains", formData.state)
@@ -219,15 +215,17 @@ export default function PartnerCreateLeadPage() {
                         <label 
                           key={serv.id} 
                           className={cn(
-                            "flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-all",
-                            isSelected ? "bg-primary/10 text-primary border-primary/20 border" : "hover:bg-white"
+                            "flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-all border-2",
+                            isSelected ? "bg-primary/10 text-primary border-primary/20" : "hover:bg-white border-transparent"
                           )}
                         >
-                          <Checkbox 
-                            checked={isSelected} 
-                            onCheckedChange={() => toggleService(serv.id)} 
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                            checked={isSelected}
+                            onChange={() => toggleService(serv.id)}
                           />
-                          <span className="text-xs font-semibold cursor-pointer flex-1">
+                          <span className="text-xs font-semibold flex-1">
                             {serv.name}
                           </span>
                         </label>

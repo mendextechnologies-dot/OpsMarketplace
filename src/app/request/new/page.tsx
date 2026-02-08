@@ -13,9 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle2, ArrowRight, ArrowLeft, ChevronRight, Tags, Building2, User, Phone, Mail, MapPin } from "lucide-react";
+import { CheckCircle2, ArrowRight, ArrowLeft, ChevronRight, Building2, User, Phone, Mail, MapPin } from "lucide-react";
 import { SERVICE_TAXONOMY, getServiceNames } from "@/lib/constants";
 import { cn, generateCompanyKey } from "@/lib/utils";
 
@@ -248,10 +247,11 @@ export default function NewRequestPage() {
                     isSelected ? "border-primary bg-primary/5 shadow-sm" : "hover:border-primary/40 bg-white"
                   )}
                 >
-                  <Checkbox 
-                    checked={isSelected} 
-                    onCheckedChange={() => handleToggleService(serv.id)}
-                    className="h-5 w-5" 
+                  <input
+                    type="checkbox"
+                    className="h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary"
+                    checked={isSelected}
+                    onChange={() => handleToggleService(serv.id)}
                   />
                   <span className="text-base font-semibold">{serv.name}</span>
                 </label>

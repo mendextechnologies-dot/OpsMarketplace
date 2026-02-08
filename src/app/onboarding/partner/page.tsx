@@ -10,7 +10,6 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Users, Phone, MapPin, Briefcase, Zap } from "lucide-react";
 import { SERVICE_TAXONOMY } from "@/lib/constants";
@@ -129,13 +128,15 @@ export default function PartnerOnboardingPage() {
                     <label 
                       key={cat.id} 
                       className={cn(
-                        "flex items-center space-x-2 p-3 rounded-lg border cursor-pointer transition-colors",
-                        isChecked ? "bg-primary/5 border-primary" : "hover:bg-muted/50"
+                        "flex items-center space-x-2 p-3 rounded-lg border-2 cursor-pointer transition-colors",
+                        isChecked ? "bg-primary/5 border-primary" : "hover:bg-muted/50 border-transparent"
                       )}
                     >
-                      <Checkbox 
-                        checked={isChecked} 
-                        onCheckedChange={() => toggleServiceFocus(cat.id)}
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                        checked={isChecked}
+                        onChange={() => toggleServiceFocus(cat.id)}
                       />
                       <span className="text-xs font-medium">{cat.name}</span>
                     </label>

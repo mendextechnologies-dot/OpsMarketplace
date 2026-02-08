@@ -12,7 +12,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Building2, User, Phone, Mail, Tag, ListChecks, ShieldAlert } from "lucide-react";
 import Link from "next/link";
@@ -203,13 +202,15 @@ export default function AdminCreateLeadPage() {
                         <label 
                           key={serv.id} 
                           className={cn(
-                            "flex items-center space-x-3 p-2 rounded-lg cursor-pointer transition-colors",
-                            isSelected ? "bg-primary/10 text-primary" : "hover:bg-white"
+                            "flex items-center space-x-3 p-2 rounded-lg cursor-pointer transition-colors border-2",
+                            isSelected ? "bg-primary/10 text-primary border-primary/20" : "hover:bg-white border-transparent"
                           )}
                         >
-                          <Checkbox 
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                             checked={isSelected}
-                            onCheckedChange={() => toggleService(serv.id)}
+                            onChange={() => toggleService(serv.id)}
                           />
                           <span className="text-xs font-medium flex-1">
                             {serv.name}
