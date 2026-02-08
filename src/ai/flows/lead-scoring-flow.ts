@@ -7,7 +7,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
-export const LeadScoreOutputSchema = z.object({
+const LeadScoreOutputSchema = z.object({
   score: z.number().min(0).max(10).describe('Overall quality score from 0 to 10'),
   reasoning: z.string().describe('Brief explanation for the score'),
   completeness: z.number().describe('Percentage of required fields provided'),

@@ -7,7 +7,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
-export const RiskAssessmentSchema = z.object({
+const RiskAssessmentSchema = z.object({
   riskLevel: z.enum(['low', 'medium', 'high']).describe('Assessed risk level'),
   riskScore: z.number().min(0).max(100).describe('0-100 score where 100 is extremely high risk'),
   flags: z.array(z.string()).describe('Specific reasons for the risk flag'),

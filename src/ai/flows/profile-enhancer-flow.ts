@@ -7,7 +7,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
-export const ProfileEnhancerOutputSchema = z.object({
+const ProfileEnhancerOutputSchema = z.object({
   professionalBio: z.string().describe('A high-impact, professional bio for the consultant'),
   specializationTags: z.array(z.string()).describe('SEO keywords and specialized tags'),
   industryFocus: z.array(z.string()).describe('Industries this consultant excels in'),

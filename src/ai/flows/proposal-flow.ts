@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview AI Proposal Assistant.
@@ -8,7 +7,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
-export const ProposalOutputSchema = z.object({
+const ProposalOutputSchema = z.object({
   draftMessage: z.string().describe('The professional proposal draft'),
   keyValueProps: z.array(z.string()).describe('Key selling points to highlight in the conversation'),
   estimatedComplexity: z.enum(['simple', 'moderate', 'complex']).describe('AI estimated difficulty'),

@@ -7,7 +7,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
-export const IntentOutputSchema = z.object({
+const IntentOutputSchema = z.object({
   serviceCategory: z.string().describe('The broad category of service (e.g. Labour Compliance, Payroll, HR)'),
   specificServices: z.array(z.string()).describe('List of specific sub-services identified'),
   location: z.string().describe('The city or state mentioned'),

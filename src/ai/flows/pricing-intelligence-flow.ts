@@ -7,7 +7,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
-export const PricingOutputSchema = z.object({
+const PricingOutputSchema = z.object({
   typicalRange: z.object({
     min: z.number().describe('Minimum typical price'),
     max: z.number().describe('Maximum typical price'),
