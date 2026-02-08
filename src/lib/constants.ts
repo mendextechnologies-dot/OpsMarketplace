@@ -94,20 +94,32 @@ export const SERVICE_TAXONOMY = [
   }
 ];
 
-export function getServiceName(serviceId: string) {
+/**
+ * Robustly resolves a service ID or object into its human-readable name.
+ */
+export function getServiceName(service: any) {
+  const serviceId = typeof service === 'string' ? service : service?.id;
+  if (!serviceId) return "Unspecified Service";
+
   for (const cat of SERVICE_TAXONOMY) {
-    const service = cat.services.find(s => s.id === serviceId);
-    if (service) return service.name;
+    const found = cat.services.find(s => s.id === serviceId);
+    if (found) return found.name;
   }
-  return "Unknown Service";
+  
+  // Fallback if ID looks like a formatted string but not found in current taxonomy
+  if (typeof serviceId === 'string' && serviceId.startsWith('serv_')) {
+    return serviceId.replace('serv_', '').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  }
+
+  return "Specialized Expert Service";
 }
 
-export function getServiceNames(serviceIds: string[] | undefined) {
+export function getServiceNames(serviceIds: any[] | undefined) {
   if (!serviceIds || serviceIds.length === 0) return "No specific services selected";
   return serviceIds.map(id => getServiceName(id)).join(", ");
 }
 
 export function getCategoryName(categoryId: string) {
   const cat = SERVICE_TAXONOMY.find(c => c.id === categoryId);
-  return cat ? cat.name : "Unknown Category";
+  return cat ? cat.name : "Operations & Compliance";
 }

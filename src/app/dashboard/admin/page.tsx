@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -84,7 +85,7 @@ export default function AdminDashboard() {
       console.error("Admin Sync Error:", error);
       toast({
         title: "Sync Failed",
-        description: "Could not sync marketplace data. Check Firestore connectivity.",
+        description: "Could not sync marketplace data.",
         variant: "destructive",
       });
     } finally {
@@ -256,17 +257,6 @@ export default function AdminDashboard() {
                       <div className="bg-primary h-full transition-all duration-1000" style={{ width: `${(parseFloat(avgQualityScore) * 10)}%` }} />
                     </div>
                   </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-4 bg-white rounded-xl border">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase">Conversion Engine</p>
-                      <p className="text-sm font-bold mt-1">High Intent</p>
-                    </div>
-                    <div className="p-4 bg-white rounded-xl border">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase">Pipeline Velocity</p>
-                      <p className="text-sm font-bold mt-1">1.2 Leads/Day</p>
-                    </div>
-                  </div>
                 </CardContent>
               </Card>
 
@@ -302,9 +292,6 @@ export default function AdminDashboard() {
                       </div>
                     ))}
                   </div>
-                  <Button variant="ghost" size="sm" className="w-full mt-6 text-[10px] font-bold uppercase tracking-widest">
-                    View Full Intelligence Report
-                  </Button>
                 </CardContent>
               </Card>
             </div>
@@ -532,8 +519,7 @@ export default function AdminDashboard() {
               <div>
                 <h4 className="font-bold text-red-900">Lead Ownership Resolution</h4>
                 <p className="text-sm text-red-800 opacity-80 mt-1">
-                  The uniqueness engine has flagged these entries. Multiple leads exist for the same company and city. 
-                  Maintenance of lead exclusivity is critical for marketplace trust.
+                  Exclusivity conflicts identified by the unique key generator.
                 </p>
               </div>
             </div>
@@ -587,17 +573,6 @@ export default function AdminDashboard() {
 
         {activeView === 'risk' && (
           <div className="space-y-6">
-            <div className="bg-orange-50 border border-orange-200 p-6 rounded-2xl flex gap-4">
-              <ShieldEllipsis className="h-6 w-6 text-orange-600 shrink-0" />
-              <div>
-                <h4 className="font-bold text-orange-900">Expert Network Integrity Monitor</h4>
-                <p className="text-sm text-orange-800 opacity-80 mt-1">
-                  Profiles flagged for suspicious activity, poor engagement, or complaint spikes. 
-                  High-risk profiles should be audited or suspended to preserve platform quality.
-                </p>
-              </div>
-            </div>
-
             <Card className="border-none shadow-sm">
               <CardContent className="pt-6">
                 {riskyConsultants.length === 0 ? (
@@ -682,7 +657,7 @@ export default function AdminDashboard() {
                 <div className="space-y-2">
                   <p className="text-[10px] font-black uppercase text-muted-foreground mb-1">Services Offered</p>
                   <div className="flex flex-wrap gap-1.5">
-                    {viewingConsultant.servicesOffered?.map((sId: string, i: number) => (
+                    {viewingConsultant.servicesOffered?.map((sId: any, i: number) => (
                       <Badge key={i} variant="secondary" className="text-[9px] bg-primary/5 text-primary border-none">
                         {getServiceName(sId)}
                       </Badge>
@@ -775,24 +750,9 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              <div className="p-4 bg-muted/20 rounded-xl border border-dashed">
-                <p className="text-[10px] font-black uppercase text-muted-foreground mb-4">Referred Leads Pipeline</p>
-                <div className="space-y-2">
-                  {requests.filter(r => r.leadOwnerId === viewingPartner.userId).slice(0, 5).map((r, i) => (
-                    <div key={i} className="flex items-center justify-between text-xs p-2 bg-white rounded-lg border shadow-sm">
-                      <span className="font-bold">{r.companyName}</span>
-                      <Badge variant="outline" className="text-[9px] uppercase">{r.status}</Badge>
-                    </div>
-                  ))}
-                  {requests.filter(r => r.leadOwnerId === viewingPartner.userId).length === 0 && (
-                    <p className="text-[10px] text-center text-muted-foreground italic py-4">No leads referred yet.</p>
-                  )}
-                </div>
-              </div>
-
               <div className="pt-6 border-t flex justify-between items-center text-[10px] text-muted-foreground font-medium uppercase tracking-widest">
                 <span>Account Status: {viewingPartner.status}</span>
-                <span>Partner ID: {viewingPartner.userId.slice(0, 8)}</span>
+                <span>Partner ID: {viewingPartner.userId?.slice(0, 8)}</span>
               </div>
             </div>
           )}
