@@ -36,7 +36,9 @@ import {
   Send,
   ExternalLink,
   TrendingDown,
-  ArrowUpRight
+  ArrowUpRight,
+  HeartHandshake,
+  Coins
 } from "lucide-react";
 import {
   Table,
@@ -292,8 +294,97 @@ export default function Home() {
         </div>
       </section>
 
-      {/* SECTION 2 — THE THREE MODELS DIFFERENTIATION */}
+      {/* SECTION 2 — ROLE-BASED VALUE PROPS (RESTORED) */}
       <section className="py-24 bg-white border-b">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-extrabold tracking-tight mb-4">How We Serve the Ecosystem</h2>
+            <p className="text-muted-foreground text-lg">A balanced marketplace built for quality and trust.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <Card className="border-2 hover:border-primary/50 transition-colors rounded-3xl overflow-hidden shadow-sm">
+              <CardHeader className="bg-primary/5 pb-8">
+                <div className="bg-primary w-12 h-12 rounded-xl flex items-center justify-center mb-4">
+                  <Building2 className="h-6 w-6 text-white" />
+                </div>
+                <CardTitle>For SMEs</CardTitle>
+                <CardDescription>Get operational excellence without the search effort.</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-8 space-y-4">
+                <ul className="space-y-3">
+                  <li className="flex items-center gap-3 text-sm font-medium">
+                    <CheckCircle2 className="h-4 w-4 text-primary" /> AI-matched local experts
+                  </li>
+                  <li className="flex items-center gap-3 text-sm font-medium">
+                    <CheckCircle2 className="h-4 w-4 text-primary" /> Zero cold calls or spam
+                  </li>
+                  <li className="flex items-center gap-3 text-sm font-medium">
+                    <CheckCircle2 className="h-4 w-4 text-primary" /> High-quality requirement building
+                  </li>
+                </ul>
+                <Button className="w-full mt-4" variant="outline" asChild>
+                  <Link href="/signup?role=sme">Post as SME</Link>
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 hover:border-primary/50 transition-colors rounded-3xl overflow-hidden shadow-sm">
+              <CardHeader className="bg-secondary/20 pb-8">
+                <div className="bg-primary w-12 h-12 rounded-xl flex items-center justify-center mb-4">
+                  <Users className="h-6 w-6 text-white" />
+                </div>
+                <CardTitle>For Consultants</CardTitle>
+                <CardDescription>Focus on delivery, let AI handle the sales pipeline.</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-8 space-y-4">
+                <ul className="space-y-3">
+                  <li className="flex items-center gap-3 text-sm font-medium">
+                    <CheckCircle2 className="h-4 w-4 text-primary" /> Exclusive high-intent leads
+                  </li>
+                  <li className="flex items-center gap-3 text-sm font-medium">
+                    <CheckCircle2 className="h-4 w-4 text-primary" /> AI-generated proposal drafts
+                  </li>
+                  <li className="flex items-center gap-3 text-sm font-medium">
+                    <CheckCircle2 className="h-4 w-4 text-primary" /> Protected pricing power
+                  </li>
+                </ul>
+                <Button className="w-full mt-4" variant="outline" asChild>
+                  <Link href="/signup?role=consultant">Join as Expert</Link>
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 hover:border-primary/50 transition-colors rounded-3xl overflow-hidden shadow-sm">
+              <CardHeader className="bg-amber-50 pb-8">
+                <div className="bg-amber-500 w-12 h-12 rounded-xl flex items-center justify-center mb-4">
+                  <HeartHandshake className="h-6 w-6 text-white" />
+                </div>
+                <CardTitle>For Partners</CardTitle>
+                <CardDescription>Monetize your network with zero execution risk.</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-8 space-y-4">
+                <ul className="space-y-3">
+                  <li className="flex items-center gap-3 text-sm font-medium">
+                    <CheckCircle2 className="h-4 w-4 text-amber-500" /> Lead ownership protection
+                  </li>
+                  <li className="flex items-center gap-3 text-sm font-medium">
+                    <CheckCircle2 className="h-4 w-4 text-amber-500" /> Execution handled by experts
+                  </li>
+                  <li className="flex items-center gap-3 text-sm font-medium">
+                    <CheckCircle2 className="h-4 w-4 text-amber-500" /> Transparent referral tracking
+                  </li>
+                </ul>
+                <Button className="w-full mt-4" variant="outline" asChild>
+                  <Link href="/signup?role=partner">Join as Partner</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 3 — THE THREE MODELS DIFFERENTIATION */}
+      <section className="py-24 bg-slate-50 border-b">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16 max-w-4xl mx-auto">
             <h2 className="text-4xl lg:text-5xl font-extrabold tracking-tighter mb-6">A Smarter Model for Higher Stakes</h2>
@@ -373,7 +464,32 @@ export default function Home() {
         </div>
       </section>
 
-      {/* SECTION 3 — COMPARISON TABLE */}
+      {/* SECTION 4 — ZERO FRICTION PRICING (RESTORED) */}
+      <section className="py-24 bg-white border-b">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto bg-slate-900 rounded-[3rem] p-12 lg:p-20 text-white relative overflow-hidden">
+            <div className="absolute top-0 right-0 opacity-10"><Coins className="h-64 w-64 -mr-20 -mt-20" /></div>
+            <div className="relative z-10 flex flex-col items-center text-center">
+              <Badge className="mb-6 bg-primary text-white border-none px-6 py-1">Value-Driven Model</Badge>
+              <h2 className="text-4xl lg:text-6xl font-black mb-8">Zero Friction. <br /><span className="text-primary">Maximum Value.</span></h2>
+              <p className="text-slate-400 text-xl mb-12 max-w-2xl">We believe SMEs shouldn't pay to find help. Our platform is free for SMEs to post requirements and get matched.</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl">
+                <div className="bg-white/5 border border-white/10 p-6 rounded-2xl text-left">
+                  <p className="text-primary font-bold text-lg mb-2">Free for SMEs</p>
+                  <p className="text-sm text-slate-400">Post unlimited requirements, get matched with verified experts, and choose the best fit without any platform fee.</p>
+                </div>
+                <div className="bg-white/5 border border-white/10 p-6 rounded-2xl text-left">
+                  <p className="text-primary font-bold text-lg mb-2">Rewarding for Experts</p>
+                  <p className="text-sm text-slate-400">Low-cost, high-intent lead access. No percentage cuts on your work. Pay only for the opportunities you value.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 5 — COMPARISON TABLE */}
       <section className="py-24 bg-slate-50 border-b">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
