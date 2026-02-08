@@ -1,10 +1,9 @@
-
 "use client";
 
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { doc, getDoc, collection, query, where, getDocs, setDoc, updateDoc, serverTimestamp, limit, orderBy } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, getDocs, setDoc, updateDoc, serverTimestamp, limit } from "firebase/firestore";
 import { db } from "@/lib/firebase-config";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,19 +22,16 @@ import {
   Mail, 
   UserCheck, 
   Tag, 
-  Briefcase, 
-  ShieldCheck,
-  Search,
-  Zap,
-  Coins,
-  TrendingUp,
-  Loader2,
-  Sparkles,
-  Star,
-  ChevronRight
+  Zap, 
+  Coins, 
+  TrendingUp, 
+  Loader2, 
+  Sparkles, 
+  Star 
 } from "lucide-react";
 import Link from "next/link";
 import { getServiceNames, getCategoryName } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 import { getPricingInsights } from "@/ai/flows/pricing-intelligence-flow";
 import type { PricingOutput } from "@/ai/flows/pricing-intelligence-flow";
 
@@ -67,7 +63,6 @@ export default function RequestDetailPage() {
         }
         
         const data = docSnap.data();
-        // Permission check
         const isOwner = data.userId === profile.id || data.leadOwnerId === profile.id;
         const isAdmin = profile.role === 'admin';
         
@@ -95,8 +90,7 @@ export default function RequestDetailPage() {
         }));
         setMatches(matchData);
 
-        // 2. Fetch Potential AI Matches (Expert Identification)
-        // We look for experts who handle these services
+        // 2. Fetch Potential AI Matches
         if (data.serviceIds && data.serviceIds.length > 0) {
           const potentialQuery = query(
             collection(db, "consultantProfiles"),
@@ -104,9 +98,8 @@ export default function RequestDetailPage() {
             limit(5)
           );
           const potentialSnap = await getDocs(potentialQuery);
-          const potential = potentialSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+          let potential = potentialSnap.docs.map(d => ({ id: d.id, ...d.data() }));
           
-          // If no specific service matches, fallback to category matches or general state experts
           if (potential.length === 0) {
              const fallbackQuery = query(
                collection(db, "consultantProfiles"),
@@ -114,13 +107,12 @@ export default function RequestDetailPage() {
                limit(5)
              );
              const fallbackSnap = await getDocs(fallbackQuery);
-             setPotentialMatches(fallbackSnap.docs.map(d => ({ id: d.id, ...d.data() })));
-          } else {
-             setPotentialMatches(potential);
+             potential = fallbackSnap.docs.map(d => ({ id: d.id, ...d.data() }));
           }
+          setPotentialMatches(potential);
         }
 
-        // 3. Admin: fetch all consultants for manual override
+        // 3. Admin override list
         if (isAdmin) {
           const consSnap = await getDocs(collection(db, "consultantProfiles"));
           setConsultants(consSnap.docs.map(d => ({ id: d.id, ...d.data() })));
@@ -164,9 +156,8 @@ export default function RequestDetailPage() {
         setRequest({ ...request, status: 'assigned' });
       }
 
-      toast({ title: "Expert Assigned", description: "Lead has been manually matched with the selected expert." });
+      toast({ title: "Expert Assigned", description: "Lead matched with the selected expert." });
       
-      // Refresh matches
       const q = query(collection(db, "leadAssignments"), where("requestId", "==", id));
       const matchSnap = await getDocs(q);
       const matchData = await Promise.all(matchSnap.docs.map(async (mDoc) => {
@@ -195,7 +186,6 @@ export default function RequestDetailPage() {
     );
   }
 
-  // The 'active' match is the one that has been accepted, or the first one sent
   const activeAssignment = matches.find(m => m.status === 'accepted' || m.status === 'completed') || matches.find(m => m.status === 'sent');
   const isAdmin = profile?.role === 'admin';
 
@@ -210,7 +200,6 @@ export default function RequestDetailPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
-          {/* Main Requirement Card */}
           <Card className="border-2 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between border-b pb-6">
               <div>
@@ -274,7 +263,6 @@ export default function RequestDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Expert Identification / Match Preview Card */}
           <Card className="shadow-md border-2 overflow-hidden">
             <CardHeader className="bg-slate-50 border-b">
               <CardTitle className="text-lg flex items-center gap-2">
@@ -284,12 +272,11 @@ export default function RequestDetailPage() {
               <CardDescription>
                 {activeAssignment?.status === 'accepted' 
                   ? "Direct support from a verified specialist is now active." 
-                  : "We are currently ranking the top 5 experts for your specific requirement."}
+                  : "Scanning top experts for your requirement."}
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
               {activeAssignment?.status === 'accepted' ? (
-                /* VIEW: Expert Assigned & Accepted */
                 <div className="space-y-6">
                   <div className="flex items-center justify-between p-6 border-2 border-primary/20 rounded-2xl bg-primary/5">
                     <div className="flex items-center gap-4">
@@ -303,7 +290,6 @@ export default function RequestDetailPage() {
                     </div>
                     <Badge className="bg-green-600 px-4 py-1 text-[10px] font-black">VERIFIED PARTNER</Badge>
                   </div>
-                  
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Button className="h-14 gap-2 text-base font-bold shadow-md" variant="default" asChild>
                       <a href={`tel:${activeAssignment.consultant?.phone}`}>
@@ -318,16 +304,10 @@ export default function RequestDetailPage() {
                   </div>
                 </div>
               ) : (
-                /* VIEW: Matching in Progress / Discovery */
                 <div className="space-y-6">
                   {potentialMatches.length > 0 ? (
                     <div className="space-y-4">
-                      <div className="flex items-center justify-between mb-2">
-                         <p className="text-[10px] font-black text-primary uppercase tracking-widest">Matched Candidates ({potentialMatches.length})</p>
-                         <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground">
-                            <Loader2 className="h-3 w-3 animate-spin text-primary" /> RANKING IN PROGRESS
-                         </div>
-                      </div>
+                      <p className="text-[10px] font-black text-primary uppercase tracking-widest">Matched Candidates ({potentialMatches.length})</p>
                       {potentialMatches.map((expert) => (
                         <div key={expert.id} className="flex items-center justify-between p-4 bg-white rounded-xl border-2 hover:border-primary/30 transition-all shadow-sm group">
                           <div className="flex items-center gap-4">
@@ -359,18 +339,9 @@ export default function RequestDetailPage() {
                       ))}
                     </div>
                   ) : (
-                    /* Initial Discovery State */
                     <div className="text-center py-16">
-                      <div className="relative w-20 h-20 mx-auto mb-6">
-                        <div className="absolute inset-0 rounded-full border-4 border-primary/20 animate-ping"></div>
-                        <div className="relative z-10 bg-primary/10 w-20 h-20 rounded-full flex items-center justify-center shadow-inner">
-                          <Zap className="h-10 w-10 text-primary animate-pulse" />
-                        </div>
-                      </div>
+                      <Zap className="h-10 w-10 text-primary mx-auto animate-pulse mb-4" />
                       <h5 className="font-black text-lg mb-2 text-primary">Scanning Specialized Expert Network...</h5>
-                      <p className="text-sm text-muted-foreground max-w-xs mx-auto italic font-medium">
-                        Applying "Uber-style" dynamic ranking based on location and historical response speed.
-                      </p>
                     </div>
                   )}
                 </div>
@@ -378,7 +349,6 @@ export default function RequestDetailPage() {
             </CardContent>
           </Card>
           
-          {/* Admin Override Section */}
           {isAdmin && (
             <Card className="border-2 border-dashed border-primary/40 bg-primary/5">
               <CardHeader>
@@ -404,9 +374,7 @@ export default function RequestDetailPage() {
           )}
         </div>
 
-        {/* Sidebar Insights */}
         <div className="space-y-6">
-          {/* AI PRICING INTELLIGENCE CARD */}
           <Card className="border-amber-200 bg-amber-50/50 shadow-sm overflow-hidden">
             <CardHeader className="bg-amber-100/50 pb-4">
               <CardTitle className="text-base flex items-center gap-2 text-amber-900 font-black">
@@ -444,12 +412,11 @@ export default function RequestDetailPage() {
                   </div>
                 </div>
               ) : (
-                <p className="text-xs text-amber-700">Pricing intelligence is gathering data...</p>
+                <p className="text-xs text-amber-700">Pricing intelligence gathering data...</p>
               )}
             </CardContent>
           </Card>
 
-          {/* Process Tracker */}
           <Card className="bg-primary text-primary-foreground shadow-xl border-none rounded-2xl overflow-hidden">
             <div className="p-6 bg-white/10 border-b border-white/10">
                <CardTitle className="text-lg flex items-center gap-2 font-black">
@@ -459,9 +426,9 @@ export default function RequestDetailPage() {
             </div>
             <CardContent className="p-8 space-y-8">
               {[
-                { step: 1, title: "Intent Logged", sub: "Requirement building complete.", active: true },
+                { step: 1, title: "Intent Logged", sub: "Requirement complete.", active: true },
                 { step: 2, title: "Expert Matching", sub: "Ranking specialized providers.", active: !!activeAssignment },
-                { step: 3, title: "Project Delivery", sub: "Expert execution & compliance.", active: request.status === 'completed' }
+                { step: 3, title: "Project Delivery", sub: "Expert execution.", active: request.status === 'completed' }
               ].map((item, i) => (
                 <div key={i} className="flex gap-5">
                   <div className="flex flex-col items-center">
