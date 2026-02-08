@@ -25,7 +25,8 @@ import {
   Share2,
   AlertTriangle,
   CheckCircle2,
-  Trash2
+  Trash2,
+  BookOpen
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -61,6 +62,7 @@ export default function AdminDashboard() {
       setAssignments(assignSnap.docs.map(d => ({ id: d.id, ...d.data() })));
       setPartners(partnerSnap.docs.map(d => ({ id: d.id, ...d.data() })));
     } catch (error: any) {
+      console.error("Firestore Sync Error:", error);
       toast({
         title: "Sync Failed",
         description: error.message,
@@ -150,9 +152,9 @@ export default function AdminDashboard() {
   return (
     <div className="flex min-h-screen bg-background">
       <aside className="w-72 border-r bg-white p-6 hidden lg:flex flex-col">
-        <div className="flex items-center gap-2 mb-10 px-2">
-          <Zap className="h-6 w-6 text-primary fill-primary" />
-          <h1 className="text-xl font-bold tracking-tight">OpsAdmin</h1>
+        <div className="flex items-center gap-2 mb-10 px-2 text-primary">
+          <Zap className="h-6 w-6 fill-primary" />
+          <h1 className="text-xl font-bold tracking-tight text-foreground">OpsAdmin</h1>
         </div>
 
         <div className="space-y-1 flex-1">
@@ -163,14 +165,21 @@ export default function AdminDashboard() {
           <NavItem view="conflicts" icon={AlertTriangle} label="Ownership Conflicts" count={conflicts.length} />
         </div>
 
-        <div className="pt-6 border-t">
-          <Button asChild variant="default" className="w-full justify-start gap-2 mb-6">
+        <div className="pt-6 border-t space-y-2">
+          <Button asChild variant="default" className="w-full justify-start gap-2 shadow-sm">
             <Link href="/admin/create-lead">
               <PlusCircle className="h-4 w-4" /> New Lead
             </Link>
           </Button>
-          <p className="text-xs font-bold px-2">{profile?.name}</p>
-          <p className="text-[10px] text-muted-foreground px-2">Marketplace Operator</p>
+          <Button asChild variant="outline" className="w-full justify-start gap-2 border-primary/20 text-primary hover:bg-primary/5">
+            <Link href="/growth-playbook">
+              <BookOpen className="h-4 w-4" /> Growth Playbook
+            </Link>
+          </Button>
+          <div className="mt-6 px-2">
+            <p className="text-xs font-bold">{profile?.name}</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium">Marketplace Operator</p>
+          </div>
         </div>
       </aside>
 
