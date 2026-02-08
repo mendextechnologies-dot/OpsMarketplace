@@ -31,7 +31,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { getServiceNames, getCategoryName } from "@/lib/constants";
-import { generateProposal, ProposalOutput } from "@/ai/flows/proposal-flow";
+import { generateProposal } from "@/ai/flows/proposal-flow";
+import type { ProposalOutput } from "@/ai/flows/proposal-flow";
 
 export default function LeadDetailPage() {
   const { id } = useParams();
@@ -145,7 +146,7 @@ export default function LeadDetailPage() {
     try {
       const draft = await generateProposal({
         description: request.description,
-        services: request.serviceIds.map((sId: string) => getCategoryName(request.categoryId)),
+        services: request.serviceIds.map((sId: string) => getServiceName(sId)),
         consultantName: profile.name,
         consultantBio: "Verified Operational Expert on OpsMarketplace"
       });
@@ -157,6 +158,15 @@ export default function LeadDetailPage() {
       setGeneratingDraft(false);
     }
   };
+
+  function getServiceName(serviceId: string) {
+    const { SERVICE_TAXONOMY } = require("@/lib/constants");
+    for (const cat of SERVICE_TAXONOMY) {
+      const service = cat.services.find((s: any) => s.id === serviceId);
+      if (service) return service.name;
+    }
+    return "Unknown Service";
+  }
 
   const copyProposal = () => {
     if (aiDraft?.draftMessage) {

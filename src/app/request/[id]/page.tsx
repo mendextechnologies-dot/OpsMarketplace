@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -32,7 +33,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { getServiceNames, getCategoryName } from "@/lib/constants";
-import { getPricingInsights, PricingOutput } from "@/ai/flows/pricing-intelligence-flow";
+import { getPricingInsights } from "@/ai/flows/pricing-intelligence-flow";
+import type { PricingOutput } from "@/ai/flows/pricing-intelligence-flow";
 
 export default function RequestDetailPage() {
   const { id } = useParams();

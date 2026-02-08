@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -50,7 +51,8 @@ import {
 } from "@/components/ui/table";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
-import { marketplaceGuide, GuideOutput } from "@/ai/flows/marketplace-guide-flow";
+import { marketplaceGuide } from "@/ai/flows/marketplace-guide-flow";
+import type { GuideOutput } from "@/ai/flows/marketplace-guide-flow";
 
 export default function Home() {
   const { user } = useAuth();
