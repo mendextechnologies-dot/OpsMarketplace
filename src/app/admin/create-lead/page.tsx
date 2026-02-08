@@ -122,6 +122,7 @@ export default function AdminCreateLeadPage() {
 
       router.push("/dashboard/admin");
     } catch (error: any) {
+      console.error("Firestore Index Error:", error);
       toast({
         title: "Failed",
         description: error.message,

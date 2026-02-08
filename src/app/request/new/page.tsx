@@ -132,6 +132,7 @@ export default function NewRequestPage() {
       setStep(user ? 4 : 5); 
       toast({ title: "Request Submitted", description: isDuplicate ? "Lead logged (potential duplicate flagged)" : "Finding matching experts..." });
     } catch (error: any) {
+      console.error("Firestore Index Error:", error);
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
       setLoading(false);

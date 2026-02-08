@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { db } from "@/lib/firebase-config";
 import { collection, addDoc, serverTimestamp, query, where, getDocs } from "firebase/firestore";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +15,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Building2, MapPin, ListChecks, Zap, AlertTriangle } from "lucide-react";
-import Link from "next/link";
 import { SERVICE_TAXONOMY } from "@/lib/constants";
 import { cn, generateCompanyKey } from "@/lib/utils";
 
@@ -137,6 +137,7 @@ export default function PartnerCreateLeadPage() {
 
       router.push("/dashboard/partner");
     } catch (error: any) {
+      console.error("Firestore Index Error:", error);
       toast({ title: "Failed", description: error.message, variant: "destructive" });
     } finally {
       setLoading(false);
