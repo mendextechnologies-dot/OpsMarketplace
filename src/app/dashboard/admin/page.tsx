@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
-import { collection, query, getDocs, orderBy, doc, updateDoc, serverTimestamp, deleteDoc } from "firebase/firestore";
+import { collection, query, getDocs, orderBy, doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase-config";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -12,24 +12,23 @@ import { useToast } from "@/hooks/use-toast";
 import { 
   FileText, 
   Users, 
-  ShieldAlert, 
   LayoutDashboard,
   Loader2,
   Activity,
   PlusCircle,
   Zap,
   MapPin,
-  Briefcase,
-  Share2,
   AlertTriangle,
   CheckCircle2,
   Trash2,
   BookOpen,
-  ArrowRight,
   Sparkles,
   TrendingUp,
   ShieldEllipsis,
-  Coins
+  Coins,
+  ShieldCheck,
+  Building2,
+  UserCheck
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -44,7 +43,6 @@ export default function AdminDashboard() {
   const [activeView, setActiveView] = useState<AdminView>('dashboard');
   const [requests, setRequests] = useState<any[]>([]);
   const [consultants, setConsultants] = useState<any[]>([]);
-  const [partners, setPartners] = useState<any[]>([]);
   const [assignments, setAssignments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -52,22 +50,20 @@ export default function AdminDashboard() {
     if (!profile || profile.role !== 'admin') return;
     setLoading(true);
     try {
-      const [reqSnap, consSnap, assignSnap, partnerSnap] = await Promise.all([
+      const [reqSnap, consSnap, assignSnap] = await Promise.all([
         getDocs(query(collection(db, "serviceRequests"), orderBy("createdAt", "desc"))),
         getDocs(collection(db, "consultantProfiles")),
-        getDocs(query(collection(db, "leadAssignments"), orderBy("createdAt", "desc"))),
-        getDocs(collection(db, "partnerProfiles"))
+        getDocs(query(collection(db, "leadAssignments"), orderBy("createdAt", "desc")))
       ]);
 
       setRequests(reqSnap.docs.map(d => ({ id: d.id, ...d.data() })));
       setConsultants(consSnap.docs.map(d => ({ id: d.id, ...d.data() })));
       setAssignments(assignSnap.docs.map(d => ({ id: d.id, ...d.data() })));
-      setPartners(partnerSnap.docs.map(d => ({ id: d.id, ...d.data() })));
     } catch (error: any) {
-      console.error("Firestore Sync Error:", error);
+      console.error("Admin Sync Error:", error);
       toast({
         title: "Sync Failed",
-        description: error.message,
+        description: "Could not sync marketplace data. Check Firestore connectivity.",
         variant: "destructive",
       });
     } finally {
@@ -116,7 +112,7 @@ export default function AdminDashboard() {
       className={cn(
         "w-full flex items-center justify-between px-4 py-3 text-sm font-medium transition-colors rounded-lg",
         activeView === view 
-          ? "bg-primary text-primary-foreground" 
+          ? "bg-primary text-primary-foreground shadow-md" 
           : "text-muted-foreground hover:bg-muted"
       )}
     >
@@ -142,7 +138,7 @@ export default function AdminDashboard() {
 
         <div className="space-y-1 flex-1">
           <NavItem view="dashboard" icon={LayoutDashboard} label="Dashboard" />
-          <NavItem view="requests" icon={FileText} label="Requests" count={requests.filter(r => r.status === 'new').length} />
+          <NavItem view="requests" icon={FileText} label="Requests" count={requests.length} />
           <NavItem view="consultants" icon={Users} label="Consultants" />
           <NavItem view="pipeline" icon={Activity} label="Lead Pipeline" />
           <NavItem view="conflicts" icon={AlertTriangle} label="Ownership Conflicts" count={conflicts.length} />
@@ -257,6 +253,198 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {activeView === 'requests' && (
+          <Card className="border-none shadow-sm">
+            <CardHeader>
+              <CardTitle>Marketplace Service Requests</CardTitle>
+              <CardDescription>All active and historic requirements from SMEs and Partners.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Client & Service</TableHead>
+                    <TableHead>Location</TableHead>
+                    <TableHead>AI Quality</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {requests.map((req) => (
+                    <TableRow key={req.id}>
+                      <TableCell>
+                        <div className="space-y-1">
+                          <p className="font-bold text-sm">{req.companyName}</p>
+                          <p className="text-[10px] text-primary">{getCategoryName(req.categoryId)}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-xs">{req.city}, {req.state}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-[10px] bg-primary/5">
+                          Score: {req.ai_metadata?.quality_score || 'N/A'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className="capitalize text-[10px]">{req.status}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="sm" asChild>
+                          <Link href={`/request/${req.id}`}>Details</Link>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+
+        {activeView === 'consultants' && (
+          <Card className="border-none shadow-sm">
+            <CardHeader>
+              <CardTitle>Verified Consultant Network</CardTitle>
+              <CardDescription>Managing the supply side of the marketplace.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Expert / Firm</TableHead>
+                    <TableHead>Location</TableHead>
+                    <TableHead>Specializations</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {consultants.map((cons) => (
+                    <TableRow key={cons.id}>
+                      <TableCell>
+                        <div className="space-y-1">
+                          <p className="font-bold text-sm">{cons.name}</p>
+                          <p className="text-[10px] text-muted-foreground">{cons.companyName}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-xs">{cons.city}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {(cons.servicesOffered || []).slice(0, 2).map((sId: string, idx: number) => (
+                            <Badge key={idx} variant="outline" className="text-[8px] truncate max-w-[100px]">
+                              {sId}
+                            </Badge>
+                          ))}
+                          {(cons.servicesOffered || []).length > 2 && <span className="text-[8px] text-muted-foreground">+{(cons.servicesOffered || []).length - 2}</span>}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="outline" size="sm" className="h-8 text-xs">Profile</Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+
+        {activeView === 'pipeline' && (
+          <Card className="border-none shadow-sm">
+            <CardHeader>
+              <CardTitle>Active Lead Pipeline</CardTitle>
+              <CardDescription>Tracking real-time assignments and acceptance rates.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Request ID</TableHead>
+                    <TableHead>Expert</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Timeline</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {assignments.map((asgn) => (
+                    <TableRow key={asgn.id}>
+                      <TableCell className="font-mono text-[10px]">{asgn.requestId.slice(0, 8)}...</TableCell>
+                      <TableCell className="text-xs font-medium">{asgn.consultantId}</TableCell>
+                      <TableCell>
+                        <Badge variant={asgn.status === 'accepted' ? 'default' : 'outline'} className="capitalize text-[10px]">
+                          {asgn.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-[10px] text-muted-foreground">
+                        {asgn.createdAt?.seconds ? new Date(asgn.createdAt.seconds * 1000).toLocaleDateString() : 'Pending'}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+
+        {activeView === 'conflicts' && (
+          <div className="space-y-6">
+            <div className="bg-red-50 border border-red-200 p-6 rounded-xl flex gap-4">
+              <AlertTriangle className="h-6 w-6 text-red-600 shrink-0" />
+              <div>
+                <h4 className="font-bold text-red-900">Lead Ownership Conflicts</h4>
+                <p className="text-sm text-red-800 opacity-80 mt-1">
+                  The following leads have been flagged by the uniqueness engine. A company with the same name and city already exists in the registry. 
+                  Please resolve these to maintain lead ownership integrity.
+                </p>
+              </div>
+            </div>
+
+            <Card className="border-none shadow-sm">
+              <CardContent className="pt-6">
+                {conflicts.length === 0 ? (
+                  <div className="py-20 text-center">
+                    <CheckCircle2 className="h-10 w-10 text-green-500 mx-auto mb-4 opacity-20" />
+                    <p className="text-muted-foreground">No ownership conflicts currently detected.</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Conflicted Lead</TableHead>
+                        <TableHead>Market Context</TableHead>
+                        <TableHead className="text-right">Resolution</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {conflicts.map((req) => (
+                        <TableRow key={req.id}>
+                          <TableCell>
+                            <div className="space-y-1">
+                              <p className="font-bold text-sm">{req.companyName}</p>
+                              <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">KEY: {req.companyUniqueKey}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <p className="text-[10px]"><strong>Source:</strong> {req.leadSource || 'Manual'}</p>
+                            <p className="text-[10px]"><strong>City:</strong> {req.city}</p>
+                          </TableCell>
+                          <TableCell className="text-right space-x-2">
+                            <Button size="sm" variant="outline" className="h-8 text-xs border-green-200 text-green-700" onClick={() => handleResolveConflict(req.id, 'keep')}>
+                              Keep Both
+                            </Button>
+                            <Button size="sm" variant="outline" className="h-8 text-xs border-red-200 text-red-700" onClick={() => handleResolveConflict(req.id, 'reject')}>
+                              Reject Duplicate
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {activeView === 'risk' && (
           <div className="space-y-6">
             <div className="bg-orange-50 border border-orange-200 p-6 rounded-xl flex gap-4">
@@ -320,7 +508,6 @@ export default function AdminDashboard() {
             </Card>
           </div>
         )}
-        {/* ... (Other views like requests, consultants, conflicts, etc. remain the same as previous implementations) */}
       </main>
     </div>
   );
