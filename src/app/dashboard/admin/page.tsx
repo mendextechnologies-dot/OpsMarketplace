@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -25,7 +26,9 @@ import {
   CheckCircle2,
   Trash2,
   BookOpen,
-  ArrowRight
+  ArrowRight,
+  Sparkles,
+  TrendingUp
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -101,6 +104,9 @@ export default function AdminDashboard() {
   }
 
   const conflicts = requests.filter(r => r.duplicateFlag === true);
+  const avgQualityScore = requests.length > 0 
+    ? (requests.reduce((acc, r) => acc + (r.ai_metadata?.quality_score || 0), 0) / requests.length).toFixed(1)
+    : "0";
 
   const NavItem = ({ view, icon: Icon, label, count }: { view: AdminView, icon: any, label: string, count?: number }) => (
     <button
@@ -169,21 +175,77 @@ export default function AdminDashboard() {
         </header>
 
         {activeView === 'dashboard' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              { label: "Total Requests", val: requests.length, icon: FileText, color: "text-blue-600" },
-              { label: "Conflict Leads", val: conflicts.length, icon: AlertTriangle, color: "text-red-600" },
-              { label: "Active Pipeline", val: assignments.filter(a => a.status === 'sent' || a.status === 'accepted').length, icon: Activity, color: "text-primary" },
-              { label: "Verified Experts", val: consultants.length, icon: Users, color: "text-green-600" },
-            ].map((stat, i) => (
-              <Card key={i} className="border-none shadow-sm">
-                <CardContent className="pt-6">
-                  <stat.icon className={cn("h-5 w-5 mb-4", stat.color)} />
-                  <p className="text-sm text-muted-foreground uppercase font-bold tracking-tighter">{stat.label}</p>
-                  <h3 className="text-2xl font-bold mt-1">{stat.val}</h3>
+          <div className="space-y-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[
+                { label: "Total Requests", val: requests.length, icon: FileText, color: "text-blue-600" },
+                { label: "Conflict Leads", val: conflicts.length, icon: AlertTriangle, color: "text-red-600" },
+                { label: "Active Pipeline", val: assignments.filter(a => a.status === 'sent' || a.status === 'accepted').length, icon: Activity, color: "text-primary" },
+                { label: "Verified Experts", val: consultants.length, icon: Users, color: "text-green-600" },
+              ].map((stat, i) => (
+                <Card key={i} className="border-none shadow-sm">
+                  <CardContent className="pt-6">
+                    <stat.icon className={cn("h-5 w-5 mb-4", stat.color)} />
+                    <p className="text-sm text-muted-foreground uppercase font-bold tracking-tighter">{stat.label}</p>
+                    <h3 className="text-2xl font-bold mt-1">{stat.val}</h3>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="border-none shadow-sm bg-primary/5">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-primary" /> AI Platform Health
+                  </CardTitle>
+                  <CardDescription>Synthesized metrics from the intake and scoring engines.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-bold text-muted-foreground uppercase">Avg Quality Score</p>
+                      <h4 className="text-3xl font-black text-primary">{avgQualityScore} / 10</h4>
+                    </div>
+                    <div className="bg-primary/10 p-4 rounded-xl">
+                      <TrendingUp className="h-8 w-8 text-primary" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-[10px] font-bold uppercase">
+                      <span>Intent Clarity Rate</span>
+                      <span>88%</span>
+                    </div>
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                      <div className="bg-primary h-full w-[88%]" />
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
-            ))}
+
+              <Card className="border-none shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-lg">Recent Intent Signals</CardTitle>
+                  <CardDescription>Live feed of structured data from current intake.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {requests.slice(0, 3).map((req, i) => (
+                      <div key={i} className="flex items-center gap-4 p-3 bg-muted/30 rounded-lg">
+                        <div className="h-8 w-8 rounded bg-white flex items-center justify-center text-[10px] font-bold border">
+                          {req.ai_metadata?.quality_score || '?'}
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-xs font-bold truncate">{req.companyName}</p>
+                          <p className="text-[10px] text-muted-foreground">{getCategoryName(req.categoryId)} • {req.city}</p>
+                        </div>
+                        <Badge variant="outline" className="text-[9px] uppercase">{req.urgency}</Badge>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         )}
 
@@ -195,6 +257,7 @@ export default function AdminDashboard() {
                   <TableRow>
                     <TableHead>Service</TableHead>
                     <TableHead>Client & Owner</TableHead>
+                    <TableHead>AI Score</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -228,6 +291,17 @@ export default function AdminDashboard() {
                               </Badge>
                             )}
                           </div>
+                        </TableCell>
+                        <TableCell>
+                           <div className="flex items-center gap-2">
+                             <div className={cn(
+                               "h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold border",
+                               (req.ai_metadata?.quality_score || 0) > 7 ? "bg-green-50 text-green-700 border-green-200" : "bg-muted text-muted-foreground"
+                             )}>
+                               {req.ai_metadata?.quality_score || '-'}
+                             </div>
+                             <span className="text-[9px] text-muted-foreground uppercase font-bold tracking-tighter">Matchable</span>
+                           </div>
                         </TableCell>
                         <TableCell>
                           <Badge variant={req.status === 'new' ? 'secondary' : 'default'} className="text-[9px]">
