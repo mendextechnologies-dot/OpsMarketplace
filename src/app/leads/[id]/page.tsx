@@ -11,9 +11,27 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Building2, MapPin, Users, Phone, Mail, FileText, CheckCircle2, AlertCircle, Tag, Zap, Share2 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { 
+  ArrowLeft, 
+  Building2, 
+  MapPin, 
+  Users, 
+  Phone, 
+  Mail, 
+  FileText, 
+  CheckCircle2, 
+  AlertCircle, 
+  Tag, 
+  Zap, 
+  Share2, 
+  Sparkles,
+  Loader2,
+  Copy
+} from "lucide-react";
 import Link from "next/link";
 import { getServiceNames, getCategoryName } from "@/lib/constants";
+import { generateProposal, ProposalOutput } from "@/ai/flows/proposal-flow";
 
 export default function LeadDetailPage() {
   const { id } = useParams();
@@ -25,6 +43,10 @@ export default function LeadDetailPage() {
   const [contactProfile, setContactProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  
+  // AI Proposal State
+  const [aiDraft, setAiDraft] = useState<ProposalOutput | null>(null);
+  const [generatingDraft, setGeneratingDraft] = useState(false);
 
   useEffect(() => {
     const fetchLeadData = async () => {
@@ -55,7 +77,7 @@ export default function LeadDetailPage() {
 
         if (asgnData.status === 'accepted' || asgnData.status === 'completed') {
           if (reqData.consultantCommunicatesWith === 'partner') {
-            const partnerSnap = await getDoc(doc(db, "partnerProfiles", reqData.leadPartnerId));
+            const partnerSnap = await getDoc(doc(db, "partnerProfiles", reqData.leadOwnerId));
             if (partnerSnap.exists()) {
               setContactProfile({ ...partnerSnap.data(), isPartner: true });
             }
@@ -67,6 +89,7 @@ export default function LeadDetailPage() {
           }
         }
       } catch (error: any) {
+        console.error("Fetch Lead Error:", error);
         toast({ title: "Fetch failed", description: error.message, variant: "destructive" });
       } finally {
         setLoading(false);
@@ -99,7 +122,7 @@ export default function LeadDetailPage() {
       setAssignment({ ...assignment, status: 'accepted' });
       
       if (request.consultantCommunicatesWith === 'partner') {
-        const partnerSnap = await getDoc(doc(db, "partnerProfiles", request.leadPartnerId));
+        const partnerSnap = await getDoc(doc(db, "partnerProfiles", request.leadOwnerId));
         if (partnerSnap.exists()) {
           setContactProfile({ ...partnerSnap.data(), isPartner: true });
         }
@@ -116,24 +139,29 @@ export default function LeadDetailPage() {
     }
   };
 
-  const handleComplete = async () => {
-    if (!assignment) return;
-    setUpdating(true);
+  const handleGenerateAiProposal = async () => {
+    if (!request || !profile) return;
+    setGeneratingDraft(true);
     try {
-      await updateDoc(doc(db, "leadAssignments", assignment.id), {
-        status: "completed",
-        completedAt: serverTimestamp(),
+      const draft = await generateProposal({
+        description: request.description,
+        services: request.serviceIds.map((sId: string) => getCategoryName(request.categoryId)),
+        consultantName: profile.name,
+        consultantBio: "Verified Operational Expert on OpsMarketplace"
       });
-      
-      toast({
-        title: "Job Marked Completed",
-        description: "Great work! We've updated the record.",
-      });
-      setAssignment({ ...assignment, status: 'completed' });
+      setAiDraft(draft);
+      toast({ title: "AI Draft Ready", description: "Use this template to start your conversation." });
     } catch (error: any) {
-      toast({ title: "Action failed", description: error.message, variant: "destructive" });
+      toast({ title: "AI Assistant Busy", description: "Could not generate draft right now.", variant: "destructive" });
     } finally {
-      setUpdating(false);
+      setGeneratingDraft(false);
+    }
+  };
+
+  const copyProposal = () => {
+    if (aiDraft?.draftMessage) {
+      navigator.clipboard.writeText(aiDraft.draftMessage);
+      toast({ title: "Copied", description: "Proposal draft copied to clipboard." });
     }
   };
 
@@ -207,25 +235,72 @@ export default function LeadDetailPage() {
                 <h4 className="font-bold text-lg flex items-center gap-2 underline decoration-primary/20 underline-offset-4">
                   <FileText className="h-5 w-5" /> Detailed Requirement
                 </h4>
-                <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap text-lg">
+                <div className="text-muted-foreground leading-relaxed whitespace-pre-wrap text-lg p-4 bg-muted/10 rounded-xl border">
                   {request.description}
-                </p>
+                </div>
               </div>
+
+              {/* AI Conversation Assistant Card */}
+              {isAccepted && (
+                <Card className="border-primary/20 bg-primary/5 shadow-sm">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-primary" />
+                      AI Conversation Assistant
+                    </CardTitle>
+                    <CardDescription className="text-[11px]">
+                      Generate a professional introductory proposal based on the client's intent.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {!aiDraft ? (
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full gap-2 border-primary/20 hover:bg-primary/10 text-primary"
+                        onClick={handleGenerateAiProposal}
+                        disabled={generatingDraft}
+                      >
+                        {generatingDraft ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                        Generate Custom Proposal
+                      </Button>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="relative">
+                          <Textarea 
+                            readOnly 
+                            className="text-xs bg-white min-h-[150px] pr-10"
+                            value={aiDraft.draftMessage}
+                          />
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="absolute top-2 right-2 h-6 w-6" 
+                            onClick={copyProposal}
+                          >
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {aiDraft.keyValueProps.map((prop, i) => (
+                            <Badge key={i} variant="secondary" className="text-[9px] bg-primary/10 text-primary border-none">
+                              {prop}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
             </CardContent>
             {!isAccepted && (
               <CardFooter className="bg-muted/50 border-t p-6 flex gap-4">
-                <Button className="flex-1 h-12 text-lg font-bold" onClick={handleAccept} disabled={updating}>
+                <Button className="flex-1 h-12 text-lg font-bold shadow-lg" onClick={handleAccept} disabled={updating}>
                   {updating ? "Accepting..." : "Accept Lead & Unlock Contact"}
                 </Button>
                 <Button variant="outline" className="flex-1 h-12" asChild>
                   <Link href="/dashboard/consultant">Ignore</Link>
-                </Button>
-              </CardFooter>
-            )}
-            {assignment.status === 'accepted' && (
-              <CardFooter className="bg-green-50/50 border-t p-6">
-                <Button className="w-full h-12 bg-green-600 hover:bg-green-700 font-bold" onClick={handleComplete} disabled={updating}>
-                  {updating ? "Processing..." : "Mark as Project Completed"}
                 </Button>
               </CardFooter>
             )}
