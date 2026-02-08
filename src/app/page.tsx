@@ -23,7 +23,9 @@ import {
   Handshake,
   TrendingUp,
   ShieldEllipsis,
-  BookOpen
+  BookOpen,
+  Gavel,
+  Target
 } from "lucide-react";
 import {
   Table,
@@ -41,34 +43,34 @@ export default function Home() {
 
   const comparisonData = [
     {
-      feature: "Structured service workflow",
-      linkedIn: { icon: "cross" },
-      indiaMart: { icon: "warning", text: "Basic inquiry" },
-      opsMarketplace: { icon: "check", text: "Guided workflow" },
+      feature: "Workflow Structure",
+      directory: { icon: "cross", text: "Open Search" },
+      openBid: { icon: "warning", text: "Random Bidding" },
+      opsMarketplace: { icon: "check", text: "Guided / Curated" },
     },
     {
-      feature: "Exclusive lead ownership",
-      linkedIn: { icon: "cross" },
-      indiaMart: { icon: "cross", text: "Shared leads" },
-      opsMarketplace: { icon: "check", text: "Protected ownership" },
+      feature: "Lead Ownership",
+      directory: { icon: "cross", text: "Shared Leads" },
+      openBid: { icon: "cross", text: "Public View" },
+      opsMarketplace: { icon: "check", text: "Exclusive / Protected" },
     },
     {
-      feature: "State-wise verified experts",
-      linkedIn: { icon: "warning" },
-      indiaMart: { icon: "warning" },
-      opsMarketplace: { icon: "check" },
+      feature: "Expert Verification",
+      directory: { icon: "warning", text: "Self-Listed" },
+      openBid: { icon: "warning", text: "Profile-Based" },
+      opsMarketplace: { icon: "check", text: "State-Wise Verified" },
     },
     {
-      feature: "Partner coordination workflow",
-      linkedIn: { icon: "cross" },
-      indiaMart: { icon: "cross" },
-      opsMarketplace: { icon: "check" },
+      feature: "Pricing Model",
+      directory: { icon: "warning", text: "Price Wars" },
+      openBid: { icon: "cross", text: "Race-to-Bottom" },
+      opsMarketplace: { icon: "check", text: "Value-Driven" },
     },
     {
-      feature: "Work progress tracking",
-      linkedIn: { icon: "cross" },
-      indiaMart: { icon: "cross" },
-      opsMarketplace: { icon: "check" },
+      feature: "Quality Control",
+      directory: { icon: "cross", text: "High Spam" },
+      openBid: { icon: "warning", text: "High Noise" },
+      opsMarketplace: { icon: "check", text: "High Intent" },
     },
   ];
 
@@ -122,27 +124,83 @@ export default function Home() {
         </div>
       </section>
 
-      {/* SECTION 2 — PROBLEM STATEMENT */}
-      <section className="py-20 bg-white border-b">
+      {/* SECTION 2 — THE THREE MODELS DIFFERENTIATION */}
+      <section className="py-24 bg-white border-b">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-16">
-              <h2 className="text-3xl font-bold tracking-tight mb-4">Finding and Delivering Services is Broken</h2>
-              <p className="text-muted-foreground">Traditional platforms focus on "contacts," not "delivery." We fixed that.</p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {[
-                { title: "SMEs Struggle", desc: "Finding trusted experts for specific state-wise compliance is a manual nightmare.", icon: Search },
-                { title: "Experts Struggle", desc: "Consultants waste 40% of their time chasing random, low-intent leads.", icon: Briefcase },
-                { title: "Partners Struggle", desc: "Channel partners lack a structured way to monetize their vast business network.", icon: Handshake },
-              ].map((item, i) => (
-                <div key={i} className="flex flex-col gap-4 p-6 rounded-2xl bg-muted/30 border border-transparent hover:border-primary/10 transition-all">
-                  <div className="bg-primary/10 w-12 h-12 rounded-xl flex items-center justify-center"><item.icon className="h-6 w-6 text-primary" /></div>
-                  <h3 className="font-bold text-lg">{item.title}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
+          <div className="text-center mb-16 max-w-3xl mx-auto">
+            <h2 className="text-3xl lg:text-4xl font-extrabold tracking-tight mb-4">Not Just Another Lead Directory</h2>
+            <p className="text-muted-foreground text-lg">We moved beyond "open bidding" and "directory lists" to build a managed ecosystem that actually works for high-stakes operational services.</p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* MODEL 1: DIRECTORY */}
+            <Card className="border-2 opacity-60 grayscale hover:grayscale-0 transition-all">
+              <CardHeader>
+                <div className="bg-muted w-12 h-12 rounded-xl flex items-center justify-center mb-4">
+                  <Search className="h-6 w-6 text-muted-foreground" />
                 </div>
-              ))}
-            </div>
+                <CardTitle>1. Directory Model</CardTitle>
+                <CardDescription>e.g. IndiaMART, JustDial</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-3 bg-muted/30 rounded-lg">
+                  <p className="text-xs font-bold uppercase mb-2 tracking-widest opacity-60">The Workflow</p>
+                  <p className="text-sm">Search list → Contact many → Filter spam</p>
+                </div>
+                <ul className="text-xs space-y-2 text-muted-foreground">
+                  <li className="flex gap-2"><XCircle className="h-3.5 w-3.5 text-red-500 shrink-0" /> Low quality leads & high spam</li>
+                  <li className="flex gap-2"><XCircle className="h-3.5 w-3.5 text-red-500 shrink-0" /> Extreme price competition</li>
+                  <li className="flex gap-2"><XCircle className="h-3.5 w-3.5 text-red-500 shrink-0" /> No platform-led verification</li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            {/* MODEL 2: OPEN BID */}
+            <Card className="border-2 opacity-60 grayscale hover:grayscale-0 transition-all">
+              <CardHeader>
+                <div className="bg-muted w-12 h-12 rounded-xl flex items-center justify-center mb-4">
+                  <Gavel className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <CardTitle>2. Open Bid Model</CardTitle>
+                <CardDescription>e.g. Upwork, Freelancer</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-3 bg-muted/30 rounded-lg">
+                  <p className="text-xs font-bold uppercase mb-2 tracking-widest opacity-60">The Workflow</p>
+                  <p className="text-sm">Post need → Receive 50 bids → Hire cheapest</p>
+                </div>
+                <ul className="text-xs space-y-2 text-muted-foreground">
+                  <li className="flex gap-2"><XCircle className="h-3.5 w-3.5 text-red-500 shrink-0" /> Race-to-the-bottom pricing</li>
+                  <li className="flex gap-2"><XCircle className="h-3.5 w-3.5 text-red-500 shrink-0" /> High noise and profile fatigue</li>
+                  <li className="flex gap-2"><XCircle className="h-3.5 w-3.5 text-red-500 shrink-0" /> Not suitable for premium work</li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            {/* MODEL 3: OPSMARKETPLACE (THE WINNER) */}
+            <Card className="border-primary border-2 shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[10px] font-bold px-3 py-1 rounded-bl-lg">
+                OUR MODEL
+              </div>
+              <CardHeader>
+                <div className="bg-primary/10 w-12 h-12 rounded-xl flex items-center justify-center mb-4">
+                  <ShieldCheck className="h-6 w-6 text-primary" />
+                </div>
+                <CardTitle className="text-primary">3. Managed Model</CardTitle>
+                <CardDescription className="text-primary/70">OpsMarketplace Premium</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-3 bg-primary/5 rounded-lg border border-primary/10">
+                  <p className="text-xs font-bold uppercase mb-2 tracking-widest text-primary">The Workflow</p>
+                  <p className="text-sm font-semibold">Describe need → Smart Match → Guided Delivery</p>
+                </div>
+                <ul className="text-xs space-y-2">
+                  <li className="flex gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" /> High pricing power for experts</li>
+                  <li className="flex gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" /> Verified state-wise experts only</li>
+                  <li className="flex gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" /> Protected lead ownership</li>
+                </ul>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
@@ -309,15 +367,15 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold tracking-tight">Built Differently from Traditional Platforms</h2>
-            <p className="text-muted-foreground mt-2">Designed for SMEs who need work done, not just contacts.</p>
+            <p className="text-muted-foreground mt-2">Designed for quality delivery, not just contact sharing.</p>
           </div>
-          <Card className="max-w-4xl mx-auto border-none shadow-xl overflow-hidden">
+          <Card className="max-w-5xl mx-auto border-none shadow-xl overflow-hidden">
             <Table>
               <TableHeader className="bg-slate-900 text-white">
                 <TableRow className="hover:bg-slate-900 border-none">
-                  <TableHead className="text-white h-14">Feature</TableHead>
-                  <TableHead className="text-white text-center">LinkedIn</TableHead>
-                  <TableHead className="text-white text-center">IndiaMART</TableHead>
+                  <TableHead className="text-white h-14">Core Capabilities</TableHead>
+                  <TableHead className="text-white text-center">Directory Model</TableHead>
+                  <TableHead className="text-white text-center">Open Bid Model</TableHead>
                   <TableHead className="text-white text-center font-bold bg-primary/20">OpsMarketplace</TableHead>
                 </TableRow>
               </TableHeader>
@@ -326,10 +384,10 @@ export default function Home() {
                   <TableRow key={i}>
                     <TableCell className="font-medium py-6 text-sm">{row.feature}</TableCell>
                     <TableCell className="text-center">
-                      {renderCell(row.linkedIn)}
+                      {renderCell(row.directory)}
                     </TableCell>
                     <TableCell className="text-center">
-                      {renderCell(row.indiaMart)}
+                      {renderCell(row.openBid)}
                     </TableCell>
                     <TableCell className="text-center bg-primary/5">
                       {renderCell(row.opsMarketplace, true)}
@@ -378,7 +436,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* SECTION 7 — INSIGHTS placeholder */}
+      {/* SECTION 7 — INSIGHTS */}
       <section className="py-24 bg-white border-b">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
@@ -426,5 +484,3 @@ export default function Home() {
     </div>
   );
 }
-
-    
