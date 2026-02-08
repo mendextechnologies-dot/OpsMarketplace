@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Briefcase, MapPin, Phone, Award, Info, ChevronDown, ChevronUp } from "lucide-react";
 import { SERVICE_TAXONOMY } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 
 export default function ProfileSetupPage() {
   const { user, profile, refreshProfile } = useAuth();
@@ -122,16 +123,28 @@ export default function ProfileSetupPage() {
                     </button>
                     {expandedCats.includes(cat.id) && (
                       <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 bg-white">
-                        {cat.services.map((serv) => (
-                          <div key={serv.id} className="flex items-center space-x-2">
-                            <Checkbox 
-                              id={serv.id} 
-                              checked={formData.servicesOffered.includes(serv.id)}
-                              onCheckedChange={() => handleServiceToggle(serv.id)}
-                            />
-                            <Label htmlFor={serv.id} className="text-xs cursor-pointer leading-tight">{serv.name}</Label>
-                          </div>
-                        ))}
+                        {cat.services.map((serv) => {
+                          const isChecked = formData.servicesOffered.includes(serv.id);
+                          return (
+                            <div 
+                              key={serv.id} 
+                              className={cn(
+                                "flex items-center space-x-2 p-2 rounded hover:bg-muted/30 cursor-pointer transition-colors",
+                                isChecked ? "bg-primary/5" : ""
+                              )}
+                              onClick={() => handleServiceToggle(serv.id)}
+                            >
+                              <div className="pointer-events-none flex items-center space-x-2 w-full">
+                                <Checkbox 
+                                  checked={isChecked}
+                                />
+                                <span className="text-xs leading-tight flex-1">
+                                  {serv.name}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </div>

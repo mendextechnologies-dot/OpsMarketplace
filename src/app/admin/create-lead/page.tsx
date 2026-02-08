@@ -81,7 +81,6 @@ export default function AdminCreateLeadPage() {
     try {
       const companyKey = generateCompanyKey(formData.companyName, formData.city);
       
-      // Duplicate Check for Admin
       const dupQuery = query(
         collection(db, "serviceRequests"),
         where("companyUniqueKey", "==", companyKey),
@@ -209,14 +208,14 @@ export default function AdminCreateLeadPage() {
                           )}
                           onClick={() => toggleService(serv.id)}
                         >
-                          <Checkbox 
-                            id={`admin-${serv.id}`} 
-                            checked={isSelected}
-                            onCheckedChange={() => {}} // Controlled by div onClick
-                          />
-                          <Label htmlFor={`admin-${serv.id}`} className="text-xs font-medium cursor-pointer flex-1">
-                            {serv.name}
-                          </Label>
+                          <div className="pointer-events-none flex items-center space-x-3 w-full">
+                            <Checkbox 
+                              checked={isSelected}
+                            />
+                            <span className="text-xs font-medium flex-1">
+                              {serv.name}
+                            </span>
+                          </div>
                         </div>
                       );
                     })}

@@ -32,7 +32,6 @@ export default function NewRequestPage() {
     urgency: "medium",
     description: "",
     additionalNotes: "",
-    // Guest fields (also used for mapping auth info)
     companyName: "",
     contactName: "",
     contactPhone: "",
@@ -42,7 +41,6 @@ export default function NewRequestPage() {
     employeeCount: "",
   });
 
-  // Pre-fill if authenticated
   useEffect(() => {
     if (profile && profile.role === 'sme' && orgProfile) {
       setFormData(prev => ({
@@ -76,7 +74,6 @@ export default function NewRequestPage() {
       const isGuestRequest = !user;
       const companyKey = generateCompanyKey(formData.companyName, formData.city);
 
-      // Duplicate detection Rule: Check for active conflicts
       const dupQuery = query(
         collection(db, "serviceRequests"),
         where("companyUniqueKey", "==", companyKey),
@@ -113,7 +110,6 @@ export default function NewRequestPage() {
 
       const docRef = await addDoc(collection(db, "serviceRequests"), requestData);
 
-      // Trigger Matching Logic
       const consultantsQuery = query(
         collection(db, "consultantProfiles"),
         where("statesCovered", "array-contains", formData.state)
@@ -134,7 +130,7 @@ export default function NewRequestPage() {
         }
       }
 
-      setStep(user ? 4 : 5); // 4 for auth success, 5 for guest success
+      setStep(user ? 4 : 5); 
       toast({ title: "Request Submitted", description: isDuplicate ? "Lead logged (potential duplicate flagged)" : "Finding matching experts..." });
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -143,7 +139,6 @@ export default function NewRequestPage() {
     }
   };
 
-  // Success screen for Guest
   if (step === 5) {
     return (
       <div className="container mx-auto px-4 py-20 max-w-lg text-center">
@@ -171,7 +166,6 @@ export default function NewRequestPage() {
     );
   }
 
-  // Success screen for Auth
   if (step === 4) {
     return (
       <div className="container mx-auto px-4 py-20 max-w-lg text-center">
@@ -255,16 +249,16 @@ export default function NewRequestPage() {
                   )}
                   onClick={() => toggleService(serv.id)}
                 >
-                  <Checkbox 
-                    id={serv.id}
-                    checked={isSelected}
-                    className="h-5 w-5 pointer-events-none"
-                    onCheckedChange={() => {}} 
-                  />
-                  <div className="flex-1">
-                    <Label htmlFor={serv.id} className="text-base font-semibold cursor-pointer block">
-                      {serv.name}
-                    </Label>
+                  <div className="pointer-events-none flex items-center space-x-4 w-full">
+                    <Checkbox 
+                      checked={isSelected}
+                      className="h-5 w-5"
+                    />
+                    <div className="flex-1">
+                      <span className="text-base font-semibold block">
+                        {serv.name}
+                      </span>
+                    </div>
                   </div>
                 </div>
               );
