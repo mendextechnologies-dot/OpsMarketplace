@@ -9,6 +9,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { 
   FileText, 
   Users, 
@@ -33,11 +40,13 @@ import {
   Handshake,
   BarChart3,
   Search,
-  History
+  History,
+  Briefcase,
+  Globe
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { getServiceNames, getCategoryName } from "@/lib/constants";
+import { getServiceNames, getCategoryName, getServiceName } from "@/lib/constants";
 
 type AdminView = 'dashboard' | 'requests' | 'consultants' | 'partners' | 'pipeline' | 'conflicts' | 'risk';
 
@@ -51,6 +60,7 @@ export default function AdminDashboard() {
   const [partners, setPartners] = useState<any[]>([]);
   const [assignments, setAssignments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewingConsultant, setViewingConsultant] = useState<any>(null);
 
   const fetchData = async () => {
     if (!profile || profile.role !== 'admin') return;
@@ -391,7 +401,7 @@ export default function AdminDashboard() {
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="outline" size="sm" className="h-8 text-xs">Profile</Button>
+                        <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setViewingConsultant(cons)}>Profile</Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -629,6 +639,77 @@ export default function AdminDashboard() {
           </div>
         )}
       </main>
+
+      {/* CONSULTANT PROFILE DIALOG */}
+      <Dialog open={!!viewingConsultant} onOpenChange={() => setViewingConsultant(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader className="border-b pb-4">
+            <div className="flex items-center gap-4">
+              <div className="bg-primary/10 h-16 w-16 rounded-2xl flex items-center justify-center text-primary">
+                <Users className="h-8 w-8" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-bold">{viewingConsultant?.name}</DialogTitle>
+                <DialogDescription className="text-sm">
+                  {viewingConsultant?.companyName} • {viewingConsultant?.city}
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+          
+          {viewingConsultant && (
+            <div className="space-y-6 pt-4">
+              <div className="p-4 bg-muted/30 rounded-xl border">
+                <p className="text-[10px] font-black uppercase text-muted-foreground mb-2 flex items-center gap-1">
+                  <Briefcase className="h-3 w-3" /> Professional Bio
+                </p>
+                <p className="text-sm leading-relaxed text-slate-700 italic">
+                  "{viewingConsultant.description}"
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <p className="text-[10px] font-black uppercase text-muted-foreground mb-1">Services Offered</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {viewingConsultant.servicesOffered?.map((sId: string, i: number) => (
+                      <Badge key={i} variant="secondary" className="text-[9px] bg-primary/5 text-primary border-none">
+                        {getServiceName(sId)}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-[10px] font-black uppercase text-muted-foreground mb-1">State Jurisdictions</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {viewingConsultant.statesCovered?.map((state: string, i: number) => (
+                      <Badge key={i} variant="outline" className="text-[9px] border-slate-200">
+                        <Globe className="h-2 w-2 mr-1" /> {state}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-6 border-t flex items-center justify-between">
+                <div className="flex gap-6">
+                  <div>
+                    <p className="text-[10px] font-black uppercase text-muted-foreground">Experience</p>
+                    <p className="text-sm font-bold">{viewingConsultant.yearsExperience} Years</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase text-muted-foreground">Mobile</p>
+                    <p className="text-sm font-bold">{viewingConsultant.phone}</p>
+                  </div>
+                </div>
+                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 py-1.5 px-3">
+                  <ShieldCheck className="h-3 w-3 mr-1" /> Verified Platform Expert
+                </Badge>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
