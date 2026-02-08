@@ -96,17 +96,25 @@ export const SERVICE_TAXONOMY = [
 
 /**
  * Robustly resolves a service ID or object into its human-readable name.
+ * Handles cases where the database might store the name string directly.
  */
 export function getServiceName(service: any) {
   const serviceId = typeof service === 'string' ? service : service?.id;
   if (!serviceId) return "Unspecified Service";
 
+  // 1. Try to match against internal taxonomy IDs
   for (const cat of SERVICE_TAXONOMY) {
     const found = cat.services.find(s => s.id === serviceId);
     if (found) return found.name;
   }
   
-  // Fallback if ID looks like a formatted string but not found in current taxonomy
+  // 2. If it's a string and doesn't look like an ID (doesn't start with serv_ or cat_), 
+  // it's likely already a human-readable name from manual entry.
+  if (typeof serviceId === 'string' && !serviceId.startsWith('serv_') && !serviceId.startsWith('cat_')) {
+    return serviceId;
+  }
+
+  // 3. Fallback: If it's a formatted ID string, try to prettify it
   if (typeof serviceId === 'string' && serviceId.startsWith('serv_')) {
     return serviceId.replace('serv_', '').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   }
