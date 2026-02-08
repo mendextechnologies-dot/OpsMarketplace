@@ -200,23 +200,21 @@ export default function AdminCreateLeadPage() {
                     {selectedCategory?.services.map((serv) => {
                       const isSelected = formData.serviceIds.includes(serv.id);
                       return (
-                        <div 
+                        <label 
                           key={serv.id} 
                           className={cn(
                             "flex items-center space-x-3 p-2 rounded-lg cursor-pointer transition-colors",
                             isSelected ? "bg-primary/10 text-primary" : "hover:bg-white"
                           )}
-                          onClick={() => toggleService(serv.id)}
                         >
-                          <div className="pointer-events-none flex items-center space-x-3 w-full">
-                            <Checkbox 
-                              checked={isSelected}
-                            />
-                            <span className="text-xs font-medium flex-1">
-                              {serv.name}
-                            </span>
-                          </div>
-                        </div>
+                          <Checkbox 
+                            checked={isSelected}
+                            onCheckedChange={() => toggleService(serv.id)}
+                          />
+                          <span className="text-xs font-medium flex-1">
+                            {serv.name}
+                          </span>
+                        </label>
                       );
                     })}
                   </div>

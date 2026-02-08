@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { db } from "@/lib/firebase-config";
 import { collection, addDoc, serverTimestamp, query, where, getDocs } from "firebase/firestore";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -215,19 +216,21 @@ export default function PartnerCreateLeadPage() {
                     {selectedCategory?.services.map((serv) => {
                       const isSelected = formData.serviceIds.includes(serv.id);
                       return (
-                        <div 
+                        <label 
                           key={serv.id} 
                           className={cn(
                             "flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-all",
                             isSelected ? "bg-primary/10 text-primary border-primary/20 border" : "hover:bg-white"
                           )}
-                          onClick={() => toggleService(serv.id)}
                         >
-                          <Checkbox id={serv.id} checked={isSelected} onCheckedChange={() => {}} />
-                          <Label htmlFor={serv.id} className="text-xs font-semibold cursor-pointer flex-1">
+                          <Checkbox 
+                            checked={isSelected} 
+                            onCheckedChange={() => toggleService(serv.id)} 
+                          />
+                          <span className="text-xs font-semibold cursor-pointer flex-1">
                             {serv.name}
-                          </Label>
-                        </div>
+                          </span>
+                        </label>
                       );
                     })}
                   </div>

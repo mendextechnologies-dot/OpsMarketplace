@@ -126,19 +126,19 @@ export default function PartnerOnboardingPage() {
                 {SERVICE_TAXONOMY.map((cat) => {
                   const isChecked = formData.servicesFocus.includes(cat.id);
                   return (
-                    <div 
+                    <label 
                       key={cat.id} 
                       className={cn(
                         "flex items-center space-x-2 p-3 rounded-lg border cursor-pointer transition-colors",
                         isChecked ? "bg-primary/5 border-primary" : "hover:bg-muted/50"
                       )}
-                      onClick={() => toggleServiceFocus(cat.id)}
                     >
-                      <div className="pointer-events-none flex items-center space-x-2 w-full">
-                        <Checkbox checked={isChecked} />
-                        <span className="text-xs font-medium">{cat.name}</span>
-                      </div>
-                    </div>
+                      <Checkbox 
+                        checked={isChecked} 
+                        onCheckedChange={() => toggleServiceFocus(cat.id)}
+                      />
+                      <span className="text-xs font-medium">{cat.name}</span>
+                    </label>
                   );
                 })}
               </div>

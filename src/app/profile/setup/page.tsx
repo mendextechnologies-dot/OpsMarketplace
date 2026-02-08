@@ -126,21 +126,21 @@ export default function ProfileSetupPage() {
                         {cat.services.map((serv) => {
                           const isChecked = formData.servicesOffered.includes(serv.id);
                           return (
-                            <div 
+                            <label 
                               key={serv.id} 
                               className={cn(
                                 "flex items-center space-x-2 p-2 rounded cursor-pointer transition-colors",
                                 isChecked ? "bg-primary/5 border border-primary/20" : "hover:bg-muted/30"
                               )}
-                              onClick={() => handleServiceToggle(serv.id)}
                             >
-                              <div className="pointer-events-none flex items-center space-x-2 w-full">
-                                <Checkbox checked={isChecked} />
-                                <span className="text-xs leading-tight flex-1">
-                                  {serv.name}
-                                </span>
-                              </div>
-                            </div>
+                              <Checkbox 
+                                checked={isChecked}
+                                onCheckedChange={() => handleServiceToggle(serv.id)}
+                              />
+                              <span className="text-xs leading-tight flex-1">
+                                {serv.name}
+                              </span>
+                            </label>
                           );
                         })}
                       </div>

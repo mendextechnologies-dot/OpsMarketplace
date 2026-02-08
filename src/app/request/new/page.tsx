@@ -241,19 +241,20 @@ export default function NewRequestPage() {
             {selectedCategory?.services.map((serv) => {
               const isSelected = formData.serviceIds.includes(serv.id);
               return (
-                <div 
+                <label 
                   key={serv.id} 
                   className={cn(
                     "flex items-center space-x-4 p-4 border-2 rounded-xl cursor-pointer transition-all",
                     isSelected ? "border-primary bg-primary/5 shadow-sm" : "hover:border-primary/40 bg-white"
                   )}
-                  onClick={() => handleToggleService(serv.id)}
                 >
-                  <div className="pointer-events-none flex items-center space-x-4 w-full">
-                    <Checkbox checked={isSelected} className="h-5 w-5" />
-                    <span className="text-base font-semibold">{serv.name}</span>
-                  </div>
-                </div>
+                  <Checkbox 
+                    checked={isSelected} 
+                    onCheckedChange={() => handleToggleService(serv.id)}
+                    className="h-5 w-5" 
+                  />
+                  <span className="text-base font-semibold">{serv.name}</span>
+                </label>
               );
             })}
           </div>
