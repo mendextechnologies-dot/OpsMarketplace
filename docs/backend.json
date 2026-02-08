@@ -8,7 +8,7 @@
       "properties": {
         "name": { "type": "string" },
         "email": { "type": "string", "format": "email" },
-        "role": { "type": "string", "enum": ["sme", "consultant", "admin"] },
+        "role": { "type": "string", "enum": ["sme", "consultant", "admin", "partner"] },
         "onboarded": { "type": "boolean" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
@@ -47,6 +47,20 @@
         "createdAt": { "type": "string", "format": "date-time" }
       }
     },
+    "PartnerProfile": {
+      "title": "Partner Profile",
+      "description": "Professional details for channel partners",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "partnerName": { "type": "string" },
+        "phone": { "type": "string" },
+        "city": { "type": "string" },
+        "servicesFocus": { "type": "array", "items": { "type": "string" } },
+        "status": { "type": "string", "enum": ["active", "inactive"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
     "ServiceCategory": {
       "title": "Service Category",
       "description": "Broad category of services (e.g., Payroll)",
@@ -77,6 +91,9 @@
       "properties": {
         "userId": { "type": "string", "description": "Nullable for guest requests" },
         "isGuestRequest": { "type": "boolean" },
+        "leadOwnerType": { "type": "string", "enum": ["sme", "admin", "partner"] },
+        "leadPartnerId": { "type": "string" },
+        "consultantCommunicatesWith": { "type": "string", "enum": ["sme", "partner"] },
         "categoryId": { "type": "string" },
         "serviceIds": { "type": "array", "items": { "type": "string" }, "description": "Array of requested service IDs" },
         "companyName": { "type": "string" },
@@ -123,6 +140,10 @@
     "/consultantProfiles/{userId}": {
       "schema": "ConsultantProfile",
       "description": "Consultant professional profile"
+    },
+    "/partnerProfiles/{userId}": {
+      "schema": "PartnerProfile",
+      "description": "Partner professional details"
     },
     "/serviceCategories/{categoryId}": {
       "schema": "ServiceCategory",

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, Suspense } from "react";
@@ -22,7 +23,7 @@ function SignupForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<"sme" | "consultant" | "admin">(initialRole as any);
+  const [role, setRole] = useState<"sme" | "consultant" | "admin" | "partner">(initialRole as any);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
@@ -31,7 +32,6 @@ function SignupForm() {
     e.preventDefault();
     setLoading(true);
     try {
-      // 1. Create the user in Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
@@ -39,25 +39,27 @@ function SignupForm() {
         name,
         email,
         role,
+        onboarded: false,
         createdAt: serverTimestamp(),
       };
 
-      // 2. Create the user profile in Firestore
       const userDocRef = doc(db, "users", user.uid);
 
       setDoc(userDocRef, profileData)
         .then(() => {
           toast({ 
             title: "Account created!", 
-            description: `Welcome to OpsMarketplace as an ${role.toUpperCase()}.` 
+            description: `Welcome to OpsMarketplace as a ${role.toUpperCase()}.` 
           });
           
           if (role === 'consultant') {
             router.push("/profile/setup");
           } else if (role === 'admin') {
             router.push("/dashboard/admin");
+          } else if (role === 'partner') {
+            router.push("/onboarding/partner");
           } else {
-            router.push("/dashboard/sme");
+            router.push("/onboarding/sme");
           }
         })
         .catch(async (error) => {
@@ -131,8 +133,12 @@ function SignupForm() {
                 <Label htmlFor="role-consultant">Consultant (Provider)</Label>
               </div>
               <div className="flex items-center space-x-2">
+                <RadioGroupItem value="partner" id="role-partner" />
+                <Label htmlFor="role-partner">Channel Partner</Label>
+              </div>
+              <div className="flex items-center space-x-2">
                 <RadioGroupItem value="admin" id="role-admin" />
-                <Label htmlFor="role-admin">Platform Admin (Super Admin)</Label>
+                <Label htmlFor="role-admin">Platform Admin</Label>
               </div>
             </RadioGroup>
           </div>

@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Building2, MapPin, Users, Phone, Mail, FileText, CheckCircle2, AlertCircle, Tag } from "lucide-react";
+import { ArrowLeft, Building2, MapPin, Users, Phone, Mail, FileText, CheckCircle2, AlertCircle, Tag, Zap, Share2 } from "lucide-react";
 import Link from "next/link";
 import { getServiceNames, getCategoryName } from "@/lib/constants";
 
@@ -22,7 +22,7 @@ export default function LeadDetailPage() {
   const { toast } = useToast();
   const [request, setRequest] = useState<any>(null);
   const [assignment, setAssignment] = useState<any>(null);
-  const [smeProfile, setSmeProfile] = useState<any>(null);
+  const [contactProfile, setContactProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
 
@@ -54,9 +54,16 @@ export default function LeadDetailPage() {
         setAssignment(asgnData);
 
         if (asgnData.status === 'accepted' || asgnData.status === 'completed') {
-          const smeSnap = await getDoc(doc(db, "organisationProfiles", reqData.userId));
-          if (smeSnap.exists()) {
-            setSmeProfile(smeSnap.data());
+          if (reqData.consultantCommunicatesWith === 'partner') {
+            const partnerSnap = await getDoc(doc(db, "partnerProfiles", reqData.leadPartnerId));
+            if (partnerSnap.exists()) {
+              setContactProfile({ ...partnerSnap.data(), isPartner: true });
+            }
+          } else {
+            const smeSnap = await getDoc(doc(db, "organisationProfiles", reqData.userId));
+            if (smeSnap.exists()) {
+              setContactProfile({ ...smeSnap.data(), isPartner: false });
+            }
           }
         }
       } catch (error: any) {
@@ -86,13 +93,21 @@ export default function LeadDetailPage() {
 
       toast({
         title: "Lead Accepted",
-        description: "You now have access to the SME's contact details. Good luck!",
+        description: "You now have access to the primary contact details.",
       });
       
       setAssignment({ ...assignment, status: 'accepted' });
-      const smeSnap = await getDoc(doc(db, "organisationProfiles", request.userId));
-      if (smeSnap.exists()) {
-        setSmeProfile(smeSnap.data());
+      
+      if (request.consultantCommunicatesWith === 'partner') {
+        const partnerSnap = await getDoc(doc(db, "partnerProfiles", request.leadPartnerId));
+        if (partnerSnap.exists()) {
+          setContactProfile({ ...partnerSnap.data(), isPartner: true });
+        }
+      } else {
+        const smeSnap = await getDoc(doc(db, "organisationProfiles", request.userId));
+        if (smeSnap.exists()) {
+          setContactProfile({ ...smeSnap.data(), isPartner: false });
+        }
       }
     } catch (error: any) {
       toast({ title: "Action failed", description: error.message, variant: "destructive" });
@@ -176,13 +191,6 @@ export default function LeadDetailPage() {
                       <span className="font-semibold">{request.city}, {request.state}</span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 text-sm">
-                    <Users className="h-4 w-4 text-primary" />
-                    <div>
-                      <p className="text-[10px] uppercase font-bold text-muted-foreground">Company Size</p>
-                      <span className="font-semibold">{request.employeeCount} Employees</span>
-                    </div>
-                  </div>
                 </div>
                 <div className="space-y-4">
                   <div className="flex items-center gap-3 text-sm">
@@ -203,13 +211,6 @@ export default function LeadDetailPage() {
                   {request.description}
                 </p>
               </div>
-
-              {request.additionalNotes && (
-                <div className="p-4 bg-primary/5 border border-primary/10 rounded-lg">
-                  <p className="text-xs font-bold text-primary uppercase mb-1">Additional Notes</p>
-                  <p className="text-sm italic">"{request.additionalNotes}"</p>
-                </div>
-              )}
             </CardContent>
             {!isAccepted && (
               <CardFooter className="bg-muted/50 border-t p-6 flex gap-4">
@@ -235,16 +236,24 @@ export default function LeadDetailPage() {
           <Card className={isAccepted ? "border-green-200 shadow-md" : "opacity-50"}>
             <CardHeader className="bg-muted/30">
               <CardTitle className="text-xl flex items-center gap-2">
-                <Phone className="h-5 w-5 text-primary" /> SME Contact Info
+                {request.consultantCommunicatesWith === 'partner' ? <Share2 className="h-5 w-5 text-primary" /> : <Phone className="h-5 w-5 text-primary" />}
+                Primary Contact
               </CardTitle>
               {!isAccepted && <CardDescription>Accept lead to unlock details</CardDescription>}
+              {isAccepted && request.consultantCommunicatesWith === 'partner' && (
+                <Badge variant="secondary" className="mt-2 text-[10px] bg-amber-50 text-amber-700 border-amber-200">
+                  Channel Partner Lead
+                </Badge>
+              )}
             </CardHeader>
             <CardContent className="space-y-6 pt-6">
-              {isAccepted && smeProfile ? (
+              {isAccepted && contactProfile ? (
                 <div className="space-y-5">
                   <div className="bg-primary/5 p-4 rounded-lg border border-primary/10">
-                    <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Contact Person</p>
-                    <p className="font-extrabold text-lg">{smeProfile.contactPerson}</p>
+                    <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">
+                      {contactProfile.isPartner ? 'Partner Name' : 'SME Contact Person'}
+                    </p>
+                    <p className="font-extrabold text-lg">{contactProfile.isPartner ? contactProfile.partnerName : contactProfile.contactPerson}</p>
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="bg-secondary p-3 rounded-full">
@@ -252,18 +261,14 @@ export default function LeadDetailPage() {
                     </div>
                     <div>
                       <p className="text-[10px] uppercase font-bold text-muted-foreground">Mobile</p>
-                      <a href={`tel:${smeProfile.phone}`} className="font-bold text-lg hover:underline">{smeProfile.phone}</a>
+                      <a href={`tel:${contactProfile.phone}`} className="font-bold text-lg hover:underline">{contactProfile.phone}</a>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="bg-secondary p-3 rounded-full">
-                      <Mail className="h-5 w-5 text-primary" />
+                  {contactProfile.isPartner && (
+                    <div className="p-3 bg-amber-50/50 border border-amber-100 rounded-md text-[10px] text-amber-800 italic">
+                      Note: This is a channel partner lead. Please coordinate exclusively with the partner representative.
                     </div>
-                    <div>
-                      <p className="text-[10px] uppercase font-bold text-muted-foreground">Email</p>
-                      <span className="font-bold text-lg">{request.contactEmail || 'Contact SME via Phone'}</span>
-                    </div>
-                  </div>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-4 py-4 text-center">

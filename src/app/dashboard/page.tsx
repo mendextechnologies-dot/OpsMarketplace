@@ -16,15 +16,23 @@ export default function DashboardPage() {
         router.push("/login");
       } else if (profile) {
         if (profile.role === "sme") {
-          // Check if onboarding is needed
           if (!profile.onboarded) {
             router.push("/onboarding/sme");
           } else {
             router.push("/dashboard/sme");
           }
         } else if (profile.role === "consultant") {
-          // For consultants, we have /profile/setup logic usually
-          router.push("/dashboard/consultant");
+          if (!profile.onboarded) {
+            router.push("/profile/setup");
+          } else {
+            router.push("/dashboard/consultant");
+          }
+        } else if (profile.role === "partner") {
+          if (!profile.onboarded) {
+            router.push("/onboarding/partner");
+          } else {
+            router.push("/dashboard/partner");
+          }
         } else if (profile.role === "admin") {
           router.push("/dashboard/admin");
         }

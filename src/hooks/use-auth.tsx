@@ -17,11 +17,19 @@ interface OrganisationProfile {
   phone: string;
 }
 
+interface PartnerProfile {
+  partnerName: string;
+  phone: string;
+  city: string;
+  servicesFocus: string[];
+  status: "active" | "inactive";
+}
+
 interface UserProfile {
   id: string;
   name: string;
   email: string;
-  role: "sme" | "consultant" | "admin";
+  role: "sme" | "consultant" | "admin" | "partner";
   onboarded?: boolean;
   createdAt: any;
 }
@@ -30,6 +38,7 @@ interface AuthContextType {
   user: User | null;
   profile: UserProfile | null;
   orgProfile: OrganisationProfile | null;
+  partnerProfile: PartnerProfile | null;
   loading: boolean;
   logout: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -39,6 +48,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   profile: null,
   orgProfile: null,
+  partnerProfile: null,
   loading: true,
   logout: async () => {},
   refreshProfile: async () => {},
@@ -48,6 +58,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [orgProfile, setOrgProfile] = useState<OrganisationProfile | null>(null);
+  const [partnerProfile, setPartnerProfile] = useState<PartnerProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -64,6 +75,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (orgSnap.exists()) {
           setOrgProfile(orgSnap.data() as OrganisationProfile);
         }
+      } else if (p.role === 'partner') {
+        const partnerRef = doc(db, "partnerProfiles", uid);
+        const partnerSnap = await getDoc(partnerRef);
+        if (partnerSnap.exists()) {
+          setPartnerProfile(partnerSnap.data() as PartnerProfile);
+        }
       }
     }
   };
@@ -76,6 +93,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       } else {
         setProfile(null);
         setOrgProfile(null);
+        setPartnerProfile(null);
       }
       setLoading(false);
     });
@@ -95,7 +113,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, orgProfile, loading, logout, refreshProfile }}>
+    <AuthContext.Provider value={{ user, profile, orgProfile, partnerProfile, loading, logout, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

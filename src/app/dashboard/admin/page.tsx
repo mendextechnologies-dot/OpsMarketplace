@@ -21,7 +21,8 @@ import {
   PlusCircle,
   Zap,
   MapPin,
-  Briefcase
+  Briefcase,
+  Share2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -36,6 +37,7 @@ export default function AdminDashboard() {
   const [activeView, setActiveView] = useState<AdminView>('dashboard');
   const [requests, setRequests] = useState<any[]>([]);
   const [consultants, setConsultants] = useState<any[]>([]);
+  const [partners, setPartners] = useState<any[]>([]);
   const [assignments, setAssignments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [assigningTo, setAssigningTo] = useState<string | null>(null);
@@ -44,15 +46,17 @@ export default function AdminDashboard() {
     if (!profile || profile.role !== 'admin') return;
     setLoading(true);
     try {
-      const [reqSnap, consSnap, assignSnap] = await Promise.all([
+      const [reqSnap, consSnap, assignSnap, partnerSnap] = await Promise.all([
         getDocs(query(collection(db, "serviceRequests"), orderBy("createdAt", "desc"))),
         getDocs(collection(db, "consultantProfiles")),
-        getDocs(query(collection(db, "leadAssignments"), orderBy("createdAt", "desc")))
+        getDocs(query(collection(db, "leadAssignments"), orderBy("createdAt", "desc"))),
+        getDocs(collection(db, "partnerProfiles"))
       ]);
 
       setRequests(reqSnap.docs.map(d => ({ id: d.id, ...d.data() })));
       setConsultants(consSnap.docs.map(d => ({ id: d.id, ...d.data() })));
       setAssignments(assignSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setPartners(partnerSnap.docs.map(d => ({ id: d.id, ...d.data() })));
     } catch (error: any) {
       toast({
         title: "Sync Failed",
@@ -176,55 +180,72 @@ export default function AdminDashboard() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Service</TableHead>
-                    <TableHead>Company</TableHead>
+                    <TableHead>Client & Owner</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {requests.map((req) => (
-                    <TableRow key={req.id}>
-                      <TableCell>
-                        <p className="font-bold">{getCategoryName(req.categoryId)}</p>
-                        <p className="text-[10px] text-muted-foreground italic line-clamp-1">{getServiceNames(req.serviceIds)}</p>
-                      </TableCell>
-                      <TableCell>
-                        <p className="text-xs font-semibold">{req.companyName}</p>
-                        <p className="text-[10px] text-muted-foreground">{req.city}, {req.state}</p>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={req.status === 'new' ? 'secondary' : 'default'} className="text-[9px]">
-                          {req.status.toUpperCase()}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {assigningTo === req.id ? (
-                          <Select onValueChange={(val) => handleManualAssign(req.id, val)}>
-                            <SelectTrigger className="w-[150px] h-8 text-[10px] ml-auto">
-                              <SelectValue placeholder="Assign Expert" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {consultants
-                                .filter(c => c.servicesOffered?.some((sId: string) => req.serviceIds?.includes(sId)))
-                                .map(c => (
-                                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                                ))
-                              }
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <div className="flex justify-end gap-2">
-                            {req.status === 'new' && (
-                              <Button size="sm" variant="default" className="h-7 text-[10px]" onClick={() => setAssigningTo(req.id)}>Match</Button>
+                  {requests.map((req) => {
+                    const partner = req.leadOwnerType === 'partner' ? partners.find(p => p.id === req.leadPartnerId) : null;
+                    return (
+                      <TableRow key={req.id}>
+                        <TableCell>
+                          <p className="font-bold text-sm">{getCategoryName(req.categoryId)}</p>
+                          <p className="text-[10px] text-muted-foreground italic line-clamp-1">{getServiceNames(req.serviceIds)}</p>
+                        </TableCell>
+                        <TableCell>
+                          <p className="text-xs font-semibold">{req.companyName}</p>
+                          <div className="flex items-center gap-1.5 mt-1">
+                            {req.leadOwnerType === 'partner' ? (
+                              <Badge variant="outline" className="text-[9px] bg-amber-50 text-amber-700 border-amber-200 gap-1 flex items-center">
+                                <Share2 className="h-2 w-2" /> Partner: {partner?.partnerName || 'Unknown'}
+                              </Badge>
+                            ) : req.leadOwnerType === 'admin' ? (
+                              <Badge variant="outline" className="text-[9px] bg-slate-50 text-slate-700 gap-1 flex items-center">
+                                <Activity className="h-2 w-2" /> Admin Manual
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-[9px] bg-blue-50 text-blue-700 gap-1 flex items-center">
+                                <Users className="h-2 w-2" /> SME Direct
+                              </Badge>
                             )}
-                            <Button size="sm" variant="outline" className="h-7 text-[10px]" asChild>
-                              <Link href={`/request/${req.id}`}>View</Link>
-                            </Button>
                           </div>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={req.status === 'new' ? 'secondary' : 'default'} className="text-[9px]">
+                            {req.status.toUpperCase()}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {assigningTo === req.id ? (
+                            <Select onValueChange={(val) => handleManualAssign(req.id, val)}>
+                              <SelectTrigger className="w-[150px] h-8 text-[10px] ml-auto">
+                                <SelectValue placeholder="Assign Expert" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {consultants
+                                  .filter(c => c.servicesOffered?.some((sId: string) => req.serviceIds?.includes(sId)))
+                                  .map(c => (
+                                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                                  ))
+                                }
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <div className="flex justify-end gap-2">
+                              {req.status === 'new' && (
+                                <Button size="sm" variant="default" className="h-7 text-[10px]" onClick={() => setAssigningTo(req.id)}>Match</Button>
+                              )}
+                              <Button size="sm" variant="outline" className="h-7 text-[10px]" asChild>
+                                <Link href={`/request/${req.id}`}>View</Link>
+                              </Button>
+                            </div>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </CardContent>
