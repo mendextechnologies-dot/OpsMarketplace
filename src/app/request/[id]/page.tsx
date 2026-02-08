@@ -31,7 +31,8 @@ import {
   TrendingUp,
   Loader2,
   Sparkles,
-  Star
+  Star,
+  ChevronRight
 } from "lucide-react";
 import Link from "next/link";
 import { getServiceNames, getCategoryName } from "@/lib/constants";
@@ -290,25 +291,65 @@ export default function RequestDetailPage() {
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <UserCheck className="h-5 w-5 text-primary" />
-                {assignedConsultant ? "Assigned Expert" : "Matching Progress"}
+                {assignedConsultant ? "Assigned Expert" : "Expert Identification"}
               </CardTitle>
               <CardDescription>
-                {assignedConsultant ? "Direct professional support unlocked" : "AI is identifying best-match experts"}
+                {assignedConsultant ? "Direct professional support unlocked" : "Top verified experts matching your requirement"}
               </CardDescription>
             </CardHeader>
             <CardContent>
               {!assignedConsultant ? (
-                <div className="text-center py-10">
-                  <div className="relative w-16 h-16 mx-auto mb-6">
-                    <div className="absolute inset-0 rounded-full border-4 border-primary/20 animate-ping"></div>
-                    <div className="relative z-10 bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center">
-                      <Clock className="h-8 w-8 text-primary animate-pulse" />
+                <div className="space-y-6">
+                  {potentialMatches.length > 0 ? (
+                    <div className="space-y-4">
+                      {potentialMatches.map((expert) => (
+                        <div key={expert.id} className="flex items-center justify-between p-4 bg-white rounded-xl border-2 hover:border-primary/30 transition-all shadow-sm">
+                          <div className="flex items-center gap-4">
+                            <div className="relative">
+                              <div className="h-12 w-12 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold">
+                                {expert.name?.charAt(0)}
+                              </div>
+                              <div className="absolute -bottom-1 -right-1 bg-green-500 h-4 w-4 rounded-full border-2 border-white" />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm font-bold">{expert.name}</p>
+                                <Badge variant="outline" className="text-[8px] h-4 bg-green-50 text-green-700 border-green-200">98% MATCH</Badge>
+                              </div>
+                              <p className="text-[10px] text-muted-foreground uppercase tracking-widest">{expert.companyName}</p>
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-end gap-1">
+                            <div className="flex items-center gap-0.5 text-amber-500">
+                              <Star className="h-3 w-3 fill-current" />
+                              <Star className="h-3 w-3 fill-current" />
+                              <Star className="h-3 w-3 fill-current" />
+                              <Star className="h-3 w-3 fill-current" />
+                              <Star className="h-3 w-3 fill-current" />
+                            </div>
+                            <span className="text-[10px] font-bold text-muted-foreground">{expert.city}</span>
+                          </div>
+                        </div>
+                      ))}
+                      <div className="pt-4 flex items-center justify-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        Awaiting consultant acceptance...
+                      </div>
                     </div>
-                  </div>
-                  <h5 className="font-bold mb-1">Scanning Specialized Experts...</h5>
-                  <p className="text-sm text-muted-foreground max-w-xs mx-auto italic">
-                    Ranking providers based on performance tiers and location.
-                  </p>
+                  ) : (
+                    <div className="text-center py-10">
+                      <div className="relative w-16 h-16 mx-auto mb-6">
+                        <div className="absolute inset-0 rounded-full border-4 border-primary/20 animate-ping"></div>
+                        <div className="relative z-10 bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center">
+                          <Clock className="h-8 w-8 text-primary animate-pulse" />
+                        </div>
+                      </div>
+                      <h5 className="font-bold mb-1">Scanning Specialized Experts...</h5>
+                      <p className="text-sm text-muted-foreground max-w-xs mx-auto italic">
+                        Ranking providers based on performance tiers and location.
+                      </p>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-6">
@@ -341,43 +382,6 @@ export default function RequestDetailPage() {
               )}
             </CardContent>
           </Card>
-
-          {/* TOP 5 POTENTIAL MATCHES SECTION FOR SME */}
-          {potentialMatches.length > 0 && !assignedConsultant && (
-            <Card className="border-dashed border-2 bg-muted/5">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-primary" />
-                  Top AI Match Candidates
-                </CardTitle>
-                <CardDescription>
-                  These verified experts perfectly align with your requested services.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {potentialMatches.map((expert) => (
-                  <div key={expert.id} className="flex items-center justify-between p-4 bg-white rounded-xl border hover:shadow-sm transition-shadow">
-                    <div className="flex items-center gap-4">
-                      <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold">
-                        {expert.name?.charAt(0)}
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold">{expert.name}</p>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest">{expert.companyName}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-0.5 text-amber-500">
-                        <Star className="h-3 w-3 fill-current" />
-                        <span className="text-[10px] font-bold">98% Match</span>
-                      </div>
-                      <Badge variant="secondary" className="text-[9px] uppercase">{expert.city}</Badge>
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
         </div>
 
         <div className="space-y-6">
