@@ -1,11 +1,14 @@
 
 "use client";
 
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   CheckCircle2, 
   ShieldCheck, 
@@ -25,7 +28,12 @@ import {
   ShieldEllipsis,
   BookOpen,
   Gavel,
-  Target
+  Target,
+  MessageSquare,
+  X,
+  Sparkles,
+  Loader2,
+  Send
 } from "lucide-react";
 import {
   Table,
@@ -37,9 +45,50 @@ import {
 } from "@/components/ui/table";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
+import { marketplaceGuide, GuideOutput } from "@/ai/flows/marketplace-guide-flow";
 
 export default function Home() {
   const { user } = useAuth();
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatInput, setChatInput] = useState("");
+  const [messages, setMessages] = useState<{ role: 'user' | 'model', content: string }[]>([]);
+  const [loading, setLoading] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const standardPossibilities = [
+    "What is PF registration?",
+    "How to get Shop Act?",
+    "Do I need a Factory Licence?",
+    "Explain Payroll outsourcing"
+  ];
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  const handleSendMessage = async (msg?: string) => {
+    const text = msg || chatInput;
+    if (!text || loading) return;
+
+    const newMessages = [...messages, { role: 'user', content: text } as const];
+    setMessages(newMessages);
+    setChatInput("");
+    setLoading(true);
+
+    try {
+      const response = await marketplaceGuide({
+        message: text,
+        history: messages
+      });
+      setMessages([...newMessages, { role: 'model', content: response.answer }]);
+    } catch (error) {
+      setMessages([...newMessages, { role: 'model', content: "I'm having trouble connecting right now. Please try again or submit a request directly." }]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const comparisonData = [
     {
@@ -89,7 +138,92 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen relative">
+      {/* AI CHAT AGENT WINDOW */}
+      <div className="fixed bottom-8 right-8 z-[100]">
+        {chatOpen ? (
+          <Card className="w-[380px] h-[520px] shadow-2xl border-2 flex flex-col animate-in slide-in-from-bottom-4 duration-300">
+            <CardHeader className="bg-primary text-white p-4 flex flex-row items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5" />
+                <div>
+                  <CardTitle className="text-sm font-bold">Marketplace Guide</CardTitle>
+                  <p className="text-[10px] opacity-80">AI Assistant • Online</p>
+                </div>
+              </div>
+              <Button variant="ghost" size="icon" onClick={() => setChatOpen(false)} className="text-white hover:bg-white/10">
+                <X className="h-4 w-4" />
+              </Button>
+            </CardHeader>
+            <CardContent className="flex-1 p-0 overflow-hidden flex flex-col">
+              <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+                <div className="space-y-4">
+                  <div className="bg-muted p-3 rounded-lg text-sm">
+                    <p className="font-bold text-primary text-xs mb-1">Guide</p>
+                    Hello! I'm your OpsMarketplace assistant. I can help with questions about Compliance, HR, Payroll, and Registrations. How can I assist you today?
+                  </div>
+                  
+                  {messages.length === 0 && (
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Standard Queries</p>
+                      <div className="flex flex-wrap gap-2">
+                        {standardPossibilities.map((pos, i) => (
+                          <button 
+                            key={i} 
+                            onClick={() => handleSendMessage(pos)}
+                            className="text-[10px] bg-primary/5 hover:bg-primary/10 text-primary border border-primary/20 px-3 py-1.5 rounded-full transition-colors"
+                          >
+                            {pos}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {messages.map((m, i) => (
+                    <div key={i} className={cn(
+                      "p-3 rounded-lg text-sm max-w-[85%]",
+                      m.role === 'user' ? "ml-auto bg-primary text-white" : "mr-auto bg-muted"
+                    )}>
+                      {m.content}
+                    </div>
+                  ))}
+                  {loading && (
+                    <div className="flex items-center gap-2 text-muted-foreground animate-pulse">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span className="text-[10px]">Guide is typing...</span>
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
+              <div className="p-4 border-t bg-muted/30">
+                <form 
+                  onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}
+                  className="flex gap-2"
+                >
+                  <Input 
+                    placeholder="Ask about PF, ESIC, Shop Act..." 
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    className="bg-white"
+                  />
+                  <Button size="icon" disabled={loading}>
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </form>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <Button 
+            onClick={() => setChatOpen(true)}
+            className="h-16 w-16 rounded-full shadow-2xl animate-bounce hover:animate-none"
+          >
+            <MessageSquare className="h-8 w-8" />
+          </Button>
+        )}
+      </div>
+
       {/* SECTION 1 — HERO */}
       <section className="relative py-16 lg:py-24 bg-gradient-to-br from-primary/5 via-white to-secondary/10 border-b overflow-hidden">
         <div className="container mx-auto px-4 text-center relative z-10">
