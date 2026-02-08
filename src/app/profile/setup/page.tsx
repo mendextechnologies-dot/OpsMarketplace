@@ -134,14 +134,14 @@ export default function ProfileSetupPage() {
                               )}
                               onClick={() => handleServiceToggle(serv.id)}
                             >
-                              <div className="pointer-events-none flex items-center space-x-2 w-full">
-                                <Checkbox 
-                                  checked={isChecked}
-                                />
-                                <span className="text-xs leading-tight flex-1">
-                                  {serv.name}
-                                </span>
-                              </div>
+                              <Checkbox 
+                                checked={isChecked}
+                                className="pointer-events-none"
+                                onCheckedChange={() => {}} // Parent div handles toggle
+                              />
+                              <span className="text-xs leading-tight flex-1 pointer-events-none">
+                                {serv.name}
+                              </span>
                             </div>
                           );
                         })}

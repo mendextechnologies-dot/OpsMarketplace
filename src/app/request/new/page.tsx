@@ -58,7 +58,7 @@ export default function NewRequestPage() {
 
   const selectedCategory = SERVICE_TAXONOMY.find(c => c.id === formData.categoryId);
 
-  const toggleService = (serviceId: string) => {
+  const handleToggleService = (serviceId: string) => {
     setFormData(prev => ({
       ...prev,
       serviceIds: prev.serviceIds.includes(serviceId)
@@ -247,18 +247,17 @@ export default function NewRequestPage() {
                     "flex items-center space-x-4 p-4 border-2 rounded-xl cursor-pointer transition-all",
                     isSelected ? "border-primary bg-primary/5 shadow-sm" : "hover:border-primary/40 bg-white"
                   )}
-                  onClick={() => toggleService(serv.id)}
+                  onClick={() => handleToggleService(serv.id)}
                 >
-                  <div className="pointer-events-none flex items-center space-x-4 w-full">
-                    <Checkbox 
-                      checked={isSelected}
-                      className="h-5 w-5"
-                    />
-                    <div className="flex-1">
-                      <span className="text-base font-semibold block">
-                        {serv.name}
-                      </span>
-                    </div>
+                  <Checkbox 
+                    checked={isSelected}
+                    className="h-5 w-5 pointer-events-none"
+                    onCheckedChange={() => {}} // Controlled by parent div
+                  />
+                  <div className="flex-1 pointer-events-none">
+                    <span className="text-base font-semibold block">
+                      {serv.name}
+                    </span>
                   </div>
                 </div>
               );
