@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -14,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Building2, MapPin, ListChecks, Zap, AlertTriangle } from "lucide-react";
-import { SERVICE_TAXONOMY } from "@/lib/constants";
+import { SERVICE_TAXONOMY, getCategoryName } from "@/lib/constants";
 import { cn, generateCompanyKey } from "@/lib/utils";
 import { sendLeadAssignmentEmail } from "@/lib/email-service";
 
@@ -129,12 +130,16 @@ export default function PartnerCreateLeadPage() {
             createdAt: serverTimestamp(),
           });
 
-          // Trigger Notification Email to Consultant
-          const userSnap = await getDoc(doc(db, "users", cDoc.id));
-          const consEmail = userSnap.data()?.email;
-          if (consEmail) {
+          // Trigger Notification Email to Consultant with Fallback Logic
+          let targetEmail = cData.notificationEmail;
+          if (!targetEmail) {
+            const userSnap = await getDoc(doc(db, "users", cDoc.id));
+            targetEmail = userSnap.data()?.email;
+          }
+
+          if (targetEmail) {
             sendLeadAssignmentEmail(
-              consEmail,
+              targetEmail,
               cData.name,
               formData.companyName,
               getCategoryName(formData.categoryId)

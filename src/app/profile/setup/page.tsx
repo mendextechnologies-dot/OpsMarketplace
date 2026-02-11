@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Briefcase, MapPin, Phone, Award, Info, ChevronDown, ChevronUp, Sparkles, Loader2 } from "lucide-react";
+import { Briefcase, MapPin, Phone, Award, Mail, Info, ChevronDown, ChevronUp, Sparkles, Loader2 } from "lucide-react";
 import { SERVICE_TAXONOMY } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { enhanceProfile } from "@/ai/flows/profile-enhancer-flow";
@@ -28,6 +28,7 @@ export default function ProfileSetupPage() {
   const [formData, setFormData] = useState({
     companyName: "",
     phone: "",
+    notificationEmail: "",
     city: "",
     description: "",
     yearsExperience: "",
@@ -84,6 +85,7 @@ export default function ProfileSetupPage() {
         name: profile.name,
         companyName: formData.companyName,
         phone: formData.phone,
+        notificationEmail: formData.notificationEmail || null,
         city: formData.city,
         description: formData.description,
         yearsExperience: parseInt(formData.yearsExperience),
@@ -177,6 +179,11 @@ export default function ProfileSetupPage() {
                   <div className="space-y-2">
                     <Label>Firm / Individual Name</Label>
                     <Input placeholder="e.g. Rahul Compliance & Associates" value={formData.companyName} onChange={e => setFormData({ ...formData, companyName: e.target.value })} required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2"><Mail className="h-3 w-3" /> Notification Email (Optional)</Label>
+                    <Input type="email" placeholder="leads@firm.com" value={formData.notificationEmail} onChange={e => setFormData({ ...formData, notificationEmail: e.target.value })} />
+                    <p className="text-[10px] text-muted-foreground italic">Defaults to account email if blank.</p>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">

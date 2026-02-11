@@ -39,6 +39,7 @@
         "name": { "type": "string" },
         "companyName": { "type": "string" },
         "phone": { "type": "string" },
+        "notificationEmail": { "type": "string", "format": "email", "description": "Optional additional email for lead notifications" },
         "city": { "type": "string" },
         "description": { "type": "string" },
         "yearsExperience": { "type": "number" },

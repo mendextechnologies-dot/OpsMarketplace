@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -160,11 +161,17 @@ export default function RequestDetailPage() {
       // Trigger Notification Email
       const selectedConsultant = consultants.find(c => c.id === consultantId);
       if (selectedConsultant) {
-        const consUserSnap = await getDoc(doc(db, "users", consultantId));
-        const consEmail = consUserSnap.data()?.email;
-        if (consEmail) {
+        // Fallback Logic: Notification Email -> User Email
+        let targetEmail = selectedConsultant.notificationEmail;
+        
+        if (!targetEmail) {
+          const consUserSnap = await getDoc(doc(db, "users", consultantId));
+          targetEmail = consUserSnap.data()?.email;
+        }
+
+        if (targetEmail) {
           sendLeadAssignmentEmail(
-            consEmail, 
+            targetEmail, 
             selectedConsultant.name, 
             request.companyName, 
             getCategoryName(request.categoryId)
@@ -314,7 +321,7 @@ export default function RequestDetailPage() {
                       </a>
                     </Button>
                     <Button className="h-14 gap-2 text-base font-bold" variant="outline" asChild>
-                      <a href={`mailto:${activeAssignment.consultant?.email || 'expert@opsmarketplace.com'}`}>
+                      <a href={`mailto:${activeAssignment.consultant?.notificationEmail || activeAssignment.consultant?.email || 'expert@opsmarketplace.com'}`}>
                         <Mail className="h-5 w-5" /> Send Brief
                       </a>
                     </Button>
