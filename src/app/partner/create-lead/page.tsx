@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { db } from "@/lib/firebase-config";
-import { collection, addDoc, serverTimestamp, query, where, getDocs, doc, getDoc } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, query, where, getDocs, doc, getDoc, updateDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from "@/components/ui/card";
@@ -119,10 +119,12 @@ export default function PartnerCreateLeadPage() {
       );
       const consultantSnap = await getDocs(consultantsQuery);
       
+      let matchCount = 0;
       for (const cDoc of consultantSnap.docs) {
         const cData = cDoc.data();
         const matchesService = cData.servicesOffered?.some((sId: string) => formData.serviceIds.includes(sId));
         if (matchesService) {
+          matchCount++;
           await addDoc(collection(db, "leadAssignments"), {
             requestId: docRef.id,
             consultantId: cDoc.id,
@@ -148,9 +150,16 @@ export default function PartnerCreateLeadPage() {
         }
       }
 
+      // If at least one expert was matched, update the request status to 'assigned'
+      if (matchCount > 0) {
+        await updateDoc(doc(db, "serviceRequests", docRef.id), {
+          status: "assigned"
+        });
+      }
+
       toast({
         title: "Lead Logged Successfully",
-        description: "Ownership assigned and experts notified.",
+        description: `Ownership assigned and ${matchCount} expert(s) notified.`,
       });
 
       router.push("/dashboard/partner");
