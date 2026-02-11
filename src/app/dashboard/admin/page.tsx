@@ -140,7 +140,6 @@ export default function AdminDashboard() {
       ];
 
       for (const temp of defaultTemplates) {
-        // Check if template with this name already exists
         const q = query(collection(db, "emailTemplates"), where("name", "==", temp.name));
         const existing = await getDocs(q);
         if (existing.empty) {
@@ -214,7 +213,7 @@ export default function AdminDashboard() {
           <div className="flex items-center gap-3">
             <Button variant="outline" className="rounded-xl font-bold bg-white border-none shadow-sm h-11" onClick={fetchData}>
               <History className="h-4 w-4 mr-2" /> Refresh
-            </History>
+            </Button>
             <Button asChild className="rounded-xl font-bold h-11 shadow-lg bg-primary hover:bg-primary/90">
               <Link href="/admin/create-lead">
                 <PlusCircle className="h-4 w-4 mr-2" /> Log Requirement
