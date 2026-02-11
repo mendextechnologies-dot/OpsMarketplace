@@ -133,10 +133,57 @@ export default function AdminDashboard() {
     setSeeding(true);
     try {
       const defaultTemplates = [
-        { name: "Welcome SME", subject: "Welcome to OpsMarketplace, {{name}}!", roleType: "sme", html: "<div style='font-family:sans-serif; padding:20px;'><h2>Welcome {{name}}!</h2><p>Your SME account is active. Start posting requirements today.</p></div>" },
-        { name: "Welcome Consultant", subject: "Expert Console Activated: Welcome {{name}}", roleType: "consultant", html: "<div style='font-family:sans-serif; padding:20px;'><h2>Welcome Expert {{name}}!</h2><p>You are now part of our verified network. Your opportunities will appear in the Expert Console.</p></div>" },
-        { name: "New Lead Notification", subject: "New Opportunity: {{companyName}}", roleType: "consultant", html: "<div style='font-family:sans-serif; padding:20px;'><h2>Hi {{consultantName}},</h2><p>A new requirement for <strong>{{companyName}}</strong> matches your profile.</p><p>Service: {{serviceCategory}}</p></div>" },
-        { name: "Welcome Partner", subject: "Partner Console Ready", roleType: "partner", html: "<div style='font-family:sans-serif; padding:20px;'><h2>Partner Onboarding Complete</h2><p>Start monetizing your network today.</p></div>" }
+        { 
+          name: "Welcome SME", 
+          subject: "Welcome to OpsMarketplace, {{name}}!", 
+          roleType: "sme", 
+          html: "<div style='font-family:sans-serif; padding:40px; background-color:#f8fafc;'><div style='max-width:600px; margin:0 auto; background-color:#ffffff; padding:40px; border-radius:16px;'><h2>Welcome {{name}}!</h2><p>Your SME account is active. Start posting requirements today to get matched with verified experts.</p></div></div>" 
+        },
+        { 
+          name: "Welcome Consultant", 
+          subject: "Expert Console Activated: Welcome {{name}}", 
+          roleType: "consultant", 
+          html: "<div style='font-family:sans-serif; padding:40px; background-color:#f8fafc;'><div style='max-width:600px; margin:0 auto; background-color:#ffffff; padding:40px; border-radius:16px;'><h2>Welcome Expert {{name}}!</h2><p>You are now part of our verified network. Your opportunities will appear in the Expert Console as they are matched by our AI.</p></div></div>" 
+        },
+        { 
+          name: "New Lead Notification", 
+          subject: "New Opportunity: {{companyName}} - {{serviceCategory}}", 
+          roleType: "consultant", 
+          html: `<div style="font-family: sans-serif; padding: 40px; background-color: #f8fafc; color: #334155;">
+  <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
+    <div style="background-color: #3F51B5; padding: 24px; border-radius: 12px; color: white; margin-bottom: 30px; text-align: center;">
+      <h2 style="margin: 0; font-weight: 800; font-size: 24px;">New Lead Assigned!</h2>
+    </div>
+    <p style="font-size: 16px; line-height: 1.6;">Hi {{consultantName}},</p>
+    <p style="font-size: 16px; line-height: 1.6;">A high-intent service request has been matched with your professional profile on OpsMarketplace:</p>
+    
+    <div style="background-color: #f1f5f9; padding: 24px; border-radius: 12px; margin: 24px 0; border: 1px solid #e2e8f0;">
+      <p style="margin: 0; font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 800; letter-spacing: 0.05em;">Client Organization</p>
+      <p style="margin: 8px 0 20px 0; font-size: 20px; font-weight: 800; color: #1e293b;">{{companyName}}</p>
+      
+      <p style="margin: 0; font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 800; letter-spacing: 0.05em;">Required Expertise</p>
+      <p style="margin: 8px 0 0 0; font-size: 16px; color: #334155; font-weight: 600;">{{serviceCategory}}</p>
+    </div>
+
+    <p style="font-size: 16px; line-height: 1.6;"><strong>Recommended Action:</strong></p>
+    <p style="font-size: 15px; color: #475569; line-height: 1.6;">Log in to your Expert Console immediately to review the detailed requirement and accept the assignment. Once accepted, primary contact details will be unlocked.</p>
+
+    <div style="margin-top: 32px; text-align: center;">
+      <a href="https://opsmarketplace.com/dashboard" style="background-color: #3F51B5; color: white; padding: 16px 32px; text-decoration: none; border-radius: 12px; font-weight: 800; font-size: 16px; display: inline-block; box-shadow: 0 10px 15px -3px rgba(63, 81, 181, 0.3);">Open Expert Console</a>
+    </div>
+
+    <div style="margin-top: 48px; padding-top: 24px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; text-align: center; line-height: 1.6;">
+      <p>This is an automated system notification from OpsMarketplace.<br/>You received this because you are a verified expert in our network.</p>
+    </div>
+  </div>
+</div>`
+        },
+        { 
+          name: "Welcome Partner", 
+          subject: "Partner Console Ready", 
+          roleType: "partner", 
+          html: "<div style='font-family:sans-serif; padding:40px; background-color:#f8fafc;'><div style='max-width:600px; margin:0 auto; background-color:#ffffff; padding:40px; border-radius:16px;'><h2>Partner Onboarding Complete</h2><p>Start monetizing your network today by bringing high-intent leads to the platform.</p></div></div>" 
+        }
       ];
 
       for (const temp of defaultTemplates) {
