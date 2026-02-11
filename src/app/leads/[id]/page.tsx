@@ -30,7 +30,7 @@ import {
   Copy
 } from "lucide-react";
 import Link from "next/link";
-import { getServiceNames, getCategoryName } from "@/lib/constants";
+import { getServiceNames, getCategoryName, getServiceName } from "@/lib/constants";
 import { generateProposal } from "@/ai/flows/proposal-flow";
 import type { ProposalOutput } from "@/ai/flows/proposal-flow";
 
@@ -158,15 +158,6 @@ export default function LeadDetailPage() {
       setGeneratingDraft(false);
     }
   };
-
-  function getServiceName(serviceId: string) {
-    const { SERVICE_TAXONOMY } = require("@/lib/constants");
-    for (const cat of SERVICE_TAXONOMY) {
-      const service = cat.services.find((s: any) => s.id === serviceId);
-      if (service) return service.name;
-    }
-    return "Unknown Service";
-  }
 
   const copyProposal = () => {
     if (aiDraft?.draftMessage) {
