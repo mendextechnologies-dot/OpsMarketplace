@@ -8,12 +8,7 @@ import {
   Briefcase, 
   LayoutDashboard, 
   LogOut, 
-  Users, 
-  FileText, 
-  Handshake, 
-  Settings,
-  Bell,
-  Search
+  Bell
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
@@ -27,6 +22,17 @@ export function Navbar() {
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   ];
 
+  const scrollToSection = (id: string) => {
+    if (pathname !== '/') {
+      window.location.href = `/#${id}`;
+      return;
+    }
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <nav className="border-b bg-white sticky top-0 z-50 py-2">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
@@ -37,6 +43,14 @@ export function Navbar() {
             </div>
             <span>OpsMarket</span>
           </Link>
+
+          {!user && (
+            <div className="hidden lg:flex items-center gap-6">
+              <button onClick={() => scrollToSection('sme-details')} className="text-sm font-bold text-muted-foreground hover:text-primary transition-colors">For Businesses</button>
+              <button onClick={() => scrollToSection('expert-details')} className="text-sm font-bold text-muted-foreground hover:text-primary transition-colors">For Experts</button>
+              <button onClick={() => scrollToSection('partner-details')} className="text-sm font-bold text-muted-foreground hover:text-primary transition-colors">For Partners</button>
+            </div>
+          )}
 
           {user && (
             <div className="hidden lg:flex items-center gap-1">

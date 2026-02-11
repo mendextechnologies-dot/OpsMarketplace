@@ -30,7 +30,12 @@ import {
   HeartHandshake,
   Coins,
   MessageSquare,
-  LayoutGrid
+  LayoutGrid,
+  UserPlus,
+  Target,
+  UserCheck,
+  ClipboardCheck,
+  Globe
 } from "lucide-react";
 import {
   Table,
@@ -52,13 +57,6 @@ export default function Home() {
   const [messages, setMessages] = useState<{ role: 'user' | 'model', content: string, action?: string, url?: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  const conversionTriggers = [
-    "I need a service request",
-    "What's the cost of PF?",
-    "How fast can I get an expert?",
-    "I want to join the network"
-  ];
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -144,6 +142,13 @@ export default function Home() {
     );
   };
 
+  const scrollToSection = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen relative">
       {/* AI CHAT FUNNEL */}
@@ -199,159 +204,257 @@ export default function Home() {
       </div>
 
       {/* HERO SECTION */}
-      <section className="relative py-20 lg:py-32 bg-gradient-to-br from-primary/5 via-white to-secondary/10 border-b overflow-hidden">
+      <section className="relative py-24 lg:py-40 bg-gradient-to-br from-primary/5 via-white to-secondary/10 border-b overflow-hidden">
         <div className="container mx-auto px-4 text-center">
-          <Badge variant="secondary" className="mb-6 px-4 py-1 text-[10px] font-bold tracking-widest uppercase bg-primary/10 text-primary border-primary/20">
+          <Badge variant="secondary" className="mb-8 px-6 py-2 text-[12px] font-black tracking-widest uppercase bg-primary/10 text-primary border-primary/20 rounded-full">
             Managed Marketplace • AI-Matched Delivery
           </Badge>
-          <h1 className="text-4xl lg:text-7xl font-extrabold tracking-tight mb-6 text-slate-900 leading-tight">
+          <h1 className="text-5xl lg:text-8xl font-black tracking-tighter mb-8 text-slate-900 leading-[0.9]">
             Operations Scaled by <br /> 
             <span className="text-primary italic">Expert Intelligence.</span>
           </h1>
-          <p className="text-lg md:text-xl text-slate-600 max-w-2xl mx-auto mb-10 leading-relaxed font-medium">
+          <p className="text-xl md:text-2xl text-slate-600 max-w-3xl mx-auto mb-12 leading-relaxed font-medium">
             A curated engine that matches SMEs with verified experts using proactive AI. No directories. No bidding wars.
           </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Button size="lg" className="h-14 px-10 text-lg shadow-xl rounded-xl" asChild>
-              <Link href="/request/new">Post Requirement <ArrowRight className="ml-2 h-5 w-5" /></Link>
+          <div className="flex flex-col sm:flex-row justify-center gap-6">
+            <Button size="lg" className="h-16 px-12 text-xl font-bold shadow-2xl rounded-2xl" asChild>
+              <Link href="/request/new">Post Requirement <ArrowRight className="ml-2 h-6 w-6" /></Link>
             </Button>
-            <Button size="lg" variant="outline" className="h-14 px-10 text-lg rounded-xl border-2" asChild>
+            <Button size="lg" variant="outline" className="h-16 px-12 text-xl font-bold rounded-2xl border-2" asChild>
               <Link href="/signup">Apply as Expert</Link>
             </Button>
           </div>
         </div>
       </section>
 
-      {/* ONE PLATFORM - PERSONA CARDS */}
+      {/* ONE PLATFORM - SUMMARY */}
       <section className="py-24 bg-white border-b">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-extrabold tracking-tight mb-4">One Platform. Complete HR & Compliance Execution.</h2>
-            <p className="text-muted-foreground">Select your role to see how OpsMarketplace simplifies your workflow.</p>
-          </div>
-
-          {/* FLOW DIAGRAM */}
-          <div className="max-w-4xl mx-auto mb-20 flex flex-wrap items-center justify-between gap-4 p-8 bg-slate-50 rounded-3xl border">
-            {[
-              { label: "Describe Need", icon: MessageSquare },
-              { label: "AI Match", icon: Sparkles },
-              { label: "Start Workspace", icon: LayoutGrid },
-              { label: "Complete Compliance", icon: CheckCircle2 }
-            ].map((step, i) => (
-              <div key={i} className="flex items-center gap-4">
-                <div className="flex flex-col items-center gap-2">
-                  <div className="bg-white p-4 rounded-2xl shadow-sm text-primary">
-                    <step.icon className="h-6 w-6" />
-                  </div>
-                  <span className="text-[10px] font-black uppercase tracking-tight">{step.label}</span>
-                </div>
-                {i < 3 && <ArrowRight className="h-4 w-4 text-slate-300 hidden md:block" />}
-              </div>
-            ))}
+          <div className="text-center mb-20">
+            <h2 className="text-4xl lg:text-5xl font-black tracking-tight mb-6">One Platform. Complete HR & Compliance Execution.</h2>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">Select your role to see how OpsMarketplace simplifies your specific workflow.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* SME */}
-            <Card className="border-2 hover:border-primary/50 transition-all rounded-3xl overflow-hidden shadow-sm flex flex-col">
-              <CardHeader className="bg-primary/5 pb-8">
-                <div className="bg-primary w-12 h-12 rounded-2xl flex items-center justify-center mb-6 shadow-lg">
-                  <Building2 className="h-6 w-6 text-white" />
+            {/* SME CARD */}
+            <Card className="border-2 hover:border-primary/50 transition-all rounded-[2.5rem] overflow-hidden shadow-sm flex flex-col group cursor-pointer" onClick={() => scrollToSection('sme-details')}>
+              <CardHeader className="bg-primary/5 pb-10 pt-12 text-center items-center">
+                <div className="bg-primary w-16 h-16 rounded-3xl flex items-center justify-center mb-6 shadow-xl group-hover:scale-110 transition-transform">
+                  <Building2 className="h-8 w-8 text-white" />
                 </div>
-                <CardTitle className="text-2xl font-bold">For Businesses</CardTitle>
-                <CardDescription className="text-sm">Get expert compliance and HR support without the search effort.</CardDescription>
+                <CardTitle className="text-3xl font-black">For Businesses</CardTitle>
+                <CardDescription className="text-base mt-2">Get expert compliance and HR support without the search effort.</CardDescription>
               </CardHeader>
-              <CardContent className="pt-8 flex-1">
-                <ul className="space-y-4 mb-8">
-                  <li className="flex items-center gap-3 text-sm font-medium"><CheckCircle2 className="h-5 w-5 text-primary" /> AI-matched local experts</li>
-                  <li className="flex items-center gap-3 text-sm font-medium"><CheckCircle2 className="h-5 w-5 text-primary" /> Zero cold calls or spam</li>
-                  <li className="flex items-center gap-3 text-sm font-medium"><CheckCircle2 className="h-5 w-5 text-primary" /> Managed delivery workspace</li>
-                </ul>
-              </CardContent>
-              <CardFooter className="pb-8 flex flex-col gap-3">
-                <Button className="w-full h-12 rounded-xl" asChild>
-                  <Link href="/request/new">Post Request</Link>
+              <CardFooter className="pb-12 pt-6 flex flex-col gap-4">
+                <Button variant="ghost" className="text-primary font-black text-lg hover:bg-transparent">
+                  Learn Managed Flow <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
-                <Link href="/how-it-works/sme" className="text-sm font-bold text-primary hover:underline flex items-center justify-center gap-2">
-                  Learn How It Works <ArrowRight className="h-3 w-3" />
-                </Link>
               </CardFooter>
             </Card>
 
-            {/* CONSULTANT */}
-            <Card className="border-2 hover:border-primary/50 transition-all rounded-3xl overflow-hidden shadow-sm flex flex-col">
-              <CardHeader className="bg-secondary/20 pb-8">
-                <div className="bg-primary w-12 h-12 rounded-2xl flex items-center justify-center mb-6 shadow-lg">
-                  <Briefcase className="h-6 w-6 text-white" />
+            {/* CONSULTANT CARD */}
+            <Card className="border-2 hover:border-primary/50 transition-all rounded-[2.5rem] overflow-hidden shadow-sm flex flex-col group cursor-pointer" onClick={() => scrollToSection('expert-details')}>
+              <CardHeader className="bg-secondary/20 pb-10 pt-12 text-center items-center">
+                <div className="bg-primary w-16 h-16 rounded-3xl flex items-center justify-center mb-6 shadow-xl group-hover:scale-110 transition-transform">
+                  <Briefcase className="h-8 w-8 text-white" />
                 </div>
-                <CardTitle className="text-2xl font-bold">For Experts</CardTitle>
-                <CardDescription className="text-sm">Focus on delivery, let AI handle your sales pipeline.</CardDescription>
+                <CardTitle className="text-3xl font-black">For Experts</CardTitle>
+                <CardDescription className="text-base mt-2">Focus on delivery, let AI handle your sales pipeline.</CardDescription>
               </CardHeader>
-              <CardContent className="pt-8 flex-1">
-                <ul className="space-y-4 mb-8">
-                  <li className="flex items-center gap-3 text-sm font-medium"><CheckCircle2 className="h-5 w-5 text-primary" /> Exclusive high-intent leads</li>
-                  <li className="flex items-center gap-3 text-sm font-medium"><CheckCircle2 className="h-5 w-5 text-primary" /> AI proposal assistance</li>
-                  <li className="flex items-center gap-3 text-sm font-medium"><CheckCircle2 className="h-5 w-5 text-primary" /> Structured work delivery</li>
-                </ul>
-              </CardContent>
-              <CardFooter className="pb-8 flex flex-col gap-3">
-                <Button className="w-full h-12 rounded-xl" asChild>
-                  <Link href="/signup?role=consultant">Join as Expert</Link>
+              <CardFooter className="pb-12 pt-6 flex flex-col gap-4">
+                <Button variant="ghost" className="text-primary font-black text-lg hover:bg-transparent">
+                  See Expert Benefits <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
-                <Link href="/how-it-works/consultant" className="text-sm font-bold text-primary hover:underline flex items-center justify-center gap-2">
-                  See Expert Benefits <ArrowRight className="h-3 w-3" />
-                </Link>
               </CardFooter>
             </Card>
 
-            {/* PARTNER */}
-            <Card className="border-2 hover:border-primary/50 transition-all rounded-3xl overflow-hidden shadow-sm flex flex-col">
-              <CardHeader className="bg-amber-50 pb-8">
-                <div className="bg-amber-500 w-12 h-12 rounded-2xl flex items-center justify-center mb-6 shadow-lg">
-                  <HeartHandshake className="h-6 w-6 text-white" />
+            {/* PARTNER CARD */}
+            <Card className="border-2 hover:border-amber-500/50 transition-all rounded-[2.5rem] overflow-hidden shadow-sm flex flex-col group cursor-pointer" onClick={() => scrollToSection('partner-details')}>
+              <CardHeader className="bg-amber-50 pb-10 pt-12 text-center items-center">
+                <div className="bg-amber-500 w-16 h-16 rounded-3xl flex items-center justify-center mb-6 shadow-xl group-hover:scale-110 transition-transform">
+                  <HeartHandshake className="h-8 w-8 text-white" />
                 </div>
-                <CardTitle className="text-2xl font-bold">For Partners</CardTitle>
-                <CardDescription className="text-sm">Monetize your network with zero execution risk.</CardDescription>
+                <CardTitle className="text-3xl font-black">For Partners</CardTitle>
+                <CardDescription className="text-base mt-2">Monetize your network with zero execution risk.</CardDescription>
               </CardHeader>
-              <CardContent className="pt-8 flex-1">
-                <ul className="space-y-4 mb-8">
-                  <li className="flex items-center gap-3 text-sm font-medium"><CheckCircle2 className="h-5 w-5 text-amber-500" /> Lead ownership protection</li>
-                  <li className="flex items-center gap-3 text-sm font-medium"><CheckCircle2 className="h-5 w-5 text-amber-500" /> Execution by verified specialists</li>
-                  <li className="flex items-center gap-3 text-sm font-medium"><CheckCircle2 className="h-5 w-5 text-amber-500" /> Transparent referral tracking</li>
-                </ul>
-              </CardContent>
-              <CardFooter className="pb-8 flex flex-col gap-3">
-                <Button className="w-full h-12 rounded-xl bg-amber-600 hover:bg-amber-700" asChild>
-                  <Link href="/signup?role=partner">Join as Partner</Link>
+              <CardFooter className="pb-12 pt-6 flex flex-col gap-4">
+                <Button variant="ghost" className="text-amber-600 font-black text-lg hover:bg-transparent">
+                  Partner Growth Model <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
-                <Link href="/how-it-works/partner" className="text-sm font-bold text-amber-600 hover:underline flex items-center justify-center gap-2">
-                  Partner Growth Model <ArrowRight className="h-3 w-3" />
-                </Link>
               </CardFooter>
             </Card>
           </div>
         </div>
       </section>
 
-      {/* COMPARISON SECTION */}
-      <section className="py-24 bg-slate-50 border-b">
+      {/* SME DEEP DIVE */}
+      <section id="sme-details" className="py-32 bg-slate-50 border-b">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-extrabold tracking-tight">Marketplace Architecture Comparison</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+            <div>
+              <Badge className="mb-6 bg-primary/10 text-primary border-none font-black tracking-widest uppercase text-[12px] px-4 py-1.5 rounded-full">For Businesses & SMEs</Badge>
+              <h2 className="text-5xl lg:text-7xl font-black tracking-tight text-slate-900 mb-8 leading-none">
+                Get the Right Expert — <span className="text-primary italic">Without Searching Hundreds.</span>
+              </h2>
+              <p className="text-2xl text-slate-600 leading-relaxed font-medium mb-12">
+                Describe your requirement once. Our AI matches you with verified specialists and manages the workflow from start to finish.
+              </p>
+              
+              <div className="space-y-8">
+                {[
+                  { step: "1", title: "Describe Your Need", desc: "Use natural language. AI understands compliance and HR without complex forms.", icon: MessageSquare },
+                  { step: "2", title: "Get Smart Matches", desc: "Receive top 3 vetted consultants with high matching skill scores.", icon: Sparkles },
+                  { step: "3", title: "Start Secure Workspace", desc: "Share docs and track tasks in one protected platform.", icon: ShieldCheck },
+                  { step: "4", title: "Complete Compliance", desc: "Get guided execution with expert collaboration.", icon: CheckCircle2 }
+                ].map((item, i) => (
+                  <div key={i} className="flex gap-6 items-start group">
+                    <div className="bg-white w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-md group-hover:bg-primary group-hover:text-white transition-colors">
+                      <item.icon className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <h4 className="text-xl font-black text-slate-900 mb-1">{item.title}</h4>
+                      <p className="text-slate-500 font-medium">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-16">
+                <Button size="lg" className="h-16 px-12 text-xl font-black rounded-2xl shadow-xl" asChild>
+                  <Link href="/request/new">Post Smart Request</Link>
+                </Button>
+              </div>
+            </div>
+            <div className="hidden lg:block relative">
+              <div className="absolute inset-0 bg-primary/5 blur-[120px] rounded-full" />
+              <Card className="border-none shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] rounded-[3rem] overflow-hidden relative z-10">
+                <img 
+                  src="https://picsum.photos/seed/sme-workflow/800/1000" 
+                  alt="SME Workflow" 
+                  className="w-full h-auto object-cover grayscale-[0.2] contrast-[1.1]"
+                  data-ai-hint="business office"
+                />
+              </Card>
+            </div>
           </div>
-          <Card className="max-w-4xl mx-auto border shadow-xl overflow-hidden rounded-3xl">
+        </div>
+      </section>
+
+      {/* EXPERT DEEP DIVE */}
+      <section id="expert-details" className="py-32 bg-slate-900 text-white border-b">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+            <div className="order-2 lg:order-1 hidden lg:block relative">
+              <div className="absolute inset-0 bg-primary/20 blur-[120px] rounded-full" />
+              <Card className="border-none shadow-2xl rounded-[3rem] overflow-hidden relative z-10">
+                <img 
+                  src="https://picsum.photos/seed/expert-profile/800/1000" 
+                  alt="Expert Network" 
+                  className="w-full h-auto object-cover opacity-80"
+                  data-ai-hint="professional workspace"
+                />
+              </Card>
+            </div>
+            <div className="order-1 lg:order-2">
+              <Badge className="mb-6 bg-primary/20 text-primary border-none font-black tracking-widest uppercase text-[12px] px-4 py-1.5 rounded-full">For Experts & Consultants</Badge>
+              <h2 className="text-5xl lg:text-7xl font-black tracking-tight text-white mb-8 leading-none">
+                Get High-Quality Leads — <span className="text-primary italic">Not Random Noise.</span>
+              </h2>
+              <p className="text-2xl text-slate-400 leading-relaxed font-medium mb-12">
+                Stop browsing directories. Receive exclusive, high-intent opportunities matched specifically to your expertise.
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                {[
+                  { title: "Exclusive Matches", desc: "No public bidding. Leads are assigned based on your performance.", icon: Target },
+                  { title: "AI Proposal Assistant", desc: "Generate professional introductory messages in seconds.", icon: Sparkles },
+                  { title: "Managed Execution", desc: "Integrated tools for document delivery and client chat.", icon: LayoutGrid },
+                  { title: "Reputation Growth", desc: "Improve your rank with every successful project delivery.", icon: TrendingUp }
+                ].map((item, i) => (
+                  <div key={i} className="space-y-4">
+                    <div className="bg-white/10 w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner">
+                      <item.icon className="h-6 w-6 text-primary" />
+                    </div>
+                    <h4 className="text-xl font-black text-white">{item.title}</h4>
+                    <p className="text-slate-400 font-medium leading-relaxed">{item.desc}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-16">
+                <Button size="lg" className="h-16 px-12 text-xl font-black rounded-2xl shadow-2xl bg-white text-primary hover:bg-slate-100" asChild>
+                  <Link href="/signup?role=consultant">Join Expert Network</Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* PARTNER DEEP DIVE */}
+      <section id="partner-details" className="py-32 bg-amber-50/30 border-b">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mb-20">
+            <Badge className="mb-6 bg-amber-100 text-amber-700 border-none font-black tracking-widest uppercase text-[12px] px-4 py-1.5 rounded-full">For Channel Partners</Badge>
+            <h2 className="text-5xl lg:text-7xl font-black tracking-tight text-slate-900 mb-8 leading-none">
+              Monetize Your Network — <span className="text-amber-600 italic">With Zero Execution Risk.</span>
+            </h2>
+            <p className="text-2xl text-slate-600 leading-relaxed font-medium">
+              Secure lead ownership by logging requirements for your clients. We provide the experts and the infrastructure for managed execution.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+            {[
+              { step: "1", title: "Register as Partner", desc: "Onboard your firm and define your network's core industry focus.", icon: Building2 },
+              { step: "2", title: "Secure Ownership", desc: "Log a requirement to immediately lock lead ownership to your profile.", icon: ShieldCheck },
+              { step: "3", title: "Receive AI Match", desc: "Our engine identifies the best-suited expert for your client's need.", icon: Target },
+              { step: "4", title: "Managed Delivery", desc: "Track progress through our managed delivery workspace.", icon: Zap }
+            ].map((step, i) => (
+              <div key={i} className="relative group">
+                <div className="bg-amber-50 w-20 h-20 rounded-3xl flex items-center justify-center mb-8 border border-amber-100 group-hover:bg-amber-500 group-hover:text-white transition-all shadow-sm group-hover:shadow-amber-200">
+                  <step.icon className="h-10 w-10 text-amber-600 group-hover:text-white" />
+                </div>
+                <h3 className="text-2xl font-black mb-4">{step.title}</h3>
+                <p className="text-slate-600 font-medium leading-relaxed">{step.desc}</p>
+                {i < 3 && <div className="hidden lg:block absolute top-10 -right-6 text-amber-200"><ArrowRight className="h-8 w-8" /></div>}
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-20 p-12 bg-slate-900 text-white rounded-[3rem] flex flex-col md:flex-row items-center justify-between gap-10">
+            <div>
+              <h3 className="text-3xl font-black mb-2">Ready to grow your advisory footprint?</h3>
+              <p className="text-slate-400 text-lg font-medium">Join 200+ partners monetizing their trusted networks.</p>
+            </div>
+            <Button size="lg" className="h-16 px-12 text-xl font-black rounded-2xl bg-amber-600 hover:bg-amber-700 shadow-2xl" asChild>
+              <Link href="/signup?role=partner">Join as Partner</Link>
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* COMPARISON SECTION */}
+      <section className="py-32 bg-white border-b">
+        <div className="container mx-auto px-4 text-center">
+          <div className="max-w-3xl mx-auto mb-20">
+            <h2 className="text-4xl lg:text-5xl font-black tracking-tight mb-6">Marketplace Architecture Comparison</h2>
+            <p className="text-xl text-muted-foreground">Why the managed model outperforms traditional directories.</p>
+          </div>
+          <Card className="max-w-5xl mx-auto border-2 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.1)] overflow-hidden rounded-[3rem]">
             <Table>
               <TableHeader className="bg-slate-900 text-white">
-                <TableRow className="hover:bg-slate-900 border-none h-14">
-                  <TableHead className="text-white px-6 font-bold text-sm">Key Differentiators</TableHead>
-                  <TableHead className="text-white text-center font-bold text-xs uppercase tracking-wider">Directory</TableHead>
-                  <TableHead className="text-white text-center font-bold text-xs uppercase tracking-wider">Open Bid</TableHead>
-                  <TableHead className="text-white text-center font-bold text-xs uppercase tracking-wider bg-primary/20">Managed</TableHead>
+                <TableRow className="hover:bg-slate-900 border-none h-20">
+                  <TableHead className="text-white px-10 font-black text-lg">Key Differentiators</TableHead>
+                  <TableHead className="text-white text-center font-black text-xs uppercase tracking-widest opacity-60">Directory</TableHead>
+                  <TableHead className="text-white text-center font-black text-xs uppercase tracking-widest opacity-60">Open Bid</TableHead>
+                  <TableHead className="text-white text-center font-black text-xs uppercase tracking-widest bg-primary/20">Managed</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody className="bg-white">
                 {comparisonData.map((row, i) => (
-                  <TableRow key={i} className="hover:bg-slate-50 transition-colors">
-                    <TableCell className="font-semibold py-6 px-6 text-sm text-slate-700">{row.feature}</TableCell>
+                  <TableRow key={i} className="hover:bg-slate-50 transition-colors h-24">
+                    <TableCell className="font-black py-6 px-10 text-lg text-slate-700">{row.feature}</TableCell>
                     <TableCell className="text-center">{renderCell(row.directory)}</TableCell>
                     <TableCell className="text-center">{renderCell(row.openBid)}</TableCell>
                     <TableCell className="text-center bg-primary/5">{renderCell(row.opsMarketplace, true)}</TableCell>
@@ -364,17 +467,18 @@ export default function Home() {
       </section>
 
       {/* FINAL CTA */}
-      <section className="py-24 bg-slate-950 text-white relative overflow-hidden">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-4xl lg:text-5xl font-extrabold mb-6 tracking-tight">Experience the Managed Future.</h2>
-          <p className="text-slate-400 text-lg font-medium mb-12 max-w-xl mx-auto">
+      <section className="py-32 bg-slate-950 text-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-primary/10 blur-[150px] rounded-full scale-150" />
+        <div className="container mx-auto px-4 text-center relative z-10">
+          <h2 className="text-5xl lg:text-8xl font-black mb-10 tracking-tighter leading-[0.9]">Experience the Managed Future.</h2>
+          <p className="text-slate-400 text-xl lg:text-2xl font-medium mb-16 max-w-2xl mx-auto">
             Stop competing with noise. Join the ecosystem where AI handles the intake, so you can focus on excellence.
           </p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <Button size="lg" className="h-14 px-10 text-lg font-bold shadow-2xl rounded-xl" asChild>
+          <div className="flex flex-wrap justify-center gap-6">
+            <Button size="lg" className="h-16 px-12 text-xl font-black shadow-2xl rounded-2xl" asChild>
               <Link href="/request/new">Post Smart Request</Link>
             </Button>
-            <Button size="lg" variant="outline" className="h-14 px-10 text-lg font-bold rounded-xl text-white border-white/20 hover:bg-white/10" asChild>
+            <Button size="lg" variant="outline" className="h-16 px-12 text-xl font-black rounded-2xl text-white border-white/20 hover:bg-white/10" asChild>
               <Link href="/signup">Join as Expert</Link>
             </Button>
           </div>
