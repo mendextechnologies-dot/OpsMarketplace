@@ -3,27 +3,27 @@
   "placeholderImages": [
     {
       "id": "hero-image",
-      "description": "Enterprise business dashboard",
-      "imageUrl": "https://picsum.photos/seed/ops-enterprise/1200/600",
-      "imageHint": "enterprise office"
+      "description": "Modern business tech illustration",
+      "imageUrl": "https://picsum.photos/seed/ops-illustration/1200/600",
+      "imageHint": "business illustration"
     },
     {
       "id": "sme-section",
-      "description": "Business owner at work",
-      "imageUrl": "https://picsum.photos/seed/sme-focus/600/400",
-      "imageHint": "business workspace"
+      "description": "SME growth illustration",
+      "imageUrl": "https://picsum.photos/seed/sme-graphic/600/400",
+      "imageHint": "business growth illustration"
     },
     {
       "id": "expert-section",
-      "description": "Professional consultant",
-      "imageUrl": "https://picsum.photos/seed/expert-focus/600/400",
-      "imageHint": "professional consultant"
+      "description": "Professional consultant illustration",
+      "imageUrl": "https://picsum.photos/seed/expert-graphic/600/400",
+      "imageHint": "professional illustration"
     },
     {
       "id": "partner-section",
-      "description": "Business partnership handshake",
-      "imageUrl": "https://picsum.photos/seed/partner-focus/600/400",
-      "imageHint": "business partnership"
+      "description": "Business partnership illustration",
+      "imageUrl": "https://picsum.photos/seed/partner-graphic/600/400",
+      "imageHint": "collaboration illustration"
     }
   ]
 }

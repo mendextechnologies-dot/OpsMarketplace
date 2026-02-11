@@ -212,7 +212,7 @@ export default function Home() {
       </div>
 
       {/* HERO SECTION */}
-      <section className="relative py-20 lg:py-32 bg-gradient-to-br from-primary/5 via-white to-secondary/10 border-b overflow-hidden">
+      <section className="relative py-20 lg:py-32 bg-gradient-to-br from-primary/10 via-white to-secondary/10 border-b overflow-hidden">
         <div className="container mx-auto px-4 text-center">
           <Badge variant="secondary" className="mb-6 px-4 py-1.5 text-[11px] font-black tracking-widest uppercase bg-primary/10 text-primary border-primary/20 rounded-full">
             Managed Marketplace • AI-Matched Delivery
@@ -239,54 +239,54 @@ export default function Home() {
       <section className="py-20 bg-white border-b">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-black tracking-tight mb-4">One Platform. Complete HR & Compliance Execution.</h2>
+            <h2 className="text-3xl lg:text-4xl font-black tracking-tight mb-4 text-slate-900">One Platform. Complete HR & Compliance Execution.</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">Select your role to see how OpsMarketplace simplifies your specific workflow.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* SME CARD */}
-            <Card className="border-2 hover:border-primary/50 transition-all rounded-[2rem] overflow-hidden shadow-sm flex flex-col group cursor-pointer" onClick={() => scrollToSection('sme-details')}>
-              <CardHeader className="bg-primary/5 pb-8 pt-10 text-center items-center">
+            <Card className="border-2 hover:border-primary/50 transition-all rounded-[2rem] overflow-hidden shadow-sm flex flex-col group cursor-pointer bg-slate-50/50" onClick={() => scrollToSection('sme-details')}>
+              <CardHeader className="pb-8 pt-10 text-center items-center">
                 <div className="bg-primary w-14 h-14 rounded-2xl flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform">
                   <Building2 className="h-7 w-7 text-white" />
                 </div>
-                <CardTitle className="text-2xl font-black">For Businesses</CardTitle>
-                <CardDescription className="text-sm mt-2">Get expert compliance and HR support without the search effort.</CardDescription>
+                <CardTitle className="text-2xl font-black text-slate-900">For Businesses</CardTitle>
+                <CardDescription className="text-sm mt-2 font-medium">Get expert compliance and HR support without the search effort.</CardDescription>
               </CardHeader>
-              <CardFooter className="pb-10 pt-4 flex flex-col gap-4">
-                <Button variant="ghost" className="text-primary font-black text-base hover:bg-transparent">
+              <CardFooter className="pb-10 pt-4 mt-auto">
+                <Button variant="ghost" className="w-full text-primary font-black text-base hover:bg-transparent">
                   Learn Managed Flow <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </CardFooter>
             </Card>
 
             {/* CONSULTANT CARD */}
-            <Card className="border-2 hover:border-primary/50 transition-all rounded-[2rem] overflow-hidden shadow-sm flex flex-col group cursor-pointer" onClick={() => scrollToSection('expert-details')}>
-              <CardHeader className="bg-secondary/20 pb-8 pt-10 text-center items-center">
+            <Card className="border-2 hover:border-primary/50 transition-all rounded-[2rem] overflow-hidden shadow-sm flex flex-col group cursor-pointer bg-slate-50/50" onClick={() => scrollToSection('expert-details')}>
+              <CardHeader className="pb-8 pt-10 text-center items-center">
                 <div className="bg-primary w-14 h-14 rounded-2xl flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform">
                   <Briefcase className="h-7 w-7 text-white" />
                 </div>
-                <CardTitle className="text-2xl font-black">For Experts</CardTitle>
-                <CardDescription className="text-sm mt-2">Focus on delivery, let AI handle your sales pipeline.</CardDescription>
+                <CardTitle className="text-2xl font-black text-slate-900">For Experts</CardTitle>
+                <CardDescription className="text-sm mt-2 font-medium">Focus on delivery, let AI handle your sales pipeline.</CardDescription>
               </CardHeader>
-              <CardFooter className="pb-10 pt-4 flex flex-col gap-4">
-                <Button variant="ghost" className="text-primary font-black text-base hover:bg-transparent">
+              <CardFooter className="pb-10 pt-4 mt-auto">
+                <Button variant="ghost" className="w-full text-primary font-black text-base hover:bg-transparent">
                   See Expert Benefits <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </CardFooter>
             </Card>
 
             {/* PARTNER CARD */}
-            <Card className="border-2 hover:border-amber-500/50 transition-all rounded-[2rem] overflow-hidden shadow-sm flex flex-col group cursor-pointer" onClick={() => scrollToSection('partner-details')}>
-              <CardHeader className="bg-amber-50 pb-8 pt-10 text-center items-center">
+            <Card className="border-2 hover:border-amber-500/50 transition-all rounded-[2rem] overflow-hidden shadow-sm flex flex-col group cursor-pointer bg-slate-50/50" onClick={() => scrollToSection('partner-details')}>
+              <CardHeader className="pb-8 pt-10 text-center items-center">
                 <div className="bg-amber-500 w-14 h-14 rounded-2xl flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform">
                   <HeartHandshake className="h-7 w-7 text-white" />
                 </div>
-                <CardTitle className="text-2xl font-black">For Partners</CardTitle>
-                <CardDescription className="text-sm mt-2">Monetize your network with zero execution risk.</CardDescription>
+                <CardTitle className="text-2xl font-black text-slate-900">For Partners</CardTitle>
+                <CardDescription className="text-sm mt-2 font-medium">Monetize your network with zero execution risk.</CardDescription>
               </CardHeader>
-              <CardFooter className="pb-10 pt-4 flex flex-col gap-4">
-                <Button variant="ghost" className="text-amber-600 font-black text-base hover:bg-transparent">
+              <CardFooter className="pb-10 pt-4 mt-auto">
+                <Button variant="ghost" className="w-full text-amber-600 font-black text-base hover:bg-transparent">
                   Partner Growth Model <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </CardFooter>
@@ -334,18 +334,18 @@ export default function Home() {
               </div>
             </div>
             <div className="hidden lg:block relative">
-              <div className="max-w-md mx-auto relative z-10">
+              <div className="max-w-lg mx-auto relative z-10">
                 {smeImg?.imageUrl && (
-                  <Card className="border-none shadow-2xl rounded-[2.5rem] overflow-hidden">
+                  <div className="rounded-[3rem] overflow-hidden">
                     <Image 
                       src={smeImg.imageUrl} 
-                      alt="SME Workflow" 
+                      alt="SME Workflow Graphic" 
                       width={600}
                       height={400}
-                      className="w-full h-auto object-cover grayscale-[0.2] contrast-[1.1]"
+                      className="w-full h-auto object-cover grayscale-[0.1] contrast-[1.05]"
                       data-ai-hint={smeImg.imageHint}
                     />
-                  </Card>
+                  </div>
                 )}
               </div>
             </div>
@@ -358,18 +358,18 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div className="order-2 lg:order-1 hidden lg:block relative">
-              <div className="max-w-md mx-auto relative z-10">
+              <div className="max-w-lg mx-auto relative z-10">
                 {expertImg?.imageUrl && (
-                  <Card className="border-none shadow-2xl rounded-[2.5rem] overflow-hidden">
+                  <div className="rounded-[3rem] overflow-hidden opacity-90 border border-white/10 shadow-2xl">
                     <Image 
                       src={expertImg.imageUrl} 
-                      alt="Expert Network" 
+                      alt="Expert Network Graphic" 
                       width={600}
                       height={400}
-                      className="w-full h-auto object-cover opacity-80"
+                      className="w-full h-auto object-cover"
                       data-ai-hint={expertImg.imageHint}
                     />
-                  </Card>
+                  </div>
                 )}
               </div>
             </div>
@@ -410,7 +410,7 @@ export default function Home() {
       </section>
 
       {/* PARTNER DEEP DIVE */}
-      <section id="partner-details" className="py-24 bg-amber-50/30 border-b">
+      <section id="partner-details" className="py-24 bg-amber-50/20 border-b">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center mb-16">
             <div>
@@ -423,18 +423,18 @@ export default function Home() {
               </p>
             </div>
             <div className="hidden lg:block">
-              <div className="max-w-md mx-auto">
+              <div className="max-w-lg mx-auto">
                 {partnerImg?.imageUrl && (
-                  <Card className="border-none shadow-xl rounded-[2.5rem] overflow-hidden">
+                  <div className="rounded-[3rem] overflow-hidden shadow-xl border border-amber-100">
                     <Image 
                       src={partnerImg.imageUrl} 
-                      alt="Partner Network" 
+                      alt="Partner Network Graphic" 
                       width={600}
                       height={400}
                       className="w-full h-auto object-cover"
                       data-ai-hint={partnerImg.imageHint}
                     />
-                  </Card>
+                  </div>
                 )}
               </div>
             </div>
@@ -448,22 +448,22 @@ export default function Home() {
               { step: "4", title: "Managed Delivery", desc: "Track progress through our managed delivery workspace.", icon: Zap }
             ].map((step, i) => (
               <div key={i} className="relative group">
-                <div className="bg-amber-50 w-16 h-16 rounded-2xl flex items-center justify-center mb-6 border border-amber-100 group-hover:bg-amber-500 group-hover:text-white transition-all shadow-sm group-hover:shadow-amber-200">
+                <div className="bg-white w-16 h-16 rounded-2xl flex items-center justify-center mb-6 border border-amber-100 group-hover:bg-amber-500 group-hover:text-white transition-all shadow-sm group-hover:shadow-amber-200">
                   <step.icon className="h-8 w-8 text-amber-600 group-hover:text-white" />
                 </div>
-                <h3 className="text-xl font-black mb-3">{step.title}</h3>
+                <h3 className="text-xl font-black text-slate-900 mb-3">{step.title}</h3>
                 <p className="text-sm text-slate-600 font-medium leading-relaxed">{step.desc}</p>
                 {i < 3 && <div className="hidden lg:block absolute top-8 -right-5 text-amber-200"><ArrowRight className="h-6 w-6" /></div>}
               </div>
             ))}
           </div>
 
-          <div className="mt-16 p-10 bg-slate-900 text-white rounded-[2.5rem] flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="mt-16 p-10 bg-slate-900 text-white rounded-[2.5rem] flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl">
             <div>
               <h3 className="text-2xl font-black mb-1">Ready to grow your advisory footprint?</h3>
               <p className="text-slate-400 text-base font-medium">Join 200+ partners monetizing their trusted networks.</p>
             </div>
-            <Button size="lg" className="h-14 px-10 text-lg font-black rounded-xl bg-amber-600 hover:bg-amber-700 shadow-2xl" asChild>
+            <Button size="lg" className="h-14 px-10 text-lg font-black rounded-xl bg-amber-600 hover:bg-amber-700 shadow-xl" asChild>
               <Link href="/signup?role=partner">Join as Partner</Link>
             </Button>
           </div>
@@ -474,8 +474,8 @@ export default function Home() {
       <section className="py-24 bg-white border-b">
         <div className="container mx-auto px-4 text-center">
           <div className="max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl lg:text-4xl font-black tracking-tight mb-4">Marketplace Architecture Comparison</h2>
-            <p className="text-lg text-muted-foreground">Why the managed model outperforms traditional directories.</p>
+            <h2 className="text-3xl lg:text-4xl font-black tracking-tight mb-4 text-slate-900">Marketplace Architecture Comparison</h2>
+            <p className="text-lg text-muted-foreground font-medium">Why the managed model outperforms traditional directories.</p>
           </div>
           <Card className="max-w-5xl mx-auto border-2 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.1)] overflow-hidden rounded-[2.5rem]">
             <Table>
