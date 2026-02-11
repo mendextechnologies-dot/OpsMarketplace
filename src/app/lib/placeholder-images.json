@@ -8,22 +8,22 @@
       "imageHint": "enterprise office"
     },
     {
-      "id": "compliance-service",
-      "description": "Legal compliance documents",
-      "imageUrl": "https://picsum.photos/seed/compliance-legal/400/300",
-      "imageHint": "legal papers"
+      "id": "sme-section",
+      "description": "Business owner at work",
+      "imageUrl": "https://picsum.photos/seed/sme-focus/600/400",
+      "imageHint": "business workspace"
     },
     {
-      "id": "hr-ops",
-      "description": "HR team meeting",
-      "imageUrl": "https://picsum.photos/seed/hr-team/400/300",
-      "imageHint": "hr team"
+      "id": "expert-section",
+      "description": "Professional consultant",
+      "imageUrl": "https://picsum.photos/seed/expert-focus/600/400",
+      "imageHint": "professional consultant"
     },
     {
-      "id": "payroll-calc",
-      "description": "Payroll and accounting",
-      "imageUrl": "https://picsum.photos/seed/payroll-accounting/400/300",
-      "imageHint": "accounting office"
+      "id": "partner-section",
+      "description": "Business partnership handshake",
+      "imageUrl": "https://picsum.photos/seed/partner-focus/600/400",
+      "imageHint": "business partnership"
     }
   ]
 }

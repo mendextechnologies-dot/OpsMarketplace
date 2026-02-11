@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -48,6 +49,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { marketplaceGuide } from "@/ai/flows/marketplace-guide-flow";
+import { PlaceHolderImages } from "@/lib/placeholder-images";
 
 export default function Home() {
   const { user } = useAuth();
@@ -57,6 +59,8 @@ export default function Home() {
   const [messages, setMessages] = useState<{ role: 'user' | 'model', content: string, action?: string, url?: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const getImg = (id: string) => PlaceHolderImages.find(img => img.id === id);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -326,15 +330,18 @@ export default function Home() {
               </div>
             </div>
             <div className="hidden lg:block relative">
-              <div className="absolute inset-0 bg-primary/5 blur-[100px] rounded-full" />
-              <Card className="border-none shadow-2xl rounded-[2.5rem] overflow-hidden relative z-10">
-                <img 
-                  src="https://picsum.photos/seed/sme-workflow/800/1000" 
-                  alt="SME Workflow" 
-                  className="w-full h-auto object-cover grayscale-[0.2] contrast-[1.1]"
-                  data-ai-hint="business office"
-                />
-              </Card>
+              <div className="max-w-md mx-auto relative z-10">
+                <Card className="border-none shadow-2xl rounded-[2.5rem] overflow-hidden">
+                  <Image 
+                    src={getImg('sme-section')?.imageUrl || ''} 
+                    alt="SME Workflow" 
+                    width={600}
+                    height={400}
+                    className="w-full h-auto object-cover grayscale-[0.2] contrast-[1.1]"
+                    data-ai-hint={getImg('sme-section')?.imageHint}
+                  />
+                </Card>
+              </div>
             </div>
           </div>
         </div>
@@ -345,15 +352,18 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div className="order-2 lg:order-1 hidden lg:block relative">
-              <div className="absolute inset-0 bg-primary/20 blur-[100px] rounded-full" />
-              <Card className="border-none shadow-2xl rounded-[2.5rem] overflow-hidden relative z-10">
-                <img 
-                  src="https://picsum.photos/seed/expert-profile/800/1000" 
-                  alt="Expert Network" 
-                  className="w-full h-auto object-cover opacity-80"
-                  data-ai-hint="professional workspace"
-                />
-              </Card>
+              <div className="max-w-md mx-auto relative z-10">
+                <Card className="border-none shadow-2xl rounded-[2.5rem] overflow-hidden">
+                  <Image 
+                    src={getImg('expert-section')?.imageUrl || ''} 
+                    alt="Expert Network" 
+                    width={600}
+                    height={400}
+                    className="w-full h-auto object-cover opacity-80"
+                    data-ai-hint={getImg('expert-section')?.imageHint}
+                  />
+                </Card>
+              </div>
             </div>
             <div className="order-1 lg:order-2">
               <Badge className="mb-4 bg-primary/20 text-primary border-none font-black tracking-widest uppercase text-[11px] px-3 py-1 rounded-full">For Experts & Consultants</Badge>
@@ -394,14 +404,30 @@ export default function Home() {
       {/* PARTNER DEEP DIVE */}
       <section id="partner-details" className="py-24 bg-amber-50/30 border-b">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mb-16">
-            <Badge className="mb-4 bg-amber-100 text-amber-700 border-none font-black tracking-widest uppercase text-[11px] px-3 py-1 rounded-full">For Channel Partners</Badge>
-            <h2 className="text-3xl lg:text-5xl font-black tracking-tight text-slate-900 mb-6 leading-tight">
-              Monetize Your Network — <span className="text-amber-600 italic">With Zero Execution Risk.</span>
-            </h2>
-            <p className="text-lg text-slate-600 leading-relaxed font-medium">
-              Secure lead ownership by logging requirements for your clients. We provide the experts and the infrastructure for managed execution.
-            </p>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center mb-16">
+            <div>
+              <Badge className="mb-4 bg-amber-100 text-amber-700 border-none font-black tracking-widest uppercase text-[11px] px-3 py-1 rounded-full">For Channel Partners</Badge>
+              <h2 className="text-3xl lg:text-5xl font-black tracking-tight text-slate-900 mb-6 leading-tight">
+                Monetize Your Network — <span className="text-amber-600 italic">With Zero Execution Risk.</span>
+              </h2>
+              <p className="text-lg text-slate-600 leading-relaxed font-medium">
+                Secure lead ownership by logging requirements for your clients. We provide the experts and the infrastructure for managed execution.
+              </p>
+            </div>
+            <div className="hidden lg:block">
+              <div className="max-w-md mx-auto">
+                <Card className="border-none shadow-xl rounded-[2.5rem] overflow-hidden">
+                  <Image 
+                    src={getImg('partner-section')?.imageUrl || ''} 
+                    alt="Partner Network" 
+                    width={600}
+                    height={400}
+                    className="w-full h-auto object-cover"
+                    data-ai-hint={getImg('partner-section')?.imageHint}
+                  />
+                </Card>
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
