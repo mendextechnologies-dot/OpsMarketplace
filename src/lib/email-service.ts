@@ -10,11 +10,10 @@ import nodemailer from 'nodemailer';
 
 export async function sendWelcomeEmail(email: string, name: string, role: string) {
   // 1. Configure SMTP Transporter using environment variables
-  // If variables are missing, it defaults to the Hostinger settings you provided
   const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.hostinger.com',
+    host: process.env.SMTP_HOST,
     port: parseInt(process.env.SMTP_PORT || '465'),
-    secure: true, // true for port 465, false for other ports
+    secure: true, // true for port 465
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
