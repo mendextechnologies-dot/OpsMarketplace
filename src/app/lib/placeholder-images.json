@@ -3,27 +3,27 @@
   "placeholderImages": [
     {
       "id": "hero-image",
-      "description": "Flat illustration of business growth",
-      "imageUrl": "https://images.unsplash.com/photo-1557804506-669a67965ba0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
-      "imageHint": "flat illustration"
+      "description": "Enterprise business dashboard",
+      "imageUrl": "https://picsum.photos/seed/hero99/1080/600",
+      "imageHint": "enterprise dashboard"
     },
     {
       "id": "sme-section",
-      "description": "Minimalist illustration of SME workspace",
-      "imageUrl": "https://images.unsplash.com/photo-1559028012-481c04fa702d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
-      "imageHint": "minimalist illustration"
+      "description": "AI Guided Workflow Illustration for SMEs",
+      "imageUrl": "https://picsum.photos/seed/sme-ai-flow/600/400",
+      "imageHint": "AI workflow"
     },
     {
       "id": "expert-section",
-      "description": "Vector illustration of expert consulting",
-      "imageUrl": "https://images.unsplash.com/photo-1551288049-bbda48658a7d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
-      "imageHint": "vector illustration"
+      "description": "Professional Expert Workspace Illustration",
+      "imageUrl": "https://picsum.photos/seed/expert-workspace/600/400",
+      "imageHint": "expert workspace"
     },
     {
       "id": "partner-section",
-      "description": "Graphic illustration of business partnership",
-      "imageUrl": "https://images.unsplash.com/photo-1522071823991-b1ae5e6a3048?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
-      "imageHint": "graphic illustration"
+      "description": "Business Ecosystem and Network Illustration",
+      "imageUrl": "https://picsum.photos/seed/partner-network/600/400",
+      "imageHint": "business ecosystem"
     }
   ]
 }
