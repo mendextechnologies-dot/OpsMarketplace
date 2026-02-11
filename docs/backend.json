@@ -84,7 +84,8 @@
             "subject": { "type": "string" },
             "html": { "type": "string" }
           }
-        }
+        },
+        "createdAt": { "type": "string", "format": "date-time" }
       }
     },
     "ServiceRequest": {
