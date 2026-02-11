@@ -3,13 +3,16 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
-import { collection, query, getDocs, orderBy, doc, updateDoc, deleteDoc, where } from "firebase/firestore";
+import { collection, query, getDocs, orderBy, doc, updateDoc, deleteDoc, where, addDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase-config";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { 
   AreaChart, 
   Area, 
@@ -53,14 +56,16 @@ import {
   Target,
   ArrowRight,
   Sparkles,
-  Calendar
+  Calendar,
+  Mail,
+  Settings
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { getCategoryName, getServiceName } from "@/lib/constants";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-type AdminView = 'dashboard' | 'requests' | 'consultants' | 'partners' | 'pipeline' | 'conflicts' | 'risk';
+type AdminView = 'dashboard' | 'requests' | 'consultants' | 'partners' | 'pipeline' | 'conflicts' | 'templates';
 
 export default function AdminDashboard() {
   const { profile, loading: authLoading } = useAuth();
@@ -71,25 +76,29 @@ export default function AdminDashboard() {
   const [consultants, setConsultants] = useState<any[]>([]);
   const [partners, setPartners] = useState<any[]>([]);
   const [assignments, setAssignments] = useState<any[]>([]);
+  const [templates, setTemplates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewingConsultant, setViewingConsultant] = useState<any>(null);
   const [viewingPartner, setViewingPartner] = useState<any>(null);
+  const [editingTemplate, setEditingTemplate] = useState<any>(null);
 
   const fetchData = async () => {
     if (!profile || profile.role !== 'admin') return;
     setLoading(true);
     try {
-      const [reqSnap, consSnap, partnerSnap, assignSnap] = await Promise.all([
+      const [reqSnap, consSnap, partnerSnap, assignSnap, tempSnap] = await Promise.all([
         getDocs(query(collection(db, "serviceRequests"), orderBy("createdAt", "desc"))),
         getDocs(collection(db, "consultantProfiles")),
         getDocs(collection(db, "partnerProfiles")),
-        getDocs(query(collection(db, "leadAssignments"), orderBy("createdAt", "desc")))
+        getDocs(query(collection(db, "leadAssignments"), orderBy("createdAt", "desc"))),
+        getDocs(collection(db, "emailTemplates"))
       ]);
 
       setRequests(reqSnap.docs.map(d => ({ id: d.id, ...d.data() })));
       setConsultants(consSnap.docs.map(d => ({ id: d.id, ...d.data() })));
       setPartners(partnerSnap.docs.map(d => ({ id: d.id, ...d.data() })));
       setAssignments(assignSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setTemplates(tempSnap.docs.map(d => ({ id: d.id, ...d.data() })));
     } catch (error: any) {
       toast({ title: "Sync Failed", description: "Could not sync marketplace data.", variant: "destructive" });
     } finally {
@@ -100,6 +109,24 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (!authLoading && profile?.role === 'admin') fetchData();
   }, [profile, authLoading]);
+
+  const handleSaveTemplate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTemplate) return;
+    try {
+      const { id, ...data } = editingTemplate;
+      if (id) {
+        await updateDoc(doc(db, "emailTemplates", id), data);
+      } else {
+        await addDoc(collection(db, "emailTemplates"), data);
+      }
+      toast({ title: "Template Saved", description: "Email communication updated successfully." });
+      setEditingTemplate(null);
+      fetchData();
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  };
 
   if (authLoading || loading) {
     return (
@@ -152,9 +179,9 @@ export default function AdminDashboard() {
         <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-10">
           <div>
             <h1 className="text-3xl font-black tracking-tight text-slate-900">
-              Hello, {profile?.name} 👋
+              Super Admin Console 👋
             </h1>
-            <p className="text-muted-foreground text-sm mt-1 font-medium">Here is the current status for today.</p>
+            <p className="text-muted-foreground text-sm mt-1 font-medium">Platform intelligence and management control.</p>
           </div>
           <div className="flex items-center gap-3">
             <Button variant="outline" className="rounded-xl font-bold bg-white border-none shadow-sm h-11" onClick={fetchData}>
@@ -175,6 +202,7 @@ export default function AdminDashboard() {
           <NavItem view="partners" icon={Handshake} label="Partners" count={partners.length} />
           <NavItem view="pipeline" icon={Activity} label="Live Pipeline" />
           <NavItem view="conflicts" icon={AlertTriangle} label="Conflicts" count={conflicts.length} />
+          <NavItem view="templates" icon={Mail} label="Communications" />
         </div>
 
         {activeView === 'dashboard' && (
@@ -333,6 +361,51 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {activeView === 'templates' && (
+          <div className="space-y-8">
+            <header className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-black text-slate-900">Communication Templates</h2>
+                <p className="text-muted-foreground text-sm">Manage automated emails for registration and platform events.</p>
+              </div>
+              <Button onClick={() => setEditingTemplate({ name: "", subject: "", html: "", roleType: "general" })}>
+                <PlusCircle className="h-4 w-4 mr-2" /> Add Template
+              </Button>
+            </header>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {templates.map((temp) => (
+                <Card key={temp.id} className="border-none shadow-sm rounded-3xl">
+                  <CardHeader className="pb-3">
+                    <div className="flex justify-between items-start">
+                      <Badge variant="secondary" className="bg-primary/5 text-primary border-none text-[10px] font-black uppercase">
+                        {temp.roleType}
+                      </Badge>
+                      <Button variant="ghost" size="sm" onClick={() => setEditingTemplate(temp)}>
+                        <Settings className="h-3 w-3" />
+                      </Button>
+                    </div>
+                    <CardTitle className="text-lg font-bold mt-2">{temp.name}</CardTitle>
+                    <CardDescription className="text-xs font-medium italic">"{temp.subject}"</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-24 bg-slate-50 rounded-xl border border-dashed border-slate-200 overflow-hidden text-[10px] p-2 text-slate-400">
+                      {temp.html}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+              {templates.length === 0 && (
+                <div className="col-span-full py-20 text-center border-2 border-dashed rounded-3xl">
+                  <Mail className="h-10 w-10 mx-auto opacity-10 mb-4" />
+                  <p className="text-muted-foreground font-medium">No custom templates yet. System defaults will be used.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Existing views (requests, consultants, etc.) remained implemented... */}
         {activeView === 'requests' && (
           <Card className="border-none shadow-sm rounded-3xl">
             <CardHeader className="flex flex-row items-center justify-between p-8 border-b">
@@ -546,42 +619,47 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
         )}
-
-        {activeView === 'conflicts' && (
-          <Card className="border-none shadow-sm rounded-3xl">
-            <CardHeader className="p-8 border-b">
-              <CardTitle className="text-2xl font-black text-slate-900">Lead Ownership Conflicts</CardTitle>
-              <CardDescription className="text-sm font-medium mt-1">Resolving duplicate entries and ownership disputes.</CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader className="bg-slate-50/50">
-                  <TableRow className="border-none h-14">
-                    <TableHead className="px-8 font-black text-[11px] uppercase tracking-wider">Company Key</TableHead>
-                    <TableHead className="font-black text-[11px] uppercase tracking-wider">Logged By</TableHead>
-                    <TableHead className="font-black text-[11px] uppercase tracking-wider">Conflict Status</TableHead>
-                    <TableHead className="text-right px-8"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {conflicts.map((req) => (
-                    <TableRow key={req.id} className="border-none h-16 bg-red-50/10">
-                      <TableCell className="px-8 font-mono text-[10px] font-bold">{req.companyUniqueKey}</TableCell>
-                      <TableCell className="font-bold">{req.companyName}</TableCell>
-                      <TableCell>
-                        <Badge variant="destructive" className="font-black text-[9px] uppercase">DUPLICATE DETECTED</Badge>
-                      </TableCell>
-                      <TableCell className="text-right px-8">
-                        <Button variant="ghost" size="sm" className="font-bold text-red-600 hover:bg-red-50">Review Conflict</Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        )}
       </div>
+
+      {/* TEMPLATE EDIT DIALOG */}
+      <Dialog open={!!editingTemplate} onOpenChange={() => setEditingTemplate(null)}>
+        <DialogContent className="max-w-2xl rounded-3xl">
+          <DialogHeader>
+            <DialogTitle>Email Template Editor</DialogTitle>
+            <DialogDescription>Modify the content of automated system communications.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSaveTemplate} className="space-y-6 pt-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Template Name</Label>
+                <Input value={editingTemplate?.name} onChange={e => setEditingTemplate({...editingTemplate, name: e.target.value})} placeholder="e.g. Welcome SME" required />
+              </div>
+              <div className="space-y-2">
+                <Label>Role Context</Label>
+                <Input value={editingTemplate?.roleType} onChange={e => setEditingTemplate({...editingTemplate, roleType: e.target.value})} placeholder="sme, consultant, partner" required />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Subject Line</Label>
+              <Input value={editingTemplate?.subject} onChange={e => setEditingTemplate({...editingTemplate, subject: e.target.value})} placeholder="Welcome to OpsMarketplace, {{name}}!" required />
+            </div>
+            <div className="space-y-2">
+              <Label>HTML Body</Label>
+              <Textarea 
+                value={editingTemplate?.html} 
+                onChange={e => setEditingTemplate({...editingTemplate, html: e.target.value})} 
+                className="min-h-[250px] font-mono text-xs" 
+                placeholder="<div>Hello {{name}}, welcome...</div>" 
+                required 
+              />
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" type="button" onClick={() => setEditingTemplate(null)}>Cancel</Button>
+              <Button type="submit">Save Template</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* DIALOGS */}
       <Dialog open={!!viewingConsultant} onOpenChange={() => setViewingConsultant(null)}>

@@ -61,6 +61,32 @@
         "createdAt": { "type": "string", "format": "date-time" }
       }
     },
+    "EmailTemplate": {
+      "title": "Email Template",
+      "description": "Templates for system emails",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "subject": { "type": "string" },
+        "html": { "type": "string" },
+        "roleType": { "type": "string", "enum": ["sme", "consultant", "partner", "general"] }
+      }
+    },
+    "MailTrigger": {
+      "title": "Mail Trigger",
+      "description": "Document to trigger Firebase Extension",
+      "type": "object",
+      "properties": {
+        "to": { "type": "array", "items": { "type": "string" } },
+        "message": {
+          "type": "object",
+          "properties": {
+            "subject": { "type": "string" },
+            "html": { "type": "string" }
+          }
+        }
+      }
+    },
     "ServiceRequest": {
       "title": "Service Request",
       "description": "An SME's request for professional services",
@@ -90,17 +116,6 @@
         },
         "createdAt": { "type": "string", "format": "date-time" }
       }
-    },
-    "LeadAssignment": {
-      "title": "Lead Assignment",
-      "description": "Mapping of a request to a matching consultant",
-      "type": "object",
-      "properties": {
-        "requestId": { "type": "string" },
-        "consultantId": { "type": "string" },
-        "status": { "type": "string", "enum": ["sent", "viewed", "accepted", "rejected", "completed"] },
-        "createdAt": { "type": "string", "format": "date-time" }
-      }
     }
   },
   "auth": {
@@ -110,6 +125,14 @@
     "/users/{userId}": {
       "schema": "UserProfile",
       "description": "User account data"
+    },
+    "/emailTemplates/{templateId}": {
+      "schema": "EmailTemplate",
+      "description": "System email templates"
+    },
+    "/mail/{mailId}": {
+      "schema": "MailTrigger",
+      "description": "Outgoing email queue"
     },
     "/organisationProfiles/{userId}": {
       "schema": "OrganisationProfile",
@@ -126,10 +149,6 @@
     "/serviceRequests/{requestId}": {
       "schema": "ServiceRequest",
       "description": "SME service requests"
-    },
-    "/leadAssignments/{assignmentId}": {
-      "schema": "LeadAssignment",
-      "description": "Lead matches for consultants"
     }
   }
 }

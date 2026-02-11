@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
+import { sendWelcomeEmail } from "@/lib/email-service";
 
 function SignupForm() {
   const searchParams = useSearchParams();
@@ -46,7 +47,10 @@ function SignupForm() {
       const userDocRef = doc(db, "users", user.uid);
 
       setDoc(userDocRef, profileData)
-        .then(() => {
+        .then(async () => {
+          // Trigger Welcome Email (Async, don't block navigation)
+          sendWelcomeEmail(email, name, role);
+
           toast({ 
             title: "Account created!", 
             description: `Welcome to OpsMarketplace as a ${role.toUpperCase()}.` 
