@@ -336,13 +336,13 @@ export default function Home() {
             <div className="hidden lg:block relative">
               <div className="max-w-lg mx-auto relative z-10">
                 {smeImg?.imageUrl && (
-                  <div className="rounded-[3rem] overflow-hidden">
+                  <div className="rounded-[3rem] overflow-hidden shadow-2xl border-4 border-white">
                     <Image 
                       src={smeImg.imageUrl} 
-                      alt="SME Workflow Graphic" 
+                      alt="SME Workflow" 
                       width={600}
                       height={400}
-                      className="w-full h-auto object-cover grayscale-[0.1] contrast-[1.05]"
+                      className="w-full h-auto object-cover"
                       data-ai-hint={smeImg.imageHint}
                     />
                   </div>
@@ -360,10 +360,10 @@ export default function Home() {
             <div className="order-2 lg:order-1 hidden lg:block relative">
               <div className="max-w-lg mx-auto relative z-10">
                 {expertImg?.imageUrl && (
-                  <div className="rounded-[3rem] overflow-hidden opacity-90 border border-white/10 shadow-2xl">
+                  <div className="rounded-[3rem] overflow-hidden opacity-90 shadow-2xl border-4 border-white/10">
                     <Image 
                       src={expertImg.imageUrl} 
-                      alt="Expert Network Graphic" 
+                      alt="Expert Network" 
                       width={600}
                       height={400}
                       className="w-full h-auto object-cover"
@@ -423,12 +423,12 @@ export default function Home() {
               </p>
             </div>
             <div className="hidden lg:block">
-              <div className="max-w-lg mx-auto">
+              <div className="max-w-lg mx-auto relative">
                 {partnerImg?.imageUrl && (
-                  <div className="rounded-[3rem] overflow-hidden shadow-xl border border-amber-100">
+                  <div className="rounded-[3rem] overflow-hidden shadow-2xl border-4 border-amber-100">
                     <Image 
                       src={partnerImg.imageUrl} 
-                      alt="Partner Network Graphic" 
+                      alt="Partner Network" 
                       width={600}
                       height={400}
                       className="w-full h-auto object-cover"

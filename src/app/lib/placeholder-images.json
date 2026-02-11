@@ -3,27 +3,27 @@
   "placeholderImages": [
     {
       "id": "hero-image",
-      "description": "Modern business tech illustration",
-      "imageUrl": "https://picsum.photos/seed/ops-illustration/1200/600",
-      "imageHint": "business illustration"
+      "description": "Enterprise business dashboard",
+      "imageUrl": "https://images.unsplash.com/photo-1633975846872-2bed7fd995f9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxlbnRlcnByaXNlJTIwb2ZmaWNlfGVufDB8fHx8MTc3MDc0MzEwMXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "enterprise office"
     },
     {
       "id": "sme-section",
-      "description": "SME growth illustration",
-      "imageUrl": "https://picsum.photos/seed/sme-graphic/600/400",
-      "imageHint": "business growth illustration"
+      "description": "Business owner at work",
+      "imageUrl": "https://images.unsplash.com/photo-1758520145175-aa3b593b81af?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxidXNpbmVzcyUyMHdvcmtzcGFjZXxlbnwwfHx8fDE3NzA4MDk2ODF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "business workspace"
     },
     {
       "id": "expert-section",
-      "description": "Professional consultant illustration",
-      "imageUrl": "https://picsum.photos/seed/expert-graphic/600/400",
-      "imageHint": "professional illustration"
+      "description": "Professional consultant",
+      "imageUrl": "https://images.unsplash.com/photo-1632054224659-280be3239aff?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxwcm9mZXNzaW9uYWwlMjBjb25zdWx0YW50fGVufDB8fHx8MTc3MDgwOTY4MXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "professional consultant"
     },
     {
       "id": "partner-section",
-      "description": "Business partnership illustration",
-      "imageUrl": "https://picsum.photos/seed/partner-graphic/600/400",
-      "imageHint": "collaboration illustration"
+      "description": "Business partnership handshake",
+      "imageUrl": "https://images.unsplash.com/photo-1681505531034-8d67054e07f6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxidXNpbmVzcyUyMHBhcnRuZXJzaGlwfGVufDB8fHx8MTc3MDcyNzY1M3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "business partnership"
     }
   ]
 }
