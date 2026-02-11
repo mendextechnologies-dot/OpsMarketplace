@@ -1,9 +1,8 @@
-
 "use client";
 
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
-import { collection, query, getDocs, orderBy, doc, updateDoc, deleteDoc, where, addDoc } from "firebase/firestore";
+import { collection, query, getDocs, orderBy, doc, updateDoc, deleteDoc, where, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase-config";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -58,7 +57,8 @@ import {
   Sparkles,
   Calendar,
   Mail,
-  Settings
+  Settings,
+  Database
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -81,6 +81,7 @@ export default function AdminDashboard() {
   const [viewingConsultant, setViewingConsultant] = useState<any>(null);
   const [viewingPartner, setViewingPartner] = useState<any>(null);
   const [editingTemplate, setEditingTemplate] = useState<any>(null);
+  const [seeding, setSeeding] = useState(false);
 
   const fetchData = async () => {
     if (!profile || profile.role !== 'admin') return;
@@ -125,6 +126,28 @@ export default function AdminDashboard() {
       fetchData();
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const handleSeedTemplates = async () => {
+    setSeeding(true);
+    try {
+      const defaultTemplates = [
+        { name: "Welcome SME", subject: "Welcome to OpsMarketplace, {{name}}!", roleType: "sme", html: "<div>Welcome to the platform for managed compliance.</div>" },
+        { name: "Welcome Consultant", subject: "Expert Console Activated: Welcome {{name}}", roleType: "consultant", html: "<div>You are now part of our verified expert network.</div>" },
+        { name: "New Lead Notification", subject: "New Opportunity: {{companyName}}", roleType: "consultant", html: "<div>A new requirement matching your skills has been found.</div>" },
+        { name: "Welcome Partner", subject: "Partner Console Ready", roleType: "partner", html: "<div>Start monetizing your network today.</div>" }
+      ];
+
+      for (const temp of defaultTemplates) {
+        await addDoc(collection(db, "emailTemplates"), { ...temp, createdAt: serverTimestamp() });
+      }
+      toast({ title: "System Seeded", description: "Default communication templates have been added." });
+      fetchData();
+    } catch (error: any) {
+      toast({ title: "Seed Failed", description: error.message, variant: "destructive" });
+    } finally {
+      setSeeding(false);
     }
   };
 
@@ -366,9 +389,17 @@ export default function AdminDashboard() {
                 <h2 className="text-2xl font-black text-slate-900">Communication Templates</h2>
                 <p className="text-muted-foreground text-sm">Manage automated emails for registration and platform events.</p>
               </div>
-              <Button onClick={() => setEditingTemplate({ name: "", subject: "", html: "", roleType: "general" })}>
-                <PlusCircle className="h-4 w-4 mr-2" /> Add Template
-              </Button>
+              <div className="flex gap-3">
+                {templates.length === 0 && (
+                  <Button variant="outline" onClick={handleSeedTemplates} disabled={seeding}>
+                    {seeding ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Database className="h-4 w-4 mr-2" />}
+                    Seed System Defaults
+                  </Button>
+                )}
+                <Button onClick={() => setEditingTemplate({ name: "", subject: "", html: "", roleType: "general" })}>
+                  <PlusCircle className="h-4 w-4 mr-2" /> Add Template
+                </Button>
+              </div>
             </header>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

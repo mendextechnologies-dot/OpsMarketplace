@@ -34,6 +34,7 @@ import { getServiceNames, getCategoryName } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { getPricingInsights } from "@/ai/flows/pricing-intelligence-flow";
 import type { PricingOutput } from "@/ai/flows/pricing-intelligence-flow";
+import { sendLeadAssignmentEmail } from "@/lib/email-service";
 
 export default function RequestDetailPage() {
   const { id } = useParams();
@@ -156,8 +157,24 @@ export default function RequestDetailPage() {
         setRequest({ ...request, status: 'assigned' });
       }
 
-      toast({ title: "Expert Assigned", description: "Lead matched with the selected expert." });
+      // Trigger Notification Email
+      const selectedConsultant = consultants.find(c => c.id === consultantId);
+      if (selectedConsultant) {
+        const consUserSnap = await getDoc(doc(db, "users", consultantId));
+        const consEmail = consUserSnap.data()?.email;
+        if (consEmail) {
+          sendLeadAssignmentEmail(
+            consEmail, 
+            selectedConsultant.name, 
+            request.companyName, 
+            getCategoryName(request.categoryId)
+          );
+        }
+      }
+
+      toast({ title: "Expert Assigned", description: "Lead matched and notification email sent." });
       
+      // Refresh local state
       const q = query(collection(db, "leadAssignments"), where("requestId", "==", id));
       const matchSnap = await getDocs(q);
       const matchData = await Promise.all(matchSnap.docs.map(async (mDoc) => {

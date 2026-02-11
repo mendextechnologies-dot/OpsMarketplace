@@ -1,10 +1,9 @@
-
 "use client";
 
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { db } from "@/lib/firebase-config";
-import { collection, addDoc, serverTimestamp, query, where, getDocs } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, query, where, getDocs, doc, getDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from "@/components/ui/card";
@@ -17,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Building2, MapPin, ListChecks, Zap, AlertTriangle } from "lucide-react";
 import { SERVICE_TAXONOMY } from "@/lib/constants";
 import { cn, generateCompanyKey } from "@/lib/utils";
+import { sendLeadAssignmentEmail } from "@/lib/email-service";
 
 export default function PartnerCreateLeadPage() {
   const { profile } = useAuth();
@@ -111,28 +111,41 @@ export default function PartnerCreateLeadPage() {
 
       const docRef = await addDoc(collection(db, "serviceRequests"), leadData);
 
+      // Auto-assign logic based on state and services
       const consultantsQuery = query(
         collection(db, "consultantProfiles"),
         where("statesCovered", "array-contains", formData.state)
       );
       const consultantSnap = await getDocs(consultantsQuery);
       
-      for (const doc of consultantSnap.docs) {
-        const cData = doc.data();
+      for (const cDoc of consultantSnap.docs) {
+        const cData = cDoc.data();
         const matchesService = cData.servicesOffered?.some((sId: string) => formData.serviceIds.includes(sId));
         if (matchesService) {
           await addDoc(collection(db, "leadAssignments"), {
             requestId: docRef.id,
-            consultantId: doc.id,
+            consultantId: cDoc.id,
             status: "sent",
             createdAt: serverTimestamp(),
           });
+
+          // Trigger Notification Email to Consultant
+          const userSnap = await getDoc(doc(db, "users", cDoc.id));
+          const consEmail = userSnap.data()?.email;
+          if (consEmail) {
+            sendLeadAssignmentEmail(
+              consEmail,
+              cData.name,
+              formData.companyName,
+              getCategoryName(formData.categoryId)
+            );
+          }
         }
       }
 
       toast({
         title: "Lead Logged Successfully",
-        description: "Ownership assigned to your account.",
+        description: "Ownership assigned and experts notified.",
       });
 
       router.push("/dashboard/partner");

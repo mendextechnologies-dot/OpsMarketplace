@@ -1,4 +1,3 @@
-
 'use server';
 
 import nodemailer from 'nodemailer';
@@ -8,22 +7,23 @@ import nodemailer from 'nodemailer';
  * Requires SMTP credentials in .env
  */
 
-export async function sendWelcomeEmail(email: string, name: string, role: string) {
-  // 1. Configure SMTP Transporter using environment variables
-  const transporter = nodemailer.createTransport({
+function createTransporter() {
+  return nodemailer.createTransport({
     host: process.env.SMTP_HOST,
     port: parseInt(process.env.SMTP_PORT || '465'),
-    secure: true, // true for port 465
+    secure: true,
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
     },
-    // Adding standard timeout and connection settings
     connectionTimeout: 10000, 
     greetingTimeout: 5000,
     socketTimeout: 10000,
   });
+}
 
+export async function sendWelcomeEmail(email: string, name: string, role: string) {
+  const transporter = createTransporter();
   const subject = `Welcome to OpsMarketplace, ${name}!`;
   const html = `
     <div style="font-family: sans-serif; padding: 40px; background-color: #f8fafc; color: #334155;">
@@ -40,21 +40,69 @@ export async function sendWelcomeEmail(email: string, name: string, role: string
   `;
 
   try {
-    // Determine the "From" address
     const fromAddress = process.env.SMTP_FROM || `"OpsMarketplace" <${process.env.SMTP_USER}>`;
-
-    // 2. Attempt to send the email directly
     await transporter.sendMail({
       from: fromAddress,
       to: email,
       subject: subject,
       html: html,
     });
-
-    console.log(`Welcome email sent successfully to ${email}`);
     return { success: true };
   } catch (error) {
-    console.error("SMTP sending failed:", error);
+    console.error("Welcome email failed:", error);
+    return { success: false, error: String(error) };
+  }
+}
+
+export async function sendLeadAssignmentEmail(consultantEmail: string, consultantName: string, companyName: string, serviceCategory: string) {
+  const transporter = createTransporter();
+  const subject = `New Opportunity: ${companyName} - ${serviceCategory}`;
+  const html = `
+    <div style="font-family: sans-serif; padding: 40px; background-color: #f8fafc; color: #334155;">
+      <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
+        <div style="background-color: #3F51B5; padding: 20px; border-radius: 12px; color: white; margin-bottom: 30px;">
+          <h2 style="margin: 0; font-weight: 800;">New Lead Assigned!</h2>
+        </div>
+        <p style="font-size: 16px; line-height: 1.6;">Hi ${consultantName},</p>
+        <p style="font-size: 16px; line-height: 1.6;">You have been matched with a new service opportunity on OpsMarketplace:</p>
+        
+        <div style="background-color: #f1f5f9; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <p style="margin: 0; font-size: 14px; color: #64748b; text-transform: uppercase; font-weight: bold;">Client</p>
+          <p style="margin: 5px 0 15px 0; font-size: 18px; font-weight: 800; color: #1e293b;">${companyName}</p>
+          
+          <p style="margin: 0; font-size: 14px; color: #64748b; text-transform: uppercase; font-weight: bold;">Requirement</p>
+          <p style="margin: 5px 0 0 0; font-size: 16px; color: #334155;">${serviceCategory}</p>
+        </div>
+
+        <p style="font-size: 16px; line-height: 1.6;"><strong>Next Steps:</strong></p>
+        <ol style="font-size: 15px; color: #475569; line-height: 1.8;">
+          <li>Log in to your Expert Console.</li>
+          <li>Review the detailed requirement.</li>
+          <li>Accept the lead to unlock primary contact details.</li>
+        </ol>
+
+        <div style="margin-top: 30px; text-align: center;">
+          <a href="https://opsmarketplace.com/dashboard" style="background-color: #3F51B5; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Open Expert Console</a>
+        </div>
+
+        <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; text-align: center;">
+          <p>You received this because you are a verified expert on OpsMarketplace.</p>
+        </div>
+      </div>
+    </div>
+  `;
+
+  try {
+    const fromAddress = process.env.SMTP_FROM || `"OpsMarketplace" <${process.env.SMTP_USER}>`;
+    await transporter.sendMail({
+      from: fromAddress,
+      to: consultantEmail,
+      subject: subject,
+      html: html,
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("Lead assignment email failed:", error);
     return { success: false, error: String(error) };
   }
 }
