@@ -133,16 +133,21 @@ export default function AdminDashboard() {
     setSeeding(true);
     try {
       const defaultTemplates = [
-        { name: "Welcome SME", subject: "Welcome to OpsMarketplace, {{name}}!", roleType: "sme", html: "<div>Welcome to the platform for managed compliance.</div>" },
-        { name: "Welcome Consultant", subject: "Expert Console Activated: Welcome {{name}}", roleType: "consultant", html: "<div>You are now part of our verified expert network.</div>" },
-        { name: "New Lead Notification", subject: "New Opportunity: {{companyName}}", roleType: "consultant", html: "<div>A new requirement matching your skills has been found.</div>" },
-        { name: "Welcome Partner", subject: "Partner Console Ready", roleType: "partner", html: "<div>Start monetizing your network today.</div>" }
+        { name: "Welcome SME", subject: "Welcome to OpsMarketplace, {{name}}!", roleType: "sme", html: "<div style='font-family:sans-serif; padding:20px;'><h2>Welcome {{name}}!</h2><p>Your SME account is active. Start posting requirements today.</p></div>" },
+        { name: "Welcome Consultant", subject: "Expert Console Activated: Welcome {{name}}", roleType: "consultant", html: "<div style='font-family:sans-serif; padding:20px;'><h2>Welcome Expert {{name}}!</h2><p>You are now part of our verified network. Your opportunities will appear in the Expert Console.</p></div>" },
+        { name: "New Lead Notification", subject: "New Opportunity: {{companyName}}", roleType: "consultant", html: "<div style='font-family:sans-serif; padding:20px;'><h2>Hi {{consultantName}},</h2><p>A new requirement for <strong>{{companyName}}</strong> matches your profile.</p><p>Service: {{serviceCategory}}</p></div>" },
+        { name: "Welcome Partner", subject: "Partner Console Ready", roleType: "partner", html: "<div style='font-family:sans-serif; padding:20px;'><h2>Partner Onboarding Complete</h2><p>Start monetizing your network today.</p></div>" }
       ];
 
       for (const temp of defaultTemplates) {
-        await addDoc(collection(db, "emailTemplates"), { ...temp, createdAt: serverTimestamp() });
+        // Check if template with this name already exists
+        const q = query(collection(db, "emailTemplates"), where("name", "==", temp.name));
+        const existing = await getDocs(q);
+        if (existing.empty) {
+          await addDoc(collection(db, "emailTemplates"), { ...temp, createdAt: serverTimestamp() });
+        }
       }
-      toast({ title: "System Seeded", description: "Default communication templates have been added." });
+      toast({ title: "System Seeded", description: "Standard communication templates have been verified/added." });
       fetchData();
     } catch (error: any) {
       toast({ title: "Seed Failed", description: error.message, variant: "destructive" });
@@ -209,7 +214,7 @@ export default function AdminDashboard() {
           <div className="flex items-center gap-3">
             <Button variant="outline" className="rounded-xl font-bold bg-white border-none shadow-sm h-11" onClick={fetchData}>
               <History className="h-4 w-4 mr-2" /> Refresh
-            </Button>
+            </History>
             <Button asChild className="rounded-xl font-bold h-11 shadow-lg bg-primary hover:bg-primary/90">
               <Link href="/admin/create-lead">
                 <PlusCircle className="h-4 w-4 mr-2" /> Log Requirement
@@ -387,15 +392,13 @@ export default function AdminDashboard() {
             <header className="flex justify-between items-center">
               <div>
                 <h2 className="text-2xl font-black text-slate-900">Communication Templates</h2>
-                <p className="text-muted-foreground text-sm">Manage automated emails for registration and platform events.</p>
+                <p className="text-muted-foreground text-sm">Manage automated emails. Use {{name}}, {{companyName}}, {{serviceCategory}} placeholders.</p>
               </div>
               <div className="flex gap-3">
-                {templates.length === 0 && (
-                  <Button variant="outline" onClick={handleSeedTemplates} disabled={seeding}>
-                    {seeding ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Database className="h-4 w-4 mr-2" />}
-                    Seed System Defaults
-                  </Button>
-                )}
+                <Button variant="outline" onClick={handleSeedTemplates} disabled={seeding}>
+                  {seeding ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Database className="h-4 w-4 mr-2" />}
+                  Seed System Defaults
+                </Button>
                 <Button onClick={() => setEditingTemplate({ name: "", subject: "", html: "", roleType: "general" })}>
                   <PlusCircle className="h-4 w-4 mr-2" /> Add Template
                 </Button>
@@ -427,7 +430,7 @@ export default function AdminDashboard() {
               {templates.length === 0 && (
                 <div className="col-span-full py-20 text-center border-2 border-dashed rounded-3xl">
                   <Mail className="h-10 w-10 mx-auto opacity-10 mb-4" />
-                  <p className="text-muted-foreground font-medium">No custom templates yet. System defaults will be used.</p>
+                  <p className="text-muted-foreground font-medium">No custom templates yet. Click "Seed System Defaults" to start.</p>
                 </div>
               )}
             </div>

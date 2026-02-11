@@ -1,9 +1,11 @@
 'use server';
 
 import nodemailer from 'nodemailer';
+import { db } from './firebase-config';
+import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 
 /**
- * Service to handle direct email sending via Nodemailer in a Server Action.
+ * Service to handle dynamic email sending via Firestore templates or Defaults.
  * Requires SMTP credentials in .env
  */
 
@@ -22,10 +24,41 @@ function createTransporter() {
   });
 }
 
+/**
+ * Helper to replace placeholders like {{name}} with actual values.
+ */
+function replacePlaceholders(html: string, data: Record<string, string>) {
+  let result = html;
+  for (const key in data) {
+    const regex = new RegExp(`{{${key}}}`, 'g');
+    result = result.replace(regex, data[key]);
+  }
+  return result;
+}
+
+/**
+ * Fetches a template from Firestore by name.
+ */
+async function getTemplate(name: string) {
+  try {
+    const q = query(collection(db, "emailTemplates"), where("name", "==", name), limit(1));
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      return snap.docs[0].data();
+    }
+  } catch (e) {
+    console.error(`Error fetching template ${name}:`, e);
+  }
+  return null;
+}
+
 export async function sendWelcomeEmail(email: string, name: string, role: string) {
   const transporter = createTransporter();
-  const subject = `Welcome to OpsMarketplace, ${name}!`;
-  const html = `
+  const templateName = `Welcome ${role.toUpperCase()}`;
+  const customTemplate = await getTemplate(templateName) || await getTemplate('Welcome General');
+
+  let subject = `Welcome to OpsMarketplace, ${name}!`;
+  let html = `
     <div style="font-family: sans-serif; padding: 40px; background-color: #f8fafc; color: #334155;">
       <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
         <h2 style="color: #3F51B5; margin-bottom: 24px; font-weight: 800; font-size: 24px;">Welcome to the Marketplace!</h2>
@@ -38,6 +71,11 @@ export async function sendWelcomeEmail(email: string, name: string, role: string
       </div>
     </div>
   `;
+
+  if (customTemplate) {
+    subject = replacePlaceholders(customTemplate.subject || subject, { name, role });
+    html = replacePlaceholders(customTemplate.html, { name, role });
+  }
 
   try {
     const fromAddress = process.env.SMTP_FROM || `"OpsMarketplace" <${process.env.SMTP_USER}>`;
@@ -56,8 +94,10 @@ export async function sendWelcomeEmail(email: string, name: string, role: string
 
 export async function sendLeadAssignmentEmail(consultantEmail: string, consultantName: string, companyName: string, serviceCategory: string) {
   const transporter = createTransporter();
-  const subject = `New Opportunity: ${companyName} - ${serviceCategory}`;
-  const html = `
+  const customTemplate = await getTemplate("New Lead Notification");
+
+  let subject = `New Opportunity: ${companyName} - ${serviceCategory}`;
+  let html = `
     <div style="font-family: sans-serif; padding: 40px; background-color: #f8fafc; color: #334155;">
       <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
         <div style="background-color: #3F51B5; padding: 20px; border-radius: 12px; color: white; margin-bottom: 30px;">
@@ -91,6 +131,11 @@ export async function sendLeadAssignmentEmail(consultantEmail: string, consultan
       </div>
     </div>
   `;
+
+  if (customTemplate) {
+    subject = replacePlaceholders(customTemplate.subject || subject, { consultantName, companyName, serviceCategory });
+    html = replacePlaceholders(customTemplate.html, { consultantName, companyName, serviceCategory });
+  }
 
   try {
     const fromAddress = process.env.SMTP_FROM || `"OpsMarketplace" <${process.env.SMTP_USER}>`;
