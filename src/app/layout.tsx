@@ -6,8 +6,31 @@ import { Toaster } from '@/components/ui/toaster';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
 export const metadata: Metadata = {
-  title: 'OpsMarketplace | SME Operational Services',
-  description: 'A lean marketplace connecting SMEs with expert operational consultants.',
+  title: {
+    default: 'OpsMarketplace | Managed HR & Compliance Services for SMEs',
+    template: '%s | OpsMarketplace',
+  },
+  description: 'Connect with verified HR, Payroll, and Labour Compliance experts. A managed marketplace for Indian SMEs to scale operations with AI-matched delivery.',
+  keywords: ['HR Compliance', 'Labour Law India', 'Payroll Outsourcing', 'SME Services', 'Shop Act Registration', 'Compliance Consultant'],
+  authors: [{ name: 'OpsMarketplace Team' }],
+  creator: 'OpsMarketplace',
+  openGraph: {
+    type: 'website',
+    locale: 'en_IN',
+    url: 'https://opsmarketplace.com',
+    title: 'OpsMarketplace | Managed HR & Compliance for SMEs',
+    description: 'Stop searching directories. Get AI-matched with verified operational experts for your business.',
+    siteName: 'OpsMarketplace',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'OpsMarketplace | Managed HR & Compliance for SMEs',
+    description: 'Scale your business operations with verified expert intelligence.',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
