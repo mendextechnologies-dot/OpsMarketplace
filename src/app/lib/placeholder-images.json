@@ -3,27 +3,27 @@
   "placeholderImages": [
     {
       "id": "hero-image",
-      "description": "Enterprise business dashboard",
-      "imageUrl": "https://picsum.photos/seed/hero99/1080/600",
-      "imageHint": "enterprise dashboard"
+      "description": "Enterprise business dashboard illustration",
+      "imageUrl": "https://picsum.photos/seed/ops-hero/1080/600",
+      "imageHint": "business illustration"
     },
     {
-      "id": "sme-section",
-      "description": "AI Guided Workflow Illustration for SMEs",
-      "imageUrl": "https://picsum.photos/seed/sme-ai-flow/600/400",
-      "imageHint": "AI workflow"
+      "id": "sme-illustration",
+      "description": "AI Guided Workflow for SMEs",
+      "imageUrl": "https://picsum.photos/seed/sme-workflow-flat/600/400",
+      "imageHint": "AI illustration"
     },
     {
-      "id": "expert-section",
-      "description": "Professional Expert Workspace Illustration",
-      "imageUrl": "https://picsum.photos/seed/expert-workspace/600/400",
-      "imageHint": "expert workspace"
+      "id": "expert-illustration",
+      "description": "Expert Workspace and Lead Flow",
+      "imageUrl": "https://picsum.photos/seed/expert-workspace-flat/600/400",
+      "imageHint": "Expert illustration"
     },
     {
-      "id": "partner-section",
-      "description": "Business Ecosystem and Network Illustration",
-      "imageUrl": "https://picsum.photos/seed/partner-network/600/400",
-      "imageHint": "business ecosystem"
+      "id": "partner-illustration",
+      "description": "Business Ecosystem and Network",
+      "imageUrl": "https://picsum.photos/seed/partner-network-flat/600/400",
+      "imageHint": "Network illustration"
     }
   ]
 }

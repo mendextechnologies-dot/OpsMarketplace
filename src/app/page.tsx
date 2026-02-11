@@ -27,15 +27,10 @@ import {
   Loader2,
   Send,
   X,
-  ArrowUpRight,
-  HeartHandshake,
-  Coins,
   MessageSquare,
   LayoutGrid,
-  UserPlus,
+  HeartHandshake,
   Target,
-  UserCheck,
-  ClipboardCheck,
   Globe
 } from "lucide-react";
 import {
@@ -53,7 +48,6 @@ import { PlaceHolderImages } from "@/lib/placeholder-images";
 
 export default function Home() {
   const { user } = useAuth();
-  const router = useRouter();
   const [chatOpen, setChatOpen] = useState(false);
   const [chatInput, setChatInput] = useState("");
   const [messages, setMessages] = useState<{ role: 'user' | 'model', content: string, action?: string, url?: string }[]>([]);
@@ -153,9 +147,9 @@ export default function Home() {
     }
   };
 
-  const smeImg = getImg('sme-section');
-  const expertImg = getImg('expert-section');
-  const partnerImg = getImg('partner-section');
+  const smeImg = getImg('sme-illustration');
+  const expertImg = getImg('expert-illustration');
+  const partnerImg = getImg('partner-illustration');
 
   return (
     <div className="flex flex-col min-h-screen relative">
@@ -212,7 +206,7 @@ export default function Home() {
       </div>
 
       {/* HERO SECTION */}
-      <section className="relative py-20 lg:py-32 bg-gradient-to-br from-primary/10 via-white to-secondary/10 border-b overflow-hidden">
+      <section className="relative py-20 lg:py-28 bg-gradient-to-br from-primary/10 via-white to-secondary/10 border-b overflow-hidden">
         <div className="container mx-auto px-4 text-center">
           <Badge variant="secondary" className="mb-6 px-4 py-1.5 text-[11px] font-black tracking-widest uppercase bg-primary/10 text-primary border-primary/20 rounded-full">
             Managed Marketplace • AI-Matched Delivery
@@ -245,13 +239,13 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* SME CARD */}
-            <Card className="border-2 hover:border-primary/50 transition-all rounded-[2rem] overflow-hidden shadow-sm flex flex-col group cursor-pointer bg-slate-50/50" onClick={() => scrollToSection('sme-details')}>
+            <Card className="border-2 hover:border-primary/50 transition-all rounded-[2.5rem] overflow-hidden shadow-sm flex flex-col group cursor-pointer bg-slate-50/50" onClick={() => scrollToSection('sme-details')}>
               <CardHeader className="pb-8 pt-10 text-center items-center">
                 <div className="bg-primary w-14 h-14 rounded-2xl flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform">
                   <Building2 className="h-7 w-7 text-white" />
                 </div>
                 <CardTitle className="text-2xl font-black text-slate-900">For Businesses</CardTitle>
-                <CardDescription className="text-sm mt-2 font-medium">Get expert compliance and HR support without the search effort.</CardDescription>
+                <CardDescription className="text-sm mt-2 font-medium">Get expert compliance support without the search effort.</CardDescription>
               </CardHeader>
               <CardFooter className="pb-10 pt-4 mt-auto">
                 <Button variant="ghost" className="w-full text-primary font-black text-base hover:bg-transparent">
@@ -261,7 +255,7 @@ export default function Home() {
             </Card>
 
             {/* CONSULTANT CARD */}
-            <Card className="border-2 hover:border-primary/50 transition-all rounded-[2rem] overflow-hidden shadow-sm flex flex-col group cursor-pointer bg-slate-50/50" onClick={() => scrollToSection('expert-details')}>
+            <Card className="border-2 hover:border-primary/50 transition-all rounded-[2.5rem] overflow-hidden shadow-sm flex flex-col group cursor-pointer bg-slate-50/50" onClick={() => scrollToSection('expert-details')}>
               <CardHeader className="pb-8 pt-10 text-center items-center">
                 <div className="bg-primary w-14 h-14 rounded-2xl flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform">
                   <Briefcase className="h-7 w-7 text-white" />
@@ -277,7 +271,7 @@ export default function Home() {
             </Card>
 
             {/* PARTNER CARD */}
-            <Card className="border-2 hover:border-amber-500/50 transition-all rounded-[2rem] overflow-hidden shadow-sm flex flex-col group cursor-pointer bg-slate-50/50" onClick={() => scrollToSection('partner-details')}>
+            <Card className="border-2 hover:border-amber-500/50 transition-all rounded-[2.5rem] overflow-hidden shadow-sm flex flex-col group cursor-pointer bg-slate-50/50" onClick={() => scrollToSection('partner-details')}>
               <CardHeader className="pb-8 pt-10 text-center items-center">
                 <div className="bg-amber-500 w-14 h-14 rounded-2xl flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform">
                   <HeartHandshake className="h-7 w-7 text-white" />
@@ -310,10 +304,10 @@ export default function Home() {
               
               <div className="space-y-6">
                 {[
-                  { step: "1", title: "Describe Your Need", desc: "Use natural language. AI understands compliance and HR without complex forms.", icon: MessageSquare },
-                  { step: "2", title: "Get Smart Matches", desc: "Receive top 3 vetted consultants with high matching skill scores.", icon: Sparkles },
-                  { step: "3", title: "Start Secure Workspace", desc: "Share docs and track tasks in one protected platform.", icon: ShieldCheck },
-                  { step: "4", title: "Complete Compliance", desc: "Get guided execution with expert collaboration.", icon: CheckCircle2 }
+                  { title: "Describe Your Need", desc: "Use natural language. AI understands compliance and HR without complex forms.", icon: MessageSquare },
+                  { title: "Get Smart Matches", desc: "Receive top 3 vetted consultants with high matching skill scores.", icon: Sparkles },
+                  { title: "Start Secure Workspace", desc: "Share docs and track tasks in one protected platform.", icon: ShieldCheck },
+                  { title: "Complete Compliance", desc: "Get guided execution with expert collaboration.", icon: CheckCircle2 }
                 ].map((item, i) => (
                   <div key={i} className="flex gap-5 items-start group">
                     <div className="bg-white w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-md group-hover:bg-primary group-hover:text-white transition-colors">
@@ -334,15 +328,15 @@ export default function Home() {
               </div>
             </div>
             <div className="hidden lg:block relative">
-              <div className="max-w-lg mx-auto relative z-10">
+              <div className="max-w-md mx-auto relative z-10">
                 {smeImg?.imageUrl && (
-                  <div className="rounded-[3rem] overflow-hidden shadow-2xl border-4 border-white">
+                  <div className="rounded-[3rem] overflow-hidden shadow-2xl border-4 border-white aspect-square">
                     <Image 
                       src={smeImg.imageUrl} 
-                      alt="SME Workflow" 
+                      alt="AI Workflow Illustration" 
                       width={600}
-                      height={400}
-                      className="w-full h-auto object-cover"
+                      height={600}
+                      className="w-full h-full object-cover"
                       data-ai-hint={smeImg.imageHint}
                     />
                   </div>
@@ -358,15 +352,15 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div className="order-2 lg:order-1 hidden lg:block relative">
-              <div className="max-w-lg mx-auto relative z-10">
+              <div className="max-w-md mx-auto relative z-10">
                 {expertImg?.imageUrl && (
-                  <div className="rounded-[3rem] overflow-hidden opacity-90 shadow-2xl border-4 border-white/10">
+                  <div className="rounded-[3rem] overflow-hidden opacity-90 shadow-2xl border-4 border-white/10 aspect-square">
                     <Image 
                       src={expertImg.imageUrl} 
-                      alt="Expert Network" 
+                      alt="Expert Workspace Illustration" 
                       width={600}
-                      height={400}
-                      className="w-full h-auto object-cover"
+                      height={600}
+                      className="w-full h-full object-cover"
                       data-ai-hint={expertImg.imageHint}
                     />
                   </div>
@@ -423,15 +417,15 @@ export default function Home() {
               </p>
             </div>
             <div className="hidden lg:block">
-              <div className="max-w-lg mx-auto relative">
+              <div className="max-w-md mx-auto relative">
                 {partnerImg?.imageUrl && (
-                  <div className="rounded-[3rem] overflow-hidden shadow-2xl border-4 border-amber-100">
+                  <div className="rounded-[3rem] overflow-hidden shadow-2xl border-4 border-amber-100 aspect-square">
                     <Image 
                       src={partnerImg.imageUrl} 
-                      alt="Partner Network" 
+                      alt="Partner Network Illustration" 
                       width={600}
-                      height={400}
-                      className="w-full h-auto object-cover"
+                      height={600}
+                      className="w-full h-full object-cover"
                       data-ai-hint={partnerImg.imageHint}
                     />
                   </div>
@@ -442,9 +436,9 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
             {[
-              { step: "1", title: "Register as Partner", desc: "Onboard your firm and define your network's core industry focus.", icon: Building2 },
-              { step: "2", title: "Secure Ownership", desc: "Log a requirement to immediately lock lead ownership to your profile.", icon: ShieldCheck },
-              { step: "3", title: "Receive AI Match", desc: "Our engine identifies the best-suited expert for your client's need.", icon: Target },
+              { step: "1", title: "Register as Partner", desc: "Onboard your firm and define your network's core focus.", icon: Building2 },
+              { step: "2", title: "Secure Ownership", desc: "Log a requirement to lock lead ownership immediately.", icon: ShieldCheck },
+              { step: "3", title: "Receive AI Match", desc: "Our engine identifies the best-suited expert for your client.", icon: Target },
               { step: "4", title: "Managed Delivery", desc: "Track progress through our managed delivery workspace.", icon: Zap }
             ].map((step, i) => (
               <div key={i} className="relative group">
@@ -463,9 +457,9 @@ export default function Home() {
               <h3 className="text-2xl font-black mb-1">Ready to grow your advisory footprint?</h3>
               <p className="text-slate-400 text-base font-medium">Join 200+ partners monetizing their trusted networks.</p>
             </div>
-            <Button size="lg" className="h-14 px-10 text-lg font-black rounded-xl bg-amber-600 hover:bg-amber-700 shadow-xl" asChild>
+            <button className="h-14 px-10 text-lg font-black rounded-xl bg-amber-600 hover:bg-amber-700 shadow-xl transition-colors">
               <Link href="/signup?role=partner">Join as Partner</Link>
-            </Button>
+            </button>
           </div>
         </div>
       </section>
