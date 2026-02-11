@@ -207,7 +207,6 @@ export default function AdminDashboard() {
 
         {activeView === 'dashboard' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* COLUMN 1: ANALYTICS */}
             <div className="lg:col-span-2 space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {[
@@ -306,7 +305,6 @@ export default function AdminDashboard() {
               </Card>
             </div>
 
-            {/* COLUMN 2: SIDEBAR METRICS */}
             <div className="space-y-8">
               <Card className="border-none shadow-sm rounded-3xl overflow-hidden">
                 <CardHeader>
@@ -405,7 +403,6 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Existing views (requests, consultants, etc.) remained implemented... */}
         {activeView === 'requests' && (
           <Card className="border-none shadow-sm rounded-3xl">
             <CardHeader className="flex flex-row items-center justify-between p-8 border-b">
@@ -621,7 +618,6 @@ export default function AdminDashboard() {
         )}
       </div>
 
-      {/* TEMPLATE EDIT DIALOG */}
       <Dialog open={!!editingTemplate} onOpenChange={() => setEditingTemplate(null)}>
         <DialogContent className="max-w-2xl rounded-3xl">
           <DialogHeader>
@@ -661,7 +657,6 @@ export default function AdminDashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* DIALOGS */}
       <Dialog open={!!viewingConsultant} onOpenChange={() => setViewingConsultant(null)}>
         <DialogContent className="max-w-2xl rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
           <div className="bg-primary p-8 text-white relative">
