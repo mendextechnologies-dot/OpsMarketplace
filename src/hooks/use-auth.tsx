@@ -25,6 +25,17 @@ interface PartnerProfile {
   status: "active" | "inactive";
 }
 
+interface ConsultantProfile {
+  companyName: string;
+  phone: string;
+  notificationEmail: string | null;
+  city: string;
+  description: string;
+  yearsExperience: number;
+  servicesOffered: string[];
+  statesCovered: string[];
+}
+
 interface UserProfile {
   id: string;
   name: string;
@@ -39,6 +50,7 @@ interface AuthContextType {
   profile: UserProfile | null;
   orgProfile: OrganisationProfile | null;
   partnerProfile: PartnerProfile | null;
+  consultantProfile: ConsultantProfile | null;
   loading: boolean;
   logout: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -49,6 +61,7 @@ const AuthContext = createContext<AuthContextType>({
   profile: null,
   orgProfile: null,
   partnerProfile: null,
+  consultantProfile: null,
   loading: true,
   logout: async () => {},
   refreshProfile: async () => {},
@@ -59,6 +72,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [orgProfile, setOrgProfile] = useState<OrganisationProfile | null>(null);
   const [partnerProfile, setPartnerProfile] = useState<PartnerProfile | null>(null);
+  const [consultantProfile, setConsultantProfile] = useState<ConsultantProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -81,6 +95,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (partnerSnap.exists()) {
           setPartnerProfile(partnerSnap.data() as PartnerProfile);
         }
+      } else if (p.role === 'consultant') {
+        const consRef = doc(db, "consultantProfiles", uid);
+        const consSnap = await getDoc(consRef);
+        if (consSnap.exists()) {
+          setConsultantProfile(consSnap.data() as ConsultantProfile);
+        }
       }
     }
   };
@@ -94,6 +114,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setProfile(null);
         setOrgProfile(null);
         setPartnerProfile(null);
+        setConsultantProfile(null);
       }
       setLoading(false);
     });
@@ -117,10 +138,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     profile,
     orgProfile,
     partnerProfile,
+    consultantProfile,
     loading,
     logout,
     refreshProfile
-  }), [user, profile, orgProfile, partnerProfile, loading]);
+  }), [user, profile, orgProfile, partnerProfile, consultantProfile, loading]);
 
   return (
     <AuthContext.Provider value={contextValue}>
