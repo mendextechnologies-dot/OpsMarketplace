@@ -708,21 +708,21 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Template Name</Label>
-                <Input value={editingTemplate?.name} onChange={e => setEditingTemplate({...editingTemplate, name: e.target.value})} placeholder="e.g. Welcome SME" required />
+                <Input value={editingTemplate?.name || ""} onChange={e => setEditingTemplate({...editingTemplate, name: e.target.value})} placeholder="e.g. Welcome SME" required />
               </div>
               <div className="space-y-2">
                 <Label>Role Context</Label>
-                <Input value={editingTemplate?.roleType} onChange={e => setEditingTemplate({...editingTemplate, roleType: e.target.value})} placeholder="sme, consultant, partner" required />
+                <Input value={editingTemplate?.roleType || ""} onChange={e => setEditingTemplate({...editingTemplate, roleType: e.target.value})} placeholder="sme, consultant, partner" required />
               </div>
             </div>
             <div className="space-y-2">
               <Label>Subject Line</Label>
-              <Input value={editingTemplate?.subject} onChange={e => setEditingTemplate({...editingTemplate, subject: e.target.value})} placeholder="Welcome to OpsMarketplace, {{name}}!" required />
+              <Input value={editingTemplate?.subject || ""} onChange={e => setEditingTemplate({...editingTemplate, subject: e.target.value})} placeholder="Welcome to OpsMarketplace, {{name}}!" required />
             </div>
             <div className="space-y-2">
               <Label>HTML Body</Label>
               <Textarea 
-                value={editingTemplate?.html} 
+                value={editingTemplate?.html || ""} 
                 onChange={e => setEditingTemplate({...editingTemplate, html: e.target.value})} 
                 className="min-h-[250px] font-mono text-xs" 
                 placeholder="<div>Hello {{name}}, welcome...</div>" 
