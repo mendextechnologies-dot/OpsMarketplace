@@ -31,7 +31,8 @@ import {
   Star,
   ShieldCheck,
   Handshake,
-  MessageSquareShare
+  MessageSquare,
+  Share2
 } from "lucide-react";
 import Link from "next/link";
 import { getServiceNames, getCategoryName } from "@/lib/constants";
@@ -202,18 +203,16 @@ export default function RequestDetailPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-12 max-w-4xl space-y-6">
+      <div className="container mx-auto px-4 py-12 max-w-5xl space-y-6">
         <Skeleton className="h-10 w-48" />
         <Skeleton className="h-[400px] w-full" />
       </div>
     );
   }
 
-  // Define logic for "Any Assignment" vs "Accepted"
-  const activeAssignment = matches.find(m => m.status === 'accepted' || m.status === 'completed') || matches.find(m => m.status === 'sent');
+  const activeAssignment = matches.find(m => m.status === 'accepted' || m.status === 'completed' || m.status === 'sent');
   const isAdmin = profile?.role === 'admin';
   const isPartnerView = profile?.role === 'partner' && request.leadOwnerId === profile.id;
-  const isSmeView = profile?.role === 'sme';
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-5xl">
@@ -229,11 +228,11 @@ export default function RequestDetailPage() {
           <div className="flex items-center gap-3">
             <ShieldCheck className="h-6 w-6 text-primary" />
             <div>
-              <p className="text-xs font-black text-primary uppercase tracking-widest leading-none">Managed Ecosystem Lead</p>
-              <p className="text-sm font-medium text-slate-700 mt-1">Managed coordination required. Partner commissions are protected via this workflow.</p>
+              <p className="text-xs font-black text-primary uppercase tracking-widest leading-none">Partner-Led Coordination</p>
+              <p className="text-sm font-medium text-slate-700 mt-1">Managed execution ecosystem. Communication must be routed through the lead owner.</p>
             </div>
           </div>
-          <Badge className="bg-primary text-white font-black px-4 py-1">PARTNER OWNED</Badge>
+          <Badge className="bg-primary text-white font-black px-4 py-1">MANAGED DEAL</Badge>
         </div>
       )}
 
@@ -306,11 +305,11 @@ export default function RequestDetailPage() {
             <CardHeader className="bg-slate-50 border-b">
               <CardTitle className="text-lg flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-primary" />
-                {activeAssignment ? "Assigned Operational Expert" : "Expert Identification Engine"}
+                {activeAssignment ? "Matched Delivery Expert" : "Expert Identification Engine"}
               </CardTitle>
               <CardDescription>
                 {activeAssignment
-                  ? "A verified specialist has been matched with this requirement." 
+                  ? "A verified specialist has been assigned to this requirement." 
                   : "Scanning top 5% of verified experts for your specific requirement."}
               </CardDescription>
             </CardHeader>
@@ -335,7 +334,6 @@ export default function RequestDetailPage() {
                     <Badge className="bg-green-600 px-4 py-1 text-[10px] font-black">VERIFIED PROVIDER</Badge>
                   </div>
 
-                  {/* Contact details visible to Owner or Admin */}
                   {(isAdmin || isPartnerView) ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <Button className="h-14 gap-2 text-base font-bold shadow-md" variant="default" asChild>
@@ -353,7 +351,7 @@ export default function RequestDetailPage() {
                     <div className="p-4 bg-muted/30 rounded-xl border border-dashed flex items-center gap-3">
                       <Handshake className="h-5 w-5 text-muted-foreground" />
                       <p className="text-xs text-muted-foreground font-medium">
-                        Coordination is managed by our central operations team. You will be introduced once the initial feasibility check is complete.
+                        Coordination is managed by our central operations team or lead partner. You will be introduced once the initial intake check is complete.
                       </p>
                     </div>
                   )}
@@ -433,10 +431,10 @@ export default function RequestDetailPage() {
           <Card className="border-primary/20 shadow-md bg-white">
             <CardHeader className="bg-muted/30">
               <CardTitle className="text-xl flex items-center gap-2">
-                <MessageSquareShare className="h-5 w-5 text-primary" />
+                <MessageSquare className="h-5 w-5 text-primary" />
                 Contact Point
               </CardTitle>
-              <CardDescription>Primary stakeholder for this lead.</CardDescription>
+              <CardDescription>Primary stakeholder for this deal.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6 pt-6">
               {request.leadOwnerType === 'partner' && leadOwnerProfile ? (
@@ -458,7 +456,7 @@ export default function RequestDetailPage() {
                   </div>
                   <div className="p-3 bg-amber-50 border border-amber-100 rounded-lg text-[10px] text-amber-800 leading-relaxed font-medium">
                     <p className="font-bold mb-1">Commission Protected Path</p>
-                    This requirement was logged by a channel partner. Direct client-expert bypass is prohibited to ensure deal security.
+                    This requirement was logged by a channel partner. Direct client-expert bypass is prohibited to ensure deal security and Partner recognition.
                   </div>
                 </div>
               ) : (
