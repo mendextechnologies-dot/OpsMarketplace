@@ -34,7 +34,7 @@ import {
 import { 
   FileText, 
   Users, 
-  LayoutDashboard,
+  LayoutDashboard, 
   Loader2,
   Activity,
   PlusCircle,
@@ -438,7 +438,7 @@ export default function AdminDashboard() {
             <header className="flex justify-between items-center">
               <div>
                 <h2 className="text-2xl font-black text-slate-900">Communication Templates</h2>
-                <p className="text-muted-foreground text-sm">Manage automated emails. Use {{name}}, {{companyName}}, {{serviceCategory}} placeholders.</p>
+                <p className="text-muted-foreground text-sm">Manage automated emails. Use {'{{name}}, {{companyName}}, {{serviceCategory}}'} placeholders.</p>
               </div>
               <div className="flex gap-3">
                 <Button variant="outline" onClick={handleSeedTemplates} disabled={seeding}>
