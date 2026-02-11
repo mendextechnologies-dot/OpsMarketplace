@@ -10,20 +10,20 @@
     {
       "id": "sme-illustration",
       "description": "AI Guided Workflow for SMEs",
-      "imageUrl": "https://picsum.photos/seed/sme-workflow-flat/600/400",
-      "imageHint": "AI illustration"
+      "imageUrl": "https://picsum.photos/seed/sme-workflow-flat/600/600",
+      "imageHint": "AI dashboard"
     },
     {
       "id": "expert-illustration",
       "description": "Expert Workspace and Lead Flow",
-      "imageUrl": "https://picsum.photos/seed/expert-workspace-flat/600/400",
-      "imageHint": "Expert illustration"
+      "imageUrl": "https://picsum.photos/seed/expert-workspace-flat/600/600",
+      "imageHint": "Expert workspace"
     },
     {
       "id": "partner-illustration",
       "description": "Business Ecosystem and Network",
-      "imageUrl": "https://picsum.photos/seed/partner-network-flat/600/400",
-      "imageHint": "Network illustration"
+      "imageUrl": "https://picsum.photos/seed/partner-network-flat/600/600",
+      "imageHint": "Business network"
     }
   ]
 }
