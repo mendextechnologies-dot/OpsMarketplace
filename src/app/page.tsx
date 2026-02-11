@@ -153,6 +153,10 @@ export default function Home() {
     }
   };
 
+  const smeImg = getImg('sme-section');
+  const expertImg = getImg('expert-section');
+  const partnerImg = getImg('partner-section');
+
   return (
     <div className="flex flex-col min-h-screen relative">
       {/* AI CHAT FUNNEL */}
@@ -331,16 +335,18 @@ export default function Home() {
             </div>
             <div className="hidden lg:block relative">
               <div className="max-w-md mx-auto relative z-10">
-                <Card className="border-none shadow-2xl rounded-[2.5rem] overflow-hidden">
-                  <Image 
-                    src={getImg('sme-section')?.imageUrl || ''} 
-                    alt="SME Workflow" 
-                    width={600}
-                    height={400}
-                    className="w-full h-auto object-cover grayscale-[0.2] contrast-[1.1]"
-                    data-ai-hint={getImg('sme-section')?.imageHint}
-                  />
-                </Card>
+                {smeImg?.imageUrl && (
+                  <Card className="border-none shadow-2xl rounded-[2.5rem] overflow-hidden">
+                    <Image 
+                      src={smeImg.imageUrl} 
+                      alt="SME Workflow" 
+                      width={600}
+                      height={400}
+                      className="w-full h-auto object-cover grayscale-[0.2] contrast-[1.1]"
+                      data-ai-hint={smeImg.imageHint}
+                    />
+                  </Card>
+                )}
               </div>
             </div>
           </div>
@@ -353,16 +359,18 @@ export default function Home() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div className="order-2 lg:order-1 hidden lg:block relative">
               <div className="max-w-md mx-auto relative z-10">
-                <Card className="border-none shadow-2xl rounded-[2.5rem] overflow-hidden">
-                  <Image 
-                    src={getImg('expert-section')?.imageUrl || ''} 
-                    alt="Expert Network" 
-                    width={600}
-                    height={400}
-                    className="w-full h-auto object-cover opacity-80"
-                    data-ai-hint={getImg('expert-section')?.imageHint}
-                  />
-                </Card>
+                {expertImg?.imageUrl && (
+                  <Card className="border-none shadow-2xl rounded-[2.5rem] overflow-hidden">
+                    <Image 
+                      src={expertImg.imageUrl} 
+                      alt="Expert Network" 
+                      width={600}
+                      height={400}
+                      className="w-full h-auto object-cover opacity-80"
+                      data-ai-hint={expertImg.imageHint}
+                    />
+                  </Card>
+                )}
               </div>
             </div>
             <div className="order-1 lg:order-2">
@@ -416,16 +424,18 @@ export default function Home() {
             </div>
             <div className="hidden lg:block">
               <div className="max-w-md mx-auto">
-                <Card className="border-none shadow-xl rounded-[2.5rem] overflow-hidden">
-                  <Image 
-                    src={getImg('partner-section')?.imageUrl || ''} 
-                    alt="Partner Network" 
-                    width={600}
-                    height={400}
-                    className="w-full h-auto object-cover"
-                    data-ai-hint={getImg('partner-section')?.imageHint}
-                  />
-                </Card>
+                {partnerImg?.imageUrl && (
+                  <Card className="border-none shadow-xl rounded-[2.5rem] overflow-hidden">
+                    <Image 
+                      src={partnerImg.imageUrl} 
+                      alt="Partner Network" 
+                      width={600}
+                      height={400}
+                      className="w-full h-auto object-cover"
+                      data-ai-hint={partnerImg.imageHint}
+                    />
+                  </Card>
+                )}
               </div>
             </div>
           </div>
