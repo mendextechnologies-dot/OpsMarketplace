@@ -212,11 +212,11 @@ export default function Home() {
             Managed Marketplace • AI-Matched Delivery
           </Badge>
           <h1 className="text-4xl lg:text-6xl font-black tracking-tight mb-8 text-slate-900 leading-tight">
-            Operations Scaled by <br /> 
-            <span className="text-primary italic">Expert Intelligence.</span>
+            HR, Payroll, and Compliance <br />
+            <span className="text-primary italic">Delivered with Confidence.</span>
           </h1>
           <p className="text-lg md:text-xl text-slate-600 max-w-3xl mx-auto mb-10 leading-relaxed font-medium">
-            A curated engine that matches SMEs with verified experts using proactive AI. No directories. No bidding wars.
+            A managed marketplace for Indian SMEs to connect with verified payroll, labour compliance, and HRMS experts. No open bids, only trusted delivery.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Button size="lg" className="h-14 px-10 text-lg font-bold shadow-xl rounded-xl" asChild>
@@ -233,8 +233,8 @@ export default function Home() {
       <section className="py-20 bg-white border-b">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-black tracking-tight mb-4 text-slate-900">One Platform. Complete HR & Compliance Execution.</h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">Select your role to see how OpsMarketplace simplifies your specific workflow.</p>
+            <h2 className="text-3xl lg:text-4xl font-black tracking-tight mb-4 text-slate-900">One Platform. Payroll, HRMS and Compliance Simplified.</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">Choose your role to access workflows built for regulated payroll, statutory filings and employee operations.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

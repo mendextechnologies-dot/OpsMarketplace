@@ -191,9 +191,9 @@ export default function NewRequestPage() {
       <div className="mb-12 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
         <div>
           <h1 className="text-4xl font-extrabold text-primary flex items-center gap-3">
-            <Sparkles className="h-8 w-8 text-primary" /> AI Intake Console
+            <Sparkles className="h-8 w-8 text-primary" /> Compliance Intake Console
           </h1>
-          <p className="text-muted-foreground mt-2">Describe your requirement once. Let AI handle the rest.</p>
+          <p className="text-muted-foreground mt-2">Tell us your payroll or compliance need once. Our intake AI pre-fills the request for accurate matching.</p>
         </div>
         <Button variant="outline" className="border-primary/20 text-primary" onClick={() => setMode(mode === 'ai' ? 'manual' : 'ai')}>
           {mode === 'ai' ? 'Switch to Manual Form' : 'Use AI Intake'}
@@ -362,7 +362,7 @@ export default function NewRequestPage() {
                     value={formData.description} 
                     onChange={e => setFormData({...formData, description: e.target.value})} 
                     className="min-h-[140px] text-base leading-relaxed" 
-                    placeholder="Provide as much detail as possible for better matching..."
+                    placeholder="Describe your payroll, statutory filing, HRMS implementation, or compliance issue in detail..."
                   />
                 </div>
               </div>
@@ -370,7 +370,7 @@ export default function NewRequestPage() {
             <CardFooter className="bg-muted/30 p-8">
               <Button className="w-full h-14 text-lg font-bold shadow-xl" onClick={handleSubmit} disabled={loading}>
                 {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Sparkles className="mr-2 h-5 w-5" />}
-                Publish Intelligent Request
+                Publish Compliance Request
               </Button>
             </CardFooter>
           </Card>

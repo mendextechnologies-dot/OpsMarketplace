@@ -90,7 +90,7 @@ function SignupForm() {
     <Card className="w-full max-w-md">
       <CardHeader>
         <CardTitle className="text-2xl font-headline">Create Account</CardTitle>
-        <CardDescription>Join our marketplace today</CardDescription>
+        <CardDescription>Join the HRMS, payroll and compliance network.</CardDescription>
       </CardHeader>
       <form onSubmit={handleSignup}>
         <CardContent className="space-y-4">

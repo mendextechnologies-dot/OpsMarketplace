@@ -182,9 +182,9 @@ export default function PartnerCreateLeadPage() {
 
       <div className="mb-8">
         <h1 className="text-3xl font-extrabold tracking-tight text-primary flex items-center gap-3">
-          <Zap className="h-8 w-8" /> Log Channel Lead
+          <Zap className="h-8 w-8" /> Log Compliance Lead
         </h1>
-        <p className="text-muted-foreground">Submit a requirement on behalf of your client. You will be established as the lead owner.</p>
+        <p className="text-muted-foreground">Submit a payroll or compliance requirement on behalf of your client and own the relationship.</p>
       </div>
 
       <Card className="border-2 shadow-sm">

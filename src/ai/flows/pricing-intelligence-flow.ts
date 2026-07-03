@@ -24,19 +24,20 @@ const pricingPrompt = ai.definePrompt({
   input: { schema: z.object({ categoryName: z.string(), location: z.string() }) },
   output: { schema: PricingOutputSchema },
   prompt: `
-    You are a marketplace pricing analyst for operational services in India.
-    Provide realistic market price insights for the following service and location.
+    You are a pricing analyst for HRMS, payroll, and labour compliance services in India.
+    Provide realistic market price insights for the following compliance service and location.
     
     Service: {{categoryName}}
     Location: {{location}}
     
-    Consider standard rates for:
-    - PF/ESIC Registration: ₹2,500 - ₹5,000
-    - Shop Act: ₹1,500 - ₹3,500
-    - Labour Audits: ₹15,000+
-    - GST Filing: ₹1,000 - ₹3,000 per month
+    Consider market norms for:
+    - PF/ESIC Filing & Payroll Compliance: ₹2,500 - ₹5,000
+    - Shop Act / Labour Licence: ₹1,500 - ₹3,500
+    - Labour Law Audit: ₹15,000 - ₹40,000
+    - HRMS / Payroll Software Implementation: ₹50,000 - ₹250,000
+    - TDS/GST Filing Support: ₹1,000 - ₹4,000 per month
     
-    Provide a realistic range and sentiment.
+    Provide a realistic range, key pricing factors, and market sentiment for SMEs.
   `,
 });
 

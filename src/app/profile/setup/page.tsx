@@ -114,13 +114,13 @@ export default function ProfileSetupPage() {
         <div className="bg-primary/10 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
           <Sparkles className="h-10 w-10 text-primary" />
         </div>
-        <h1 className="text-4xl font-extrabold text-primary">Expert Identity Setup</h1>
-        <p className="text-muted-foreground mt-2">Define your expertise for our curated matching engine.</p>
+        <h1 className="text-4xl font-extrabold text-primary">Payroll & Compliance Expert Setup</h1>
+        <p className="text-muted-foreground mt-2">Tell us your specialties so we can match you with the right SME engagements.</p>
       </div>
 
       <Card className="border-2 shadow-2xl relative overflow-hidden">
         <div className="absolute top-0 right-0 bg-primary text-white text-[10px] font-bold px-4 py-1.5 rounded-bl-lg flex items-center gap-2">
-          <Sparkles className="h-3 w-3" /> AI PROFILE VERIFICATION
+          <Sparkles className="h-3 w-3" /> AI PROFILE OPTIMIZATION
         </div>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-10 pt-10">

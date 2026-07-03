@@ -23,13 +23,13 @@ const intentPrompt = ai.definePrompt({
   input: { schema: z.object({ text: z.string() }) },
   output: { schema: IntentOutputSchema },
   prompt: `
-    You are an expert marketplace intake agent for operational services in India.
+    You are an expert intake agent for HRMS, payroll and labour compliance services in India.
     Extract structured data from the following user requirement text.
     
     User Text: "{{text}}"
     
-    Identify the service category, specific services, location, and urgency.
-    If company size or industry is mentioned, extract those as well.
+    Identify the service category, specific services, location, urgency, company size, and industry.
+    Focus on payroll processing, statutory filings, employee management, labour law compliance, and HRMS implementation.
   `,
 });
 

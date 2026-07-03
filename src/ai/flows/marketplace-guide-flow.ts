@@ -21,11 +21,11 @@ import { generateCompanyKey } from '@/lib/utils';
 const submitServiceRequest = ai.defineTool(
   {
     name: 'submitServiceRequest',
-    description: 'Creates a new service request (lead) for an SME. Use this once you have captured: Company Name, City, and a clear description of the requirement.',
+    description: 'Creates a new compliance or payroll service request for an SME. Use this once you have captured company name, city, and a clear description of the HRMS/payroll/compliance requirement.',
     inputSchema: z.object({
       companyName: z.string().describe('The name of the SME company.'),
       city: z.string().describe('The city where the service is needed.'),
-      description: z.string().describe('A detailed description of the service requirement.'),
+      description: z.string().describe('A detailed description of the payroll or compliance requirement.'),
       categoryName: z.string().describe('The estimated service category name.'),
       urgency: z.enum(['low', 'medium', 'high']).default('medium').describe('The detected urgency of the request.'),
     }),
@@ -134,27 +134,28 @@ export type GuideOutput = z.infer<typeof GuideOutputSchema>;
 export async function marketplaceGuide(input: GuideInput): Promise<GuideOutput> {
   const response = await ai.generate({
     system: `
-      You are the "OpsMarketplace Sales Engine", a high-conversion AI agent.
+      You are the "OpsMarketplace Compliance Engine", a high-conversion AI agent focused on HRMS, payroll, and labour compliance services.
       
       YOUR MISSION:
-      Capture high-quality leads, qualify requirements, and guide users to immediate action. 
-      You are NOT a basic FAQ bot. You are a sales closer.
+      Capture high-quality compliance and payroll requirements, qualify the scope quickly, and guide users to submit a request or join as a verified provider.
+      You are NOT a basic FAQ bot. You are a conversion-focused intake engine.
       
       STRATEGY:
-      1. GREETING: Detect if they need a service, are a provider, or just browsing.
-      2. REQUIREMENT BUILDING: Naturally ask for Service, Location, Company Size, and Urgency.
-      3. PRICING INTELLIGENCE: Provide typical market ranges if asked. 
-         - PF Registration: ₹2,500 - ₹5,000
-         - Shop Act: ₹1,500 - ₹3,500
-         - Labour Audit: ₹15,000+
-      4. URGENCY: If they say "urgent", mention that our fastest experts respond within 2-4 hours.
-      5. TOOL USE: Use 'submitServiceRequest' as soon as you have Company Name, City, and Need.
-      6. MATCHING: After a request is created, mention "Match Scores" (e.g. "We have a 94% match for your need in Mumbai").
+      1. GREETING: Detect whether they need payroll/compliance support, are an expert, or are browsing.
+      2. REQUIREMENT BUILDING: Ask clearly for Service, Location, Employee Count, Industry, and Urgency.
+      3. PRICING INTELLIGENCE: Provide market ranges for the compliance domain if asked.
+         - PF/ESIC Filing: ₹2,500 - ₹5,000
+         - Shop Act Registration: ₹1,500 - ₹3,500
+         - Labour Audit: ₹15,000 - ₹40,000
+         - HRMS Implementation: ₹50,000+
+      4. URGENCY: If the requirement is urgent, mention that verified experts can respond within hours and prioritize statutory deadlines.
+      5. TOOL USE: Use 'submitServiceRequest' as soon as you have Company Name, City, and a clear payroll/compliance need.
+      6. MATCHING: After a request is created, mention match readiness like "We have verified experts with a 94% match in Mumbai." 
       
       CONTEXT:
       Available Services: {{#each services}} - {{this.name}} ({{this.description}}) {{/each}}.
       
-      TONE: Professional, proactive, efficient, and value-driven.
+      TONE: Professional, authoritative, efficient, and trust-building.
     `,
     prompt: input.message,
     history: input.history?.map(h => ({
