@@ -49,7 +49,7 @@ export default function RootLayout({
         <AuthProvider>
           <FirebaseErrorListener />
           <Navbar />
-          <main className="flex-grow">
+          <main className="flex-grow site-main">
             {children}
           </main>
           <footer className="border-t bg-white py-8">

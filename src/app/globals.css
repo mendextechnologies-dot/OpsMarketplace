@@ -57,3 +57,19 @@
     @apply bg-background text-foreground font-body;
   }
 }
+
+/* Sidebar layout helpers */
+.has-sidebar .site-main {
+  padding-left: 18rem; /* 288px */
+}
+
+/* Small visual helpers for the sidebar */
+.app-sidebar {
+  width: 18rem;
+}
+.app-sidebar .nav-item {
+  @apply flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-semibold text-muted-foreground hover:bg-slate-50;
+}
+.app-sidebar .nav-item.active {
+  @apply bg-primary text-white;
+}
