@@ -3,6 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Briefcase, LayoutDashboard, LogOut, Bell, Settings, User as UserIcon, ChevronDown } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
@@ -15,7 +16,7 @@ export function Navbar() {
   const { user, profile, logout } = useAuth();
   const pathname = usePathname();
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (typeof document === 'undefined') return;
     if (user) {
       document.body.classList.add('has-sidebar');
