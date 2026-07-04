@@ -165,7 +165,7 @@ export default function NewRequestPage() {
             event: "request_created",
             byId: user ? user.uid : null,
             byName: user ? profile?.name : "Guest",
-            byRole: user ? profile?.role : "guest" : "guest",
+            byRole: user ? profile?.role : "guest",
             timestamp: serverTimestamp(),
             note: "Requirement submitted through the platform.",
           }
