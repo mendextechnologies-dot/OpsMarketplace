@@ -19,11 +19,11 @@ export default function Sidebar({ profile, pathname }: { profile: any, pathname?
       </div>
 
       <nav className="flex-1 space-y-1">
-        <Link href="/dashboard" className={cn('nav-item', pathname?.startsWith('/dashboard') ? 'active' : '')}>
+        <Link href="/dashboard" className={cn('nav-item', pathname?.startsWith('/dashboard') && !pathname?.startsWith('/dashboard/admin') ? 'active' : '')}>
           <LayoutDashboard className="h-4 w-4" /> <span>Dashboard</span>
         </Link>
         {isAdmin && (
-          <Link href="/admin" className={cn('nav-item', pathname?.startsWith('/admin') ? 'active' : '')}>
+          <Link href="/dashboard/admin" className={cn('nav-item', pathname?.startsWith('/dashboard/admin') ? 'active' : '')}>
             <UserIcon className="h-4 w-4" /> <span>Super Admin</span>
           </Link>
         )}
@@ -39,15 +39,19 @@ export default function Sidebar({ profile, pathname }: { profile: any, pathname?
         <Link href="/dashboard/sme" className="nav-item">
           <UserIcon className="h-4 w-4" /> <span>SMEs</span>
         </Link>
-        <Link href="/dashboard" className="nav-item">
+        <Link href="/dashboard/admin?view=pipeline" className="nav-item">
           <Activity className="h-4 w-4" /> <span>Live Pipeline</span>
         </Link>
-        <Link href="/dashboard/conflicts" className="nav-item">
-          <AlertTriangle className="h-4 w-4" /> <span>Conflicts</span>
-        </Link>
-        <Link href="/dashboard/users" className="nav-item">
-          <Database className="h-4 w-4" /> <span>Users</span>
-        </Link>
+        {isAdmin && (
+          <>
+            <Link href="/dashboard/admin?view=conflicts" className="nav-item">
+              <AlertTriangle className="h-4 w-4" /> <span>Conflicts</span>
+            </Link>
+            <Link href="/dashboard/admin?view=users" className="nav-item">
+              <Database className="h-4 w-4" /> <span>Users</span>
+            </Link>
+          </>
+        )}
       </nav>
 
       <div className="mt-6">

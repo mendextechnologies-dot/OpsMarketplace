@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { collection, query, getDocs, orderBy, doc, updateDoc, deleteDoc, where, addDoc, serverTimestamp, arrayUnion } from "firebase/firestore";
 import { db } from "@/lib/firebase-config";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
@@ -71,6 +72,7 @@ type AdminView = 'dashboard' | 'requests' | 'consultants' | 'partners' | 'pipeli
 export default function AdminDashboard() {
   const { profile, loading: authLoading } = useAuth();
   const { toast } = useToast();
+  const searchParams = useSearchParams();
   
   const [activeView, setActiveView] = useState<AdminView>('dashboard');
   const [requests, setRequests] = useState<any[]>([]);
@@ -118,6 +120,15 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (!authLoading && profile?.role === 'admin') fetchData();
   }, [profile, authLoading]);
+
+  useEffect(() => {
+    const view = searchParams.get('view') as AdminView | null;
+    if (view && ['dashboard', 'requests', 'consultants', 'partners', 'pipeline', 'conflicts', 'templates', 'users'].includes(view)) {
+      setActiveView(view);
+    } else {
+      setActiveView('dashboard');
+    }
+  }, [searchParams]);
 
   const handleSaveTemplate = async (e: React.FormEvent) => {
     e.preventDefault();
