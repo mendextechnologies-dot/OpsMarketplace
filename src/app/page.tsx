@@ -308,17 +308,20 @@ export default function Home() {
                   { title: "Get Smart Matches", desc: "Receive top 3 vetted consultants with high matching skill scores.", icon: Sparkles },
                   { title: "Start Secure Workspace", desc: "Share docs and track tasks in one protected platform.", icon: ShieldCheck },
                   { title: "Complete Compliance", desc: "Get guided execution with expert collaboration.", icon: CheckCircle2 }
-                ].map((item, i) => (
-                  <div key={i} className="flex gap-5 items-start group">
-                    <div className="bg-white w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-md group-hover:bg-primary group-hover:text-white transition-colors">
-                      <item.icon className="h-5 w-5" />
+                ].map((item, i) => {
+                  const Icon = item.icon;
+                  return (
+                    <div key={i} className="flex gap-5 items-start group">
+                      <div className="bg-white w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-md group-hover:bg-primary group-hover:text-white transition-colors">
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h4 className="text-lg font-black text-slate-900 mb-0.5">{item.title}</h4>
+                        <p className="text-sm text-slate-500 font-medium">{item.desc}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="text-lg font-black text-slate-900 mb-0.5">{item.title}</h4>
-                      <p className="text-sm text-slate-500 font-medium">{item.desc}</p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               <div className="mt-12">
@@ -382,15 +385,18 @@ export default function Home() {
                   { title: "AI Proposal Assistant", desc: "Generate professional introductory messages in seconds.", icon: Sparkles },
                   { title: "Managed Execution", desc: "Integrated tools for document delivery and client chat.", icon: LayoutGrid },
                   { title: "Reputation Growth", desc: "Improve your rank with every successful project delivery.", icon: TrendingUp }
-                ].map((item, i) => (
-                  <div key={i} className="space-y-3">
-                    <div className="bg-white/10 w-12 h-12 rounded-xl flex items-center justify-center shadow-inner">
-                      <item.icon className="h-5 w-5 text-primary" />
+                ].map((item, i) => {
+                  const Icon = item.icon;
+                  return (
+                    <div key={i} className="space-y-3">
+                      <div className="bg-white/10 w-12 h-12 rounded-xl flex items-center justify-center shadow-inner">
+                        <Icon className="h-5 w-5 text-primary" />
+                      </div>
+                      <h4 className="text-lg font-black text-white">{item.title}</h4>
+                      <p className="text-sm text-slate-400 font-medium leading-relaxed">{item.desc}</p>
                     </div>
-                    <h4 className="text-lg font-black text-white">{item.title}</h4>
-                    <p className="text-sm text-slate-400 font-medium leading-relaxed">{item.desc}</p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               <div className="mt-12">
