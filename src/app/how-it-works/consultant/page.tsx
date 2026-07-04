@@ -40,7 +40,7 @@ export default function HowItWorksConsultant() {
     {
       id: 4,
       title: "Grow Your Reputation",
-      description: "Successful completions improve your marketplace match score, leading to higher-value opportunities and better ranking.",
+      description: "Successful completions improve your network match score, leading to higher-value opportunities and better ranking.",
       icon: TrendingUp,
     }
   ];
@@ -103,7 +103,7 @@ export default function HowItWorksConsultant() {
                   { title: "High Intent Leads", desc: "No time-wasters. Every match is scored by AI for clarity and urgency." },
                   { title: "Protected Pricing", desc: "We are not a bidding site. We protect your value by matching on quality." },
                   { title: "Integrated Workspace", desc: "Manage client communication and document delivery in one platform." },
-                  { title: "Market Insights", desc: "Access AI-driven pricing intelligence and market sentiment for your region." }
+                  { title: "Network Insights", desc: "Access AI-driven pricing intelligence and market sentiment for your region." }
                 ].map((item, i) => (
                   <div key={i} className="flex gap-4">
                     <CheckCircle2 className="h-6 w-6 text-primary shrink-0" />

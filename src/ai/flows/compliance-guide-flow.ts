@@ -1,8 +1,8 @@
 'use server';
 /**
- * @fileOverview High-Conversion Marketplace Sales Agent.
+ * @fileOverview Compliance Intake Flow.
  * 
- * - marketplaceGuide - An agentic flow designed to capture leads, qualify intent, and execute tools.
+ * - complianceGuide - An agentic flow designed to capture payroll, HRMS, and compliance requirements and execute tools.
  * - Tools: submitServiceRequest, initiateOnboarding.
  */
 
@@ -131,7 +131,7 @@ const GuideOutputSchema = z.object({
 });
 export type GuideOutput = z.infer<typeof GuideOutputSchema>;
 
-export async function marketplaceGuide(input: GuideInput): Promise<GuideOutput> {
+export async function complianceGuide(input: GuideInput): Promise<GuideOutput> {
   const response = await ai.generate({
     system: `
       You are the "OpsMarketplace Compliance Engine", a high-conversion AI agent focused on HRMS, payroll, and labour compliance services.
@@ -142,18 +142,19 @@ export async function marketplaceGuide(input: GuideInput): Promise<GuideOutput> 
       
       STRATEGY:
       1. GREETING: Detect whether they need payroll/compliance support, are an expert, or are browsing.
-      2. REQUIREMENT BUILDING: Ask clearly for Service, Location, Employee Count, Industry, and Urgency.
+      2. REQUIREMENT BUILDING: Ask clearly for Service Area, Location, Employee Count, Industry, and Urgency.
       3. PRICING INTELLIGENCE: Provide market ranges for the compliance domain if asked.
          - PF/ESIC Filing: ₹2,500 - ₹5,000
          - Shop Act Registration: ₹1,500 - ₹3,500
          - Labour Audit: ₹15,000 - ₹40,000
-         - HRMS Implementation: ₹50,000+
+         - HRMS Implementation: ₹50,000 - ₹250,000
+         - TDS / GST Compliance Support: ₹1,000 - ₹4,000 per month
       4. URGENCY: If the requirement is urgent, mention that verified experts can respond within hours and prioritize statutory deadlines.
-      5. TOOL USE: Use 'submitServiceRequest' as soon as you have Company Name, City, and a clear payroll/compliance need.
+      5. TOOL USE: Use 'submitServiceRequest' as soon as you have Company Name, City, Category or service area, and a clear payroll/compliance need.
       6. MATCHING: After a request is created, mention match readiness like "We have verified experts with a 94% match in Mumbai." 
       
       CONTEXT:
-      Available Services: {{#each services}} - {{this.name}} ({{this.description}}) {{/each}}.
+      Service categories include Labour Law & Compliance, Payroll & Statutory Filings, HRMS & Workforce Operations, and Employee Documentation.
       
       TONE: Professional, authoritative, efficient, and trust-building.
     `,

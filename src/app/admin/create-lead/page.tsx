@@ -143,8 +143,8 @@ export default function AdminCreateLeadPage() {
       </Button>
 
       <div className="mb-8">
-        <h1 className="text-3xl font-extrabold tracking-tight text-primary">Log Market Intelligence</h1>
-        <p className="text-muted-foreground">Add manually sourced outbound leads to the platform pipeline.</p>
+        <h1 className="text-3xl font-extrabold tracking-tight text-primary">Log Compliance Intelligence</h1>
+        <p className="text-muted-foreground">Add manually sourced payroll and compliance opportunities to the platform pipeline.</p>
       </div>
 
       <Card className="border-2 shadow-sm">

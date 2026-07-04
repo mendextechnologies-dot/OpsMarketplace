@@ -121,7 +121,7 @@ export default function HowItWorksPartner() {
                   <Coins className="h-8 w-8 text-amber-500" />
                 </div>
                 <h3 className="text-2xl font-bold">Grow your advisory footprint.</h3>
-                <p className="text-slate-400">Become a strategic node in the fastest-growing operational marketplace.</p>
+                <p className="text-slate-400">Become a strategic node in the fastest-growing compliance delivery network.</p>
                 <Button size="lg" className="w-full h-14 text-lg font-bold shadow-2xl bg-amber-600 hover:bg-amber-700" asChild>
                   <Link href="/signup?role=partner">Join as Partner</Link>
                 </Button>

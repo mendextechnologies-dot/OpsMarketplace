@@ -4,13 +4,15 @@
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { doc, getDoc, updateDoc, collection, query, where, getDocs, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, updateDoc, setDoc, collection, query, where, getDocs, serverTimestamp, arrayUnion } from "firebase/firestore";
 import { db } from "@/lib/firebase-config";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { 
   ArrowLeft, 
@@ -36,11 +38,15 @@ import type { ProposalOutput } from "@/ai/flows/proposal-flow";
 
 export default function LeadDetailPage() {
   const { id } = useParams();
-  const { profile } = useAuth();
+  const { profile, consultantProfile } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [request, setRequest] = useState<any>(null);
   const [assignment, setAssignment] = useState<any>(null);
+  const [existingBid, setExistingBid] = useState<any>(null);
+  const [bidAmount, setBidAmount] = useState("");
+  const [bidMessage, setBidMessage] = useState("");
+  const [submittingBid, setSubmittingBid] = useState(false);
   const [contactProfile, setContactProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -68,13 +74,30 @@ export default function LeadDetailPage() {
           where("consultantId", "==", profile.id)
         );
         const assignSnap = await getDocs(q);
-        if (assignSnap.empty) {
+        if (!assignSnap.empty) {
+          const asgnDoc = assignSnap.docs[0];
+          const asgnData = { id: asgnDoc.id, ...asgnDoc.data() };
+          setAssignment(asgnData);
+        }
+
+        const bidQuery = query(
+          collection(db, "requestBids"),
+          where("requestId", "==", id),
+          where("consultantId", "==", profile.id)
+        );
+        const bidSnap = await getDocs(bidQuery);
+        if (!bidSnap.empty) {
+          const bidDoc = bidSnap.docs[0];
+          const bidData = { id: bidDoc.id, ...bidDoc.data() };
+          setExistingBid(bidData);
+          setBidAmount(bidData.bidAmount?.toString() || "");
+          setBidMessage(bidData.message || "");
+        }
+
+        if (reqData.status !== 'new' && assignSnap.empty) {
           router.push("/dashboard/consultant");
           return;
         }
-        const asgnDoc = assignSnap.docs[0];
-        const asgnData = { id: asgnDoc.id, ...asgnDoc.data() };
-        setAssignment(asgnData);
 
         if (asgnData.status === 'accepted' || asgnData.status === 'completed') {
           if (reqData.consultantCommunicatesWith === 'partner') {
@@ -107,12 +130,29 @@ export default function LeadDetailPage() {
       await updateDoc(doc(db, "leadAssignments", assignment.id), {
         status: "accepted",
         acceptedAt: serverTimestamp(),
+        assignmentHistory: arrayUnion({
+          event: "accepted",
+          byId: profile.id,
+          byName: profile.name,
+          byRole: profile.role,
+          timestamp: serverTimestamp(),
+          note: "Consultant accepted the assignment.",
+        }),
       });
       
       if (request.status === 'new') {
         await updateDoc(doc(db, "serviceRequests", request.id), {
-          status: "assigned"
+          status: "assigned",
+          auditLog: arrayUnion({
+            event: "assignment_accepted",
+            byId: profile.id,
+            byName: profile.name,
+            byRole: profile.role,
+            timestamp: serverTimestamp(),
+            note: "Consultant accepted the request assignment.",
+          })
         });
+        setRequest({ ...request, status: 'assigned' });
       }
 
       toast({
@@ -148,7 +188,7 @@ export default function LeadDetailPage() {
         description: request.description,
         services: request.serviceIds.map((sId: string) => getServiceName(sId)),
         consultantName: profile.name,
-        consultantBio: "Verified Operational Expert on OpsMarketplace"
+        consultantBio: "Verified Compliance Expert on OpsMarketplace"
       });
       setAiDraft(draft);
       toast({ title: "AI Draft Ready", description: "Use this template to start your conversation." });
@@ -156,6 +196,58 @@ export default function LeadDetailPage() {
       toast({ title: "AI Assistant Busy", description: "Could not generate draft right now.", variant: "destructive" });
     } finally {
       setGeneratingDraft(false);
+    }
+  };
+
+  const handleSubmitBid = async () => {
+    if (!request || !profile || !consultantProfile) return;
+    if (!bidAmount || !bidMessage) {
+      toast({ title: "Bid Required", description: "Add your bid amount and message before submitting.", variant: "destructive" });
+      return;
+    }
+
+    setSubmittingBid(true);
+    try {
+      const bidId = `${request.id}_${profile.id}`;
+      await setDoc(doc(db, "requestBids", bidId), {
+        requestId: request.id,
+        consultantId: profile.id,
+        consultantName: profile.name,
+        consultantCompany: consultantProfile.companyName || "",
+        bidAmount: parseInt(bidAmount, 10) || 0,
+        message: bidMessage,
+        status: "submitted",
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+
+      await updateDoc(doc(db, "serviceRequests", request.id), {
+        auditLog: arrayUnion({
+          event: "bid_submitted",
+          byId: profile.id,
+          byName: profile.name,
+          byRole: profile.role,
+          timestamp: serverTimestamp(),
+          note: `Consultant submitted a bid of ₹${parseInt(bidAmount, 10) || 0}.`, 
+        })
+      });
+
+      const bidRecord = {
+        id: bidId,
+        requestId: request.id,
+        consultantId: profile.id,
+        consultantName: profile.name,
+        consultantCompany: consultantProfile.companyName || "",
+        bidAmount: parseInt(bidAmount, 10) || 0,
+        message: bidMessage,
+        status: "submitted",
+      };
+      setExistingBid(bidRecord);
+      toast({ title: "Bid Submitted", description: "Your proposal has been submitted to the request owner." });
+    } catch (error: any) {
+      toast({ title: "Submission Failed", description: error.message, variant: "destructive" });
+    } finally {
+      setSubmittingBid(false);
     }
   };
 
@@ -175,7 +267,22 @@ export default function LeadDetailPage() {
     );
   }
 
-  const isAccepted = assignment.status === 'accepted' || assignment.status === 'completed';
+  const isAccepted = assignment?.status === 'accepted' || assignment?.status === 'completed';
+  const isOpportunityOpen = request?.status === 'new';
+  const bidStatusLabel = existingBid?.status === 'awarded'
+    ? 'Awarded'
+    : existingBid?.status === 'rejected'
+    ? 'Rejected'
+    : existingBid
+    ? 'Submitted'
+    : null;
+  const bidStatusDescription = existingBid
+    ? existingBid.status === 'awarded'
+      ? 'Congratulations — your proposal has been selected by the request owner.'
+      : existingBid.status === 'rejected'
+      ? 'This bid was not selected. You can still review the request if you have ongoing access.'
+      : 'Your current bid is active and can be updated until the request is awarded.'
+    : 'You have not submitted a bid for this requirement yet.';
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-5xl">
@@ -241,6 +348,120 @@ export default function LeadDetailPage() {
                 </div>
               </div>
 
+              <Card className="border-2 border-dashed shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-base">Your Bid Status</CardTitle>
+                  <CardDescription>
+                    {bidStatusDescription}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {existingBid ? (
+                    <div className="space-y-4 rounded-2xl border p-4 bg-slate-50">
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <p className="text-sm font-bold">Current bid</p>
+                          <p className="text-xs text-muted-foreground mt-1">Submitted on {existingBid.createdAt?.seconds ? new Date(existingBid.createdAt.seconds * 1000).toLocaleDateString() : 'Unknown date'}</p>
+                        </div>
+                        <Badge className={cn(
+                          'uppercase text-[10px] font-black px-2 py-1',
+                          existingBid.status === 'awarded'
+                            ? 'bg-emerald-600 text-white'
+                            : existingBid.status === 'rejected'
+                            ? 'bg-slate-100 text-slate-700'
+                            : 'bg-primary/10 text-primary'
+                        )}>
+                          {bidStatusLabel}
+                        </Badge>
+                      </div>
+                      <div className="grid gap-4">
+                        <div>
+                          <Label htmlFor="bidAmount">Bid amount (₹)</Label>
+                          <Input
+                            id="bidAmount"
+                            type="number"
+                            value={bidAmount}
+                            onChange={(e) => setBidAmount(e.target.value)}
+                            placeholder="Enter your bid amount"
+                            disabled={!isOpportunityOpen}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="bidMessage">Bid message</Label>
+                          <Textarea
+                            id="bidMessage"
+                            value={bidMessage}
+                            onChange={(e) => setBidMessage(e.target.value)}
+                            placeholder="Write a brief proposal summary"
+                            className="min-h-[130px]"
+                            disabled={!isOpportunityOpen}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid gap-4">
+                      <div>
+                        <Label htmlFor="bidAmount">Bid amount (₹)</Label>
+                        <Input
+                          id="bidAmount"
+                          type="number"
+                          value={bidAmount}
+                          onChange={(e) => setBidAmount(e.target.value)}
+                          placeholder="Enter your bid amount"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="bidMessage">Bid message</Label>
+                        <Textarea
+                          id="bidMessage"
+                          value={bidMessage}
+                          onChange={(e) => setBidMessage(e.target.value)}
+                          placeholder="Write a brief proposal summary"
+                          className="min-h-[130px]"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+                <CardFooter className="bg-muted/50 border-t p-6">
+                  <Button className="w-full h-12" onClick={handleSubmitBid} disabled={submittingBid || !isOpportunityOpen}>
+                    {submittingBid ? (existingBid ? "Updating bid..." : "Submitting bid...") : existingBid ? "Update Bid" : "Submit Bid"}
+                  </Button>
+                </CardFooter>
+                {!isOpportunityOpen && (
+                  <div className="p-4 text-xs text-muted-foreground bg-slate-50 border-t border-slate-200">
+                    Bidding is closed for this request since it is no longer open. Your existing bid remains visible for reference.
+                  </div>
+                )}
+              </Card>
+              
+              {existingBid && existingBid.status === 'awarded' && (
+                <Card className="border-2 border-emerald-200 bg-emerald-50">
+                  <CardHeader>
+                    <CardTitle className="text-sm">Award Status</CardTitle>
+                    <CardDescription>Your proposal won the award and the client has selected your bid.</CardDescription>
+                  </CardHeader>
+                </Card>
+              )}
+              {existingBid && existingBid.status === 'rejected' && (
+                <Card className="border-2 border-slate-200 bg-slate-50">
+                  <CardHeader>
+                    <CardTitle className="text-sm">Bid Outcome</CardTitle>
+                    <CardDescription>This bid was not selected. Keep scanning for other open opportunities.</CardDescription>
+                  </CardHeader>
+                </Card>
+              )}
+              
+              {isOpportunityOpen && !existingBid && (
+                <div className="rounded-2xl border border-dashed border-slate-200 bg-white/70 p-4 text-sm text-slate-700">
+                  Your bid will be visible to the request owner once submitted.
+                </div>
+              )}
+              
+            </CardContent>
+          </Card>
+
               {/* AI Conversation Assistant Card */}
               {isAccepted && (
                 <Card className="border-primary/20 bg-primary/5 shadow-sm">
@@ -295,7 +516,7 @@ export default function LeadDetailPage() {
                 </Card>
               )}
             </CardContent>
-            {!isAccepted && (
+            {!isAccepted && assignment && (
               <CardFooter className="bg-muted/50 border-t p-6 flex gap-4">
                 <Button className="flex-1 h-12 text-lg font-bold shadow-lg" onClick={handleAccept} disabled={updating}>
                   {updating ? "Accepting..." : "Accept Lead & Unlock Contact"}

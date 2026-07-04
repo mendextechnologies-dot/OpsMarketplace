@@ -4,4 +4,4 @@ import './flows/intent-flow';
 import './flows/lead-scoring-flow';
 import './flows/profile-enhancer-flow';
 import './flows/proposal-flow';
-import './flows/marketplace-guide-flow';
+import './flows/compliance-guide-flow';

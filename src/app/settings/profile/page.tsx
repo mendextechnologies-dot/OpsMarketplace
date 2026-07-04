@@ -60,6 +60,9 @@ export default function ProfileSettingsPage() {
     yearsExperience: "",
     servicesOffered: [] as string[],
     statesCovered: "",
+    verified: false,
+    verificationStatus: "pending",
+    verificationNotes: "",
   });
 
   // Partner State
@@ -92,6 +95,9 @@ export default function ProfileSettingsPage() {
         yearsExperience: consultantProfile.yearsExperience?.toString() || "",
         servicesOffered: consultantProfile.servicesOffered || [],
         statesCovered: consultantProfile.statesCovered?.join(", ") || "",
+        verified: consultantProfile.verified || false,
+        verificationStatus: consultantProfile.verificationStatus || "pending",
+        verificationNotes: consultantProfile.verificationNotes || "",
       });
     }
     if (partnerProfile) {

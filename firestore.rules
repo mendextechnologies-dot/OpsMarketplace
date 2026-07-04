@@ -49,7 +49,8 @@ service cloud.firestore {
       );
       allow update: if isAuthenticated() && (
         resource.data.smeId == request.auth.uid ||
-        isAdmin()
+        isAdmin() ||
+        request.auth.uid == resource.data.selectedConsultantId
       );
       allow delete: if isAdmin();
     }
@@ -63,8 +64,24 @@ service cloud.firestore {
         resource.data.consultantId == request.auth.uid ||
         isAdmin()
       );
-      allow update: if isAuthenticated() && isAdmin();
+      allow update: if isAuthenticated() && (
+        isAdmin() || request.auth.uid == resource.data.consultantId
+      );
       allow delete: if isAdmin();
+    }
+
+    match /requestBids/{bidId} {
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.consultantId;
+      allow read: if isAuthenticated() && (
+        request.auth.uid == resource.data.consultantId ||
+        get(/databases/$(database)/documents/serviceRequests/$(resource.data.requestId)).data.userId == request.auth.uid ||
+        get(/databases/$(database)/documents/serviceRequests/$(resource.data.requestId)).data.leadOwnerId == request.auth.uid ||
+        isAdmin()
+      );
+      allow update: if isAuthenticated() && (
+        isAdmin() || request.auth.uid == resource.data.consultantId
+      );
+      allow delete: if false;
     }
 
     match /emailTemplates/{templateId} {

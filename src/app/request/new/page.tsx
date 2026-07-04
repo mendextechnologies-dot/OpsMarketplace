@@ -157,6 +157,19 @@ export default function NewRequestPage() {
         leadOwnerId: user ? user.uid : null,
         status: "new",
         createdAt: serverTimestamp(),
+        createdById: user ? user.uid : null,
+        createdByRole: user ? profile?.role : 'guest',
+        createdByName: user ? profile?.name : "Guest",
+        auditLog: [
+          {
+            event: "request_created",
+            byId: user ? user.uid : null,
+            byName: user ? profile?.name : "Guest",
+            byRole: user ? profile?.role : "guest" : "guest",
+            timestamp: serverTimestamp(),
+            note: "Requirement submitted through the platform.",
+          }
+        ]
       };
 
       await addDoc(collection(db, "serviceRequests"), requestData);

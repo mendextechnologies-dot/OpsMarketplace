@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
-import { collection, query, where, getDocs, getDoc, doc, orderBy } from "firebase/firestore";
+import { collection, query, where, getDocs, getDoc, doc, orderBy, limit } from "firebase/firestore";
 import { db } from "@/lib/firebase-config";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 export default function ConsultantDashboard() {
   const { profile } = useAuth();
   const [leads, setLeads] = useState<any[]>([]);
+  const [openOpportunities, setOpenOpportunities] = useState<any[]>([]);
   const [consultantData, setConsultantData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -22,12 +23,19 @@ export default function ConsultantDashboard() {
     const fetchData = async () => {
       if (!profile) return;
       
-      const [leadsSnap, profileSnap] = await Promise.all([
+      const [leadsSnap, profileSnap, openRequestsSnap] = await Promise.all([
         getDocs(query(collection(db, "leadAssignments"), where("consultantId", "==", profile.id), orderBy("createdAt", "desc"))),
-        getDoc(doc(db, "consultantProfiles", profile.id))
+        getDoc(doc(db, "consultantProfiles", profile.id)),
+        getDocs(query(
+          collection(db, "serviceRequests"),
+          where("status", "==", "new"),
+          orderBy("createdAt", "desc"),
+          limit(10)
+        ))
       ]);
       
-      setConsultantData(profileSnap.data());
+      const consultantProfileData = profileSnap.data();
+      setConsultantData(consultantProfileData);
       
       const leadsWithDetails = await Promise.all(
         leadsSnap.docs.map(async (assignmentDoc) => {
@@ -45,8 +53,17 @@ export default function ConsultantDashboard() {
         })
       );
       
+      const openRequests = openRequestsSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      
+      const filteredOpenRequests = openRequests.filter((req) => {
+        if (!consultantProfileData?.servicesOffered?.length) return true;
+        return req.serviceIds?.some((serviceId: string) =>
+          consultantProfileData.servicesOffered.includes(serviceId)
+        );
+      });
+      
       // Dynamic Ranking Logic: Score = Lead Quality * Provider Performance Multiplier
-      const perfMultiplier = consultantData?.performance_multiplier || 1.0;
+      const perfMultiplier = consultantProfileData?.performance_multiplier || 1.0;
       const rankedLeads = leadsWithDetails.sort((a, b) => {
         const scoreA = (a.ai_metadata?.quality_score || 0) * perfMultiplier;
         const scoreB = (b.ai_metadata?.quality_score || 0) * perfMultiplier;
@@ -54,13 +71,33 @@ export default function ConsultantDashboard() {
       });
       
       setLeads(rankedLeads);
+      setOpenOpportunities(filteredOpenRequests);
       setLoading(false);
     };
     fetchData();
   }, [profile]);
 
-  const newLeads = leads.filter(l => l.assignmentStatus === 'sent' || l.assignmentStatus === 'viewed');
-  const activeWork = leads.filter(l => l.assignmentStatus === 'accepted');
+  const newLeads = leads.filter(l => l.assignmentStatus === 'sent' || l.assignmentStatus === 'viewed' || l.assignmentStatus === 'selected');
+  const activeWork = leads.filter(l => l.assignmentStatus === 'accepted' || l.assignmentStatus === 'completed');
+  const openBids = openOpportunities.filter((req) => {
+    return !leads.some((lead) => lead.requestId === req.id) && req.status === 'new';
+  });
+  const inPipeline = leads.filter(l => l.assignmentStatus === 'sent' || l.assignmentStatus === 'viewed' || l.assignmentStatus === 'selected' || l.assignmentStatus === 'accepted');
+
+  const statusPill = (lead: any) => {
+    const label = lead.assignmentStatus === 'open' ? 'Open Bid' :
+      lead.assignmentStatus === 'selected' ? 'Selected' :
+      lead.assignmentStatus === 'accepted' ? 'In Progress' :
+      lead.assignmentStatus === 'completed' ? 'Completed' :
+      lead.assignmentStatus === 'sent' ? 'New Lead' :
+      lead.assignmentStatus === 'viewed' ? 'Viewed' :
+      'Opportunity';
+    return (
+      <Badge variant={lead.assignmentStatus === 'accepted' || lead.assignmentStatus === 'completed' ? 'secondary' : 'outline'} className="text-[9px] uppercase tracking-wider">
+        {label}
+      </Badge>
+    );
+  };
 
   const LeadCard = ({ lead }: { lead: any }) => (
     <Card key={lead.id} className="hover:border-primary/50 transition-all shadow-md group relative overflow-hidden">
@@ -101,10 +138,19 @@ export default function ConsultantDashboard() {
           </div>
         )}
       </CardContent>
-      <CardContent className="pt-0 border-t bg-secondary/5 py-4 flex justify-between items-center">
-        <Badge variant="outline" className="text-[9px] uppercase tracking-tighter">
-          {lead.urgency} Urgency
-        </Badge>
+      <CardContent className="pt-0 border-t bg-secondary/5 py-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        {statusPill(lead)}
+        <div className="flex items-center justify-between gap-2">
+          <Badge variant="outline" className="text-[9px] uppercase tracking-tighter">
+            {lead.urgency} Urgency
+          </Badge>
+          <Button size="sm" asChild className="group h-8 text-xs">
+            <Link href={`/leads/${lead.requestId}`}>
+              Review Opportunity
+              <ArrowRight className="ml-1 h-3 w-3 transition-transform group-hover:translate-x-1" />
+            </Link>
+          </Button>
+        </div>
         <Button size="sm" asChild className="group h-8 text-xs">
           <Link href={`/leads/${lead.requestId}`}>
             Review Opportunity
@@ -131,11 +177,11 @@ export default function ConsultantDashboard() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">AI Ranked Matches</p>
-                <p className="text-3xl font-bold mt-1 text-primary">{newLeads.length}</p>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Open Bid Opportunities</p>
+                <p className="text-3xl font-bold mt-1 text-primary">{openBids.length}</p>
               </div>
               <div className="bg-primary/10 p-3 rounded-xl">
-                <Sparkles className="h-6 w-6 text-primary" />
+                <Zap className="h-6 w-6 text-primary" />
               </div>
             </div>
           </CardContent>
@@ -144,11 +190,11 @@ export default function ConsultantDashboard() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Ranking Health</p>
-                <p className="text-3xl font-bold mt-1 text-blue-600">Optimal</p>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">AI Ranked Matches</p>
+                <p className="text-3xl font-bold mt-1 text-blue-600">{newLeads.length}</p>
               </div>
               <div className="bg-blue-100 p-3 rounded-xl">
-                <TrendingUp className="h-6 w-6 text-blue-600" />
+                <Sparkles className="h-6 w-6 text-blue-600" />
               </div>
             </div>
           </CardContent>
@@ -157,8 +203,8 @@ export default function ConsultantDashboard() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Avg Response</p>
-                <p className="text-3xl font-bold mt-1 text-green-600">45m</p>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Live Pipeline</p>
+                <p className="text-3xl font-bold mt-1 text-green-600">{activeWork.length}</p>
               </div>
               <div className="bg-green-100 p-3 rounded-xl">
                 <Clock className="h-6 w-6 text-green-600" />
@@ -170,8 +216,8 @@ export default function ConsultantDashboard() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Market Standing</p>
-                <p className="text-3xl font-bold mt-1 text-slate-700">Top 5%</p>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">My Pipeline</p>
+                <p className="text-3xl font-bold mt-1 text-slate-700">{inPipeline.length}</p>
               </div>
               <div className="bg-slate-200 p-3 rounded-xl">
                 <BarChart3 className="h-6 w-6 text-slate-700" />
@@ -183,6 +229,9 @@ export default function ConsultantDashboard() {
 
       <Tabs defaultValue="new" className="w-full">
         <TabsList className="bg-muted/80 p-1 mb-8">
+          <TabsTrigger value="open" className="px-8 font-bold text-xs uppercase tracking-widest">
+            Open Bids ({openBids.length})
+          </TabsTrigger>
           <TabsTrigger value="new" className="px-8 font-bold text-xs uppercase tracking-widest">
             AI Dynamic Ranking ({newLeads.length})
           </TabsTrigger>
@@ -190,6 +239,31 @@ export default function ConsultantDashboard() {
             Ongoing Delivery
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="open">
+          {loading ? (
+            <div className="text-center py-20 animate-pulse text-muted-foreground italic">Loading open bid opportunities...</div>
+          ) : openBids.length === 0 ? (
+            <Card className="bg-muted/30 border-dashed border-2">
+              <CardContent className="py-16 text-center text-muted-foreground">
+                <Sparkles className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                <h3 className="text-lg font-semibold text-foreground">No open opportunities</h3>
+                <p className="max-w-xs mx-auto mt-2">There are no new lead requests available for bidding right now.</p>
+                <div className="mt-6">
+                  <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
+                    Refresh opportunities
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {openBids.map((lead) => (
+                <LeadCard key={lead.id} lead={{ ...lead, assignmentStatus: 'open' }} />
+              ))}
+            </div>
+          )}
+        </TabsContent>
 
         <TabsContent value="new">
           {loading ? (
@@ -212,11 +286,21 @@ export default function ConsultantDashboard() {
         </TabsContent>
 
         <TabsContent value="active">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {activeWork.map((lead) => (
-              <LeadCard key={lead.id} lead={lead} />
-            ))}
-          </div>
+          {activeWork.length === 0 ? (
+            <Card className="bg-muted/30 border-dashed border-2">
+              <CardContent className="py-20 text-center text-muted-foreground">
+                <Sparkles className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                <h3 className="text-lg font-semibold text-foreground">No active delivery work</h3>
+                <p className="max-w-xs mx-auto mt-2">Once a bid is awarded and accepted, active engagements will appear here.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {activeWork.map((lead) => (
+                <LeadCard key={lead.id} lead={lead} />
+              ))}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>

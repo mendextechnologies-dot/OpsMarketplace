@@ -47,7 +47,7 @@ export default function GrowthPlaybookPage() {
     });
   };
 
-  const outreachScript = "We help you monetize your network by bringing operational opportunities to our marketplace. You maintain the relationship, we provide the execution experts.";
+  const outreachScript = "We help you monetize your network by bringing payroll, HRMS, and compliance opportunities to our ecosystem. You maintain the relationship; we provide the execution experts.";
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-6xl">
@@ -63,7 +63,7 @@ export default function GrowthPlaybookPage() {
           <BookOpen className="h-8 w-8 text-primary" />
           <h1 className="text-4xl font-extrabold tracking-tight">Growth Playbook</h1>
         </div>
-        <p className="text-muted-foreground text-lg">Standard operating guide for onboarding partners, generating leads, and activating marketplace growth.</p>
+        <p className="text-muted-foreground text-lg">Standard operating guide for onboarding partners, generating leads, and activating compliance network growth.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

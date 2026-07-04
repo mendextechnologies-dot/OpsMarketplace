@@ -57,11 +57,11 @@ export async function sendWelcomeEmail(email: string, name: string, role: string
   const templateName = `Welcome ${role.toUpperCase()}`;
   const customTemplate = await getTemplate(templateName) || await getTemplate('Welcome General');
 
-  let subject = `Welcome to OpsMarketplace, ${name}!`;
+  let subject = `Welcome to OpsMarketplace Compliance Network, ${name}!`;
   let html = `
     <div style="font-family: sans-serif; padding: 40px; background-color: #f8fafc; color: #334155;">
       <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
-        <h2 style="color: #3F51B5; margin-bottom: 24px; font-weight: 800; font-size: 24px;">Welcome to the Marketplace!</h2>
+        <h2 style="color: #3F51B5; margin-bottom: 24px; font-weight: 800; font-size: 24px;">Welcome to OpsMarketplace Compliance Network!</h2>
         <p style="font-size: 16px; line-height: 1.6;">Hi ${name},</p>
         <p style="font-size: 16px; line-height: 1.6;">Your account as a <strong style="color: #3F51B5;">${role.toUpperCase()}</strong> has been successfully created.</p>
         <p style="font-size: 16px; line-height: 1.6; margin-top: 24px;">Login to your dashboard to start managing your operations or expert profile.</p>
@@ -104,7 +104,7 @@ export async function sendLeadAssignmentEmail(consultantEmail: string, consultan
           <h2 style="margin: 0; font-weight: 800;">New Lead Assigned!</h2>
         </div>
         <p style="font-size: 16px; line-height: 1.6;">Hi ${consultantName},</p>
-        <p style="font-size: 16px; line-height: 1.6;">You have been matched with a new service opportunity on OpsMarketplace:</p>
+        <p style="font-size: 16px; line-height: 1.6;">You have been matched with a new payroll and compliance opportunity on OpsMarketplace:</p>
         
         <div style="background-color: #f1f5f9; padding: 20px; border-radius: 8px; margin: 20px 0;">
           <p style="margin: 0; font-size: 14px; color: #64748b; text-transform: uppercase; font-weight: bold;">Client</p>
@@ -148,6 +148,65 @@ export async function sendLeadAssignmentEmail(consultantEmail: string, consultan
     return { success: true };
   } catch (error) {
     console.error("Lead assignment email failed:", error);
+    return { success: false, error: String(error) };
+  }
+}
+
+export async function sendBidAwardNotificationEmail(
+  consultantEmail: string,
+  consultantName: string,
+  companyName: string,
+  bidAmount: number | string,
+  serviceCategory: string
+) {
+  const transporter = createTransporter();
+  const customTemplate = await getTemplate("Bid Award Notification");
+  const amountString = typeof bidAmount === "number" ? bidAmount.toLocaleString() : bidAmount;
+
+  let subject = `Award Notification: ${companyName} selected your bid`;
+  let html = `
+    <div style="font-family: sans-serif; padding: 40px; background-color: #f8fafc; color: #334155;">
+      <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
+        <h2 style="color: #3F51B5; margin-bottom: 24px; font-weight: 800; font-size: 24px;">Congratulations, ${consultantName}!</h2>
+        <p style="font-size: 16px; line-height: 1.6;">Your proposal for <strong>${serviceCategory}</strong> has been awarded by ${companyName}.</p>
+        <p style="font-size: 16px; line-height: 1.6;">Awarded bid value: <strong>₹${amountString}</strong>.</p>
+        <p style="font-size: 16px; line-height: 1.6; margin-top: 24px;">Please log in to your OpsMarketplace dashboard to review next steps and connect with the client.</p>
+        <div style="margin-top: 30px; text-align: center;">
+          <a href="https://opsmarketplace.com/dashboard" style="background-color: #3F51B5; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Open Expert Console</a>
+        </div>
+        <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; font-size: 14px; color: #94a3b8;">
+          <p>Thank you for being a trusted expert in the OpsMarketplace network.</p>
+        </div>
+      </div>
+    </div>
+  `;
+
+  if (customTemplate) {
+    subject = replacePlaceholders(customTemplate.subject || subject, {
+      consultantName,
+      companyName,
+      bidAmount: amountString,
+      serviceCategory,
+    });
+    html = replacePlaceholders(customTemplate.html, {
+      consultantName,
+      companyName,
+      bidAmount: amountString,
+      serviceCategory,
+    });
+  }
+
+  try {
+    const fromAddress = process.env.SMTP_FROM || `"OpsMarketplace" <${process.env.SMTP_USER}>`;
+    await transporter.sendMail({
+      from: fromAddress,
+      to: consultantEmail,
+      subject: subject,
+      html: html,
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("Bid award notification email failed:", error);
     return { success: false, error: String(error) };
   }
 }

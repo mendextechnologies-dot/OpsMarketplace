@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     default: 'OpsMarketplace | Managed HR & Compliance Services for SMEs',
     template: '%s | OpsMarketplace',
   },
-  description: 'Connect with verified HR, Payroll, and Labour Compliance experts. A managed marketplace for Indian SMEs to scale operations with AI-matched delivery.',
+  description: 'Connect with verified HR, Payroll, and Labour Compliance experts. A managed compliance network for Indian SMEs to scale operations with AI-matched delivery.',
   keywords: ['HR Compliance', 'Labour Law India', 'Payroll Outsourcing', 'SME Services', 'Shop Act Registration', 'Compliance Consultant'],
   authors: [{ name: 'OpsMarketplace Team' }],
   creator: 'OpsMarketplace',

@@ -21,8 +21,8 @@ const scoringPrompt = ai.definePrompt({
   input: { schema: z.object({ description: z.string(), companyName: z.string() }) },
   output: { schema: LeadScoreOutputSchema },
   prompt: `
-    You are a marketplace quality control agent.
-    Evaluate the following service request for quality, intent clarity, and completeness.
+    You are a compliance intake quality control agent.
+    Evaluate the following payroll or compliance service request for quality, intent clarity, and completeness.
     
     Company: {{companyName}}
     Description: {{description}}

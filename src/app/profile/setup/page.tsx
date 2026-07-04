@@ -92,6 +92,10 @@ export default function ProfileSetupPage() {
         yearsExperience: parseInt(formData.yearsExperience),
         servicesOffered: formData.servicesOffered,
         statesCovered: formData.statesCovered.split(",").map(s => s.trim()),
+        verified: false,
+        verificationStatus: "pending",
+        verificationNotes: "",
+        verificationHistory: [],
         createdAt: serverTimestamp(),
       };
 

@@ -29,7 +29,7 @@ const riskPrompt = ai.definePrompt({
   },
   output: { schema: RiskAssessmentSchema },
   prompt: `
-    You are a marketplace integrity agent.
+    You are a compliance network integrity agent.
     Analyze the following consultant performance data for potential risk, fraud, or low-quality behavior.
     
     Name: {{name}}

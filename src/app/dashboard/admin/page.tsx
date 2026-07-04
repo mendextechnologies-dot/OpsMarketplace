@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
-import { collection, query, getDocs, orderBy, doc, updateDoc, deleteDoc, where, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, query, getDocs, orderBy, doc, updateDoc, deleteDoc, where, addDoc, serverTimestamp, arrayUnion } from "firebase/firestore";
 import { db } from "@/lib/firebase-config";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -101,7 +101,7 @@ export default function AdminDashboard() {
       setAssignments(assignSnap.docs.map(d => ({ id: d.id, ...d.data() })));
       setTemplates(tempSnap.docs.map(d => ({ id: d.id, ...d.data() })));
     } catch (error: any) {
-      toast({ title: "Sync Failed", description: "Could not sync marketplace data.", variant: "destructive" });
+      toast({ title: "Sync Failed", description: "Could not sync compliance network data.", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -135,15 +135,15 @@ export default function AdminDashboard() {
       const defaultTemplates = [
         { 
           name: "Welcome SME", 
-          subject: "Welcome to OpsMarketplace, {{name}}!", 
+          subject: "Welcome to OpsMarketplace Compliance Network, {{name}}!", 
           roleType: "sme", 
-          html: "<div style='font-family:sans-serif; padding:40px; background-color:#f8fafc;'><div style='max-width:600px; margin:0 auto; background-color:#ffffff; padding:40px; border-radius:16px;'><h2>Welcome {{name}}!</h2><p>Your SME account is active. Start posting requirements today to get matched with verified experts.</p></div></div>" 
+          html: "<div style='font-family:sans-serif; padding:40px; background-color:#f8fafc;'><div style='max-width:600px; margin:0 auto; background-color:#ffffff; padding:40px; border-radius:16px;'><h2>Welcome {{name}}!</h2><p>Your SME account is active. Start submitting payroll and compliance requests today to connect with verified experts.</p></div></div>" 
         },
         { 
           name: "Welcome Consultant", 
           subject: "Expert Console Activated: Welcome {{name}}", 
           roleType: "consultant", 
-          html: "<div style='font-family:sans-serif; padding:40px; background-color:#f8fafc;'><div style='max-width:600px; margin:0 auto; background-color:#ffffff; padding:40px; border-radius:16px;'><h2>Welcome Expert {{name}}!</h2><p>You are now part of our verified network. Your opportunities will appear in the Expert Console as they are matched by our AI.</p></div></div>" 
+          html: "<div style='font-family:sans-serif; padding:40px; background-color:#f8fafc;'><div style='max-width:600px; margin:0 auto; background-color:#ffffff; padding:40px; border-radius:16px;'><h2>Welcome Expert {{name}}!</h2><p>You are now part of our verified payroll and compliance network. Your new opportunities will appear in the Expert Console as they are matched by our AI.</p></div></div>" 
         },
         { 
           name: "New Lead Notification", 
@@ -182,7 +182,7 @@ export default function AdminDashboard() {
           name: "Welcome Partner", 
           subject: "Partner Console Ready", 
           roleType: "partner", 
-          html: "<div style='font-family:sans-serif; padding:40px; background-color:#f8fafc;'><div style='max-width:600px; margin:0 auto; background-color:#ffffff; padding:40px; border-radius:16px;'><h2>Partner Onboarding Complete</h2><p>Start monetizing your network today by bringing high-intent leads to the platform.</p></div></div>" 
+          html: "<div style='font-family:sans-serif; padding:40px; background-color:#f8fafc;'><div style='max-width:600px; margin:0 auto; background-color:#ffffff; padding:40px; border-radius:16px;'><h2>Partner Onboarding Complete</h2><p>Start monetizing your network today by bringing high-intent payroll and compliance leads to the platform.</p></div></div>" 
         }
       ];
 
@@ -307,8 +307,8 @@ export default function AdminDashboard() {
 
               <Card className="border-none shadow-sm rounded-3xl overflow-hidden">
                 <CardHeader>
-                  <CardTitle className="text-lg font-black text-slate-900">Marketplace Velocity</CardTitle>
-                  <CardDescription className="text-xs font-medium">Growth in service requests over time.</CardDescription>
+                  <CardTitle className="text-lg font-black text-slate-900">Compliance Pipeline Velocity</CardTitle>
+                  <CardDescription className="text-xs font-medium">Growth in payroll and compliance requests over time.</CardDescription>
                 </CardHeader>
                 <CardContent className="h-[300px]">
                   <ResponsiveContainer width="100%" height="100%">
@@ -423,7 +423,7 @@ export default function AdminDashboard() {
                   <h4 className="font-black text-xl tracking-tight">Growth Playbook</h4>
                 </div>
                 <p className="text-sm font-medium text-white/80 leading-relaxed mb-6">
-                  Standard operating guide for onboarding partners and generating leads.
+                  Standard operating guide for onboarding partners and converting payroll and compliance demand.
                 </p>
                 <Button asChild variant="secondary" className="w-full rounded-xl font-black py-6 bg-white text-primary hover:bg-white/90 border-none">
                   <Link href="/growth-playbook">Open Playbook</Link>
@@ -559,6 +559,7 @@ export default function AdminDashboard() {
                   <TableRow className="border-none h-14">
                     <TableHead className="px-8 font-black text-[11px] uppercase tracking-wider">Expert / Firm</TableHead>
                     <TableHead className="font-black text-[11px] uppercase tracking-wider">Specialization</TableHead>
+                    <TableHead className="font-black text-[11px] uppercase tracking-wider text-center">Verification</TableHead>
                     <TableHead className="font-black text-[11px] uppercase tracking-wider text-center">Performance</TableHead>
                     <TableHead className="text-right px-8"></TableHead>
                   </TableRow>
@@ -585,6 +586,14 @@ export default function AdminDashboard() {
                             </Badge>
                           ))}
                         </div>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge className={cn(
+                          "px-3 py-1 rounded-full text-[10px] font-black",
+                          cons.verified ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+                        )}>
+                          {cons.verified ? "Verified" : (cons.verificationStatus || "Pending")}
+                        </Badge>
                       </TableCell>
                       <TableCell className="text-center">
                         <div className="flex flex-col items-center gap-1">
@@ -661,8 +670,8 @@ export default function AdminDashboard() {
         {activeView === 'pipeline' && (
           <Card className="border-none shadow-sm rounded-3xl">
             <CardHeader className="p-8 border-b">
-              <CardTitle className="text-2xl font-black text-slate-900">Marketplace Pipeline</CardTitle>
-              <CardDescription className="text-sm font-medium mt-1">Tracking movement of live service deals.</CardDescription>
+              <CardTitle className="text-2xl font-black text-slate-900">Compliance Delivery Pipeline</CardTitle>
+              <CardDescription className="text-sm font-medium mt-1">Tracking movement of live compliance and payroll engagements.</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               <Table>
@@ -717,7 +726,7 @@ export default function AdminDashboard() {
             </div>
             <div className="space-y-2">
               <Label>Subject Line</Label>
-              <Input value={editingTemplate?.subject || ""} onChange={e => setEditingTemplate({...editingTemplate, subject: e.target.value})} placeholder="Welcome to OpsMarketplace, {{name}}!" required />
+              <Input value={editingTemplate?.subject || ""} onChange={e => setEditingTemplate({...editingTemplate, subject: e.target.value})} placeholder="Welcome to OpsMarketplace Compliance Network, {{name}}!" required />
             </div>
             <div className="space-y-2">
               <Label>HTML Body</Label>
@@ -781,39 +790,76 @@ export default function AdminDashboard() {
                 </div>
               </div>
             </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
-      <Dialog open={!!viewingPartner} onOpenChange={() => setViewingPartner(null)}>
-        <DialogContent className="max-w-xl rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
-          <div className="bg-amber-500 p-8 text-white">
-            <h3 className="text-2xl font-black">{viewingPartner?.partnerName}</h3>
-            <p className="text-white/80 font-bold uppercase text-[10px] tracking-widest mt-1">
-              Channel Partner • {viewingPartner?.city}
-            </p>
-          </div>
-          <div className="p-8 space-y-6 bg-white">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-slate-50 p-4 rounded-2xl">
-                <p className="text-[10px] font-black text-muted-foreground uppercase mb-1">Total Referrals</p>
-                <p className="text-2xl font-black">{requests.filter(r => r.leadOwnerId === viewingPartner?.id).length}</p>
-              </div>
-              <div className="bg-slate-50 p-4 rounded-2xl">
-                <p className="text-[10px] font-black text-muted-foreground uppercase mb-1">Status</p>
-                <p className="text-2xl font-black text-green-600 uppercase">{viewingPartner?.status || 'Active'}</p>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <p className="text-[11px] font-black text-muted-foreground uppercase tracking-widest">Service Focus</p>
-              <div className="flex flex-wrap gap-2">
-                {viewingPartner?.servicesFocus?.map((sId: string, i: number) => (
-                  <Badge key={i} variant="secondary" className="bg-amber-50 text-amber-700 border-none font-black px-3 py-1.5 rounded-xl">
-                    {getCategoryName(sId)}
-                  </Badge>
-                ))}
-              </div>
-            </div>
+                  <div className="border-t border-slate-200 pt-6">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Verification Status</p>
+                        <Badge className={cn(
+                          "px-3 py-1 rounded-full text-[10px] font-black",
+                          viewingConsultant?.verified ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+                        )}>
+                          {viewingConsultant?.verified ? "Verified" : (viewingConsultant?.verificationStatus || "Pending")}
+                        </Badge>
+                      </div>
+                      <Button
+                        variant={viewingConsultant?.verified ? "outline" : "default"}
+                        onClick={async () => {
+                          if (!viewingConsultant || !profile) return;
+                          const target = doc(db, "consultantProfiles", viewingConsultant.id);
+                          const newStatus = viewingConsultant.verified ? "pending" : "verified";
+                          const note = viewingConsultant.verified ? "Verification revoked by admin." : "Approved by admin verification.";
+                          const action = viewingConsultant.verified ? "revoked" : "verified";
+                          const historyEntry = {
+                            event: action,
+                            byId: profile.id,
+                            byName: profile.name,
+                            byRole: profile.role,
+                            timestamp: serverTimestamp(),
+                            note,
+                          };
+
+                          await updateDoc(target, {
+                            verified: !viewingConsultant.verified,
+                            verificationStatus: newStatus,
+                            verificationNotes: note,
+                            verificationHistory: arrayUnion(historyEntry),
+                          });
+
+                          setViewingConsultant({
+                            ...viewingConsultant,
+                            verified: !viewingConsultant.verified,
+                            verificationStatus: newStatus,
+                            verificationNotes: note,
+                            verificationHistory: [...(viewingConsultant.verificationHistory || []), historyEntry],
+                          });
+                          fetchData();
+                        }}
+                      >
+                        {viewingConsultant?.verified ? "Revoke Verification" : "Mark Verified"}
+                      </Button>
+                    </div>
+                    {viewingConsultant?.verificationNotes && (
+                      <p className="text-[11px] text-slate-500 mt-3">{viewingConsultant.verificationNotes}</p>
+                    )}
+                    {viewingConsultant?.verificationHistory?.length > 0 && (
+                      <div className="mt-4 border-t border-slate-200 pt-4 space-y-3">
+                        <p className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Verification Audit Trail</p>
+                        <div className="divide-y divide-slate-200">
+                          {viewingConsultant.verificationHistory.map((entry: any, idx: number) => (
+                            <div key={idx} className="py-3">
+                              <p className="text-sm font-bold text-slate-900">{entry.event === 'verified' ? 'Verified' : 'Revoked'}</p>
+                              <p className="text-[10px] text-muted-foreground">{entry.byName || 'Admin'} • {entry.byRole}</p>
+                              <p className="text-[10px] text-slate-500 mt-1">{entry.note}</p>
+                              {entry.timestamp?.seconds && (
+                                <p className="text-[10px] text-slate-400 mt-1">{new Date(entry.timestamp.seconds * 1000).toLocaleString()}</p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
           </div>
         </DialogContent>
       </Dialog>

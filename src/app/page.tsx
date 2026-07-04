@@ -43,7 +43,7 @@ import {
 } from "@/components/ui/table";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
-import { marketplaceGuide } from "@/ai/flows/marketplace-guide-flow";
+import { complianceGuide } from "@/ai/flows/compliance-guide-flow";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 
 export default function Home() {
@@ -75,7 +75,7 @@ export default function Home() {
     setLoading(true);
 
     try {
-      const response = await marketplaceGuide({
+      const response = await complianceGuide({
         message: text,
         history: messages.map(m => ({ role: m.role, content: m.content }))
       });
@@ -160,7 +160,7 @@ export default function Home() {
             <CardHeader className="bg-primary text-white p-4 flex flex-row items-center justify-between">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-5 w-5" />
-                <CardTitle className="text-xs font-bold">OpsMarketplace Agent</CardTitle>
+                <CardTitle className="text-xs font-bold">Compliance Intake Assistant</CardTitle>
               </div>
               <Button variant="ghost" size="icon" onClick={() => setChatOpen(false)} className="text-white hover:bg-white/10 h-7 w-7">
                 <X className="h-4 w-4" />
@@ -170,7 +170,7 @@ export default function Home() {
               <ScrollArea className="flex-1 p-4" ref={scrollRef}>
                 <div className="space-y-3">
                   <div className="bg-white p-3 rounded-xl text-sm border shadow-sm">
-                    Hi! I'm the marketplace engine. Looking to <strong>outsource a requirement</strong> or <strong>join our expert network</strong>? 
+                    Hi! I'm the compliance intake assistant. Looking to <strong>outsource a requirement</strong> or <strong>join our expert network</strong>? 
                   </div>
                   {messages.map((m, i) => (
                     <div key={i} className={cn(
@@ -209,14 +209,14 @@ export default function Home() {
       <section className="relative py-20 lg:py-28 bg-gradient-to-br from-primary/10 via-white to-secondary/10 border-b overflow-hidden">
         <div className="container mx-auto px-4 text-center">
           <Badge variant="secondary" className="mb-6 px-4 py-1.5 text-[11px] font-black tracking-widest uppercase bg-primary/10 text-primary border-primary/20 rounded-full">
-            Managed Marketplace • AI-Matched Delivery
+            Managed Compliance Network • AI-Matched Delivery
           </Badge>
           <h1 className="text-4xl lg:text-6xl font-black tracking-tight mb-8 text-slate-900 leading-tight">
             HR, Payroll, and Compliance <br />
             <span className="text-primary italic">Delivered with Confidence.</span>
           </h1>
           <p className="text-lg md:text-xl text-slate-600 max-w-3xl mx-auto mb-10 leading-relaxed font-medium">
-            A managed marketplace for Indian SMEs to connect with verified payroll, labour compliance, and HRMS experts. No open bids, only trusted delivery.
+            A managed compliance network for Indian SMEs to connect with verified payroll, labour compliance, and HRMS experts. No open bids, only trusted delivery.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Button size="lg" className="h-14 px-10 text-lg font-bold shadow-xl rounded-xl" asChild>
@@ -468,8 +468,8 @@ export default function Home() {
       <section className="py-24 bg-white border-b">
         <div className="container mx-auto px-4 text-center">
           <div className="max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl lg:text-4xl font-black tracking-tight mb-4 text-slate-900">Marketplace Architecture Comparison</h2>
-            <p className="text-lg text-muted-foreground font-medium">Why the managed model outperforms traditional directories.</p>
+            <h2 className="text-3xl lg:text-4xl font-black tracking-tight mb-4 text-slate-900">Compliance Network Comparison</h2>
+            <p className="text-lg text-muted-foreground font-medium">Why the managed compliance model outperforms traditional directories.</p>
           </div>
           <Card className="max-w-5xl mx-auto border-2 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.1)] overflow-hidden rounded-[2.5rem]">
             <Table>

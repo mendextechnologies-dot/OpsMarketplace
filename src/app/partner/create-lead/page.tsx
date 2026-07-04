@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { db } from "@/lib/firebase-config";
-import { collection, addDoc, serverTimestamp, query, where, getDocs, doc, getDoc, updateDoc } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, query, where, getDocs } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from "@/components/ui/card";
@@ -17,7 +17,6 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Building2, MapPin, ListChecks, Zap, AlertTriangle } from "lucide-react";
 import { SERVICE_TAXONOMY, getCategoryName } from "@/lib/constants";
 import { cn, generateCompanyKey } from "@/lib/utils";
-import { sendLeadAssignmentEmail } from "@/lib/email-service";
 
 export default function PartnerCreateLeadPage() {
   const { profile } = useAuth();
@@ -106,60 +105,28 @@ export default function PartnerCreateLeadPage() {
         
         status: "new",
         leadSource: "platform",
-        leadType: "inbound",
+        leadType: "partner",
         createdAt: serverTimestamp(),
+        createdById: profile.id,
+        createdByName: profile.name,
+        createdByRole: "partner",
+        auditLog: [
+          {
+            event: "request_created",
+            byId: profile.id,
+            byName: profile.name,
+            byRole: "partner",
+            timestamp: serverTimestamp(),
+            note: "Partner logged a compliance request",
+          }
+        ]
       };
 
       const docRef = await addDoc(collection(db, "serviceRequests"), leadData);
 
-      // Auto-assign logic based on state and services
-      const consultantsQuery = query(
-        collection(db, "consultantProfiles"),
-        where("statesCovered", "array-contains", formData.state)
-      );
-      const consultantSnap = await getDocs(consultantsQuery);
-      
-      let matchCount = 0;
-      for (const cDoc of consultantSnap.docs) {
-        const cData = cDoc.data();
-        const matchesService = cData.servicesOffered?.some((sId: string) => formData.serviceIds.includes(sId));
-        if (matchesService) {
-          matchCount++;
-          await addDoc(collection(db, "leadAssignments"), {
-            requestId: docRef.id,
-            consultantId: cDoc.id,
-            status: "sent",
-            createdAt: serverTimestamp(),
-          });
-
-          // Trigger Notification Email to Consultant with Fallback Logic
-          let targetEmail = cData.notificationEmail;
-          if (!targetEmail) {
-            const userSnap = await getDoc(doc(db, "users", cDoc.id));
-            targetEmail = userSnap.data()?.email;
-          }
-
-          if (targetEmail) {
-            sendLeadAssignmentEmail(
-              targetEmail,
-              cData.name,
-              formData.companyName,
-              getCategoryName(formData.categoryId)
-            );
-          }
-        }
-      }
-
-      // If at least one expert was matched, update the request status to 'assigned'
-      if (matchCount > 0) {
-        await updateDoc(doc(db, "serviceRequests", docRef.id), {
-          status: "assigned"
-        });
-      }
-
       toast({
         title: "Lead Logged Successfully",
-        description: `Ownership assigned and ${matchCount} expert(s) notified.`,
+        description: "Request has been created and is available for expert selection.",
       });
 
       router.push("/dashboard/partner");
