@@ -206,6 +206,31 @@ export default function AdminDashboard() {
     }
   };
 
+  // User management actions
+  const handleChangeUserRole = async (userId: string, newRole: string) => {
+    try {
+      await updateDoc(doc(db, "users", userId), { role: newRole });
+      setUsers(users.map(u => u.id === userId ? { ...u, role: newRole } : u));
+      if (viewingUser && viewingUser.id === userId) setViewingUser({ ...viewingUser, role: newRole });
+      toast({ title: "Role Updated", description: `User role changed to ${newRole}.` });
+    } catch (error: any) {
+      toast({ title: "Update Failed", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const handleToggleUserDisabled = async (userId: string) => {
+    try {
+      const user = users.find(u => u.id === userId);
+      const newDisabled = !user?.disabled;
+      await updateDoc(doc(db, "users", userId), { disabled: newDisabled });
+      setUsers(users.map(u => u.id === userId ? { ...u, disabled: newDisabled } : u));
+      if (viewingUser && viewingUser.id === userId) setViewingUser({ ...viewingUser, disabled: newDisabled });
+      toast({ title: newDisabled ? "User Disabled" : "User Enabled", description: `User ${newDisabled ? 'disabled' : 'enabled'}.` });
+    } catch (error: any) {
+      toast({ title: "Action Failed", description: error.message, variant: "destructive" });
+    }
+  };
+
   if (authLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-muted/30">
@@ -916,6 +941,41 @@ export default function AdminDashboard() {
           </div>
         </DialogContent>
       </Dialog>
+
+            <Dialog open={!!viewingUser} onOpenChange={() => setViewingUser(null)}>
+              <DialogContent className="max-w-lg rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
+                <div className="bg-primary p-6 text-white relative">
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-16 w-16 rounded-2xl border-4 border-white/20 shadow-xl">
+                      <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${viewingUser?.name}`} />
+                    </Avatar>
+                    <div>
+                      <h3 className="text-2xl font-black">{viewingUser?.name}</h3>
+                      <p className="text-white/80 font-bold uppercase text-[10px] tracking-widest mt-1">{viewingUser?.email}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-6 space-y-4 bg-white">
+                  <p className="text-sm text-muted-foreground">Role: <strong className="text-slate-900">{viewingUser?.role}</strong></p>
+                  <p className="text-sm text-muted-foreground">Status: {viewingUser?.disabled ? <Badge className="bg-amber-100 text-amber-700">Disabled</Badge> : <Badge className="bg-emerald-100 text-emerald-700">Active</Badge>}</p>
+
+                  <div className="flex gap-3 mt-4">
+                    {viewingUser?.role !== 'admin' ? (
+                      <Button onClick={() => handleChangeUserRole(viewingUser.id, 'admin')}>Promote to Admin</Button>
+                    ) : (
+                      <Button variant="outline" onClick={() => handleChangeUserRole(viewingUser.id, 'sme')}>Demote to SME</Button>
+                    )}
+
+                    <Button variant={viewingUser?.disabled ? 'secondary' : 'destructive'} onClick={() => {
+                      if (!viewingUser) return;
+                      const ok = confirm(`Are you sure you want to ${viewingUser.disabled ? 'enable' : 'disable'} this user?`);
+                      if (ok) handleToggleUserDisabled(viewingUser.id);
+                    }}>{viewingUser?.disabled ? 'Enable User' : 'Disable User'}</Button>
+                  </div>
+
+                </div>
+              </DialogContent>
+            </Dialog>
     </div>
   );
 }

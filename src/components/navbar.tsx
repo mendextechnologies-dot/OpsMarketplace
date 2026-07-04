@@ -4,26 +4,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { 
-  Briefcase, 
-  LayoutDashboard, 
-  LogOut, 
-  Bell,
-  Settings,
-  User as UserIcon,
-  ChevronDown
-} from "lucide-react";
+import { Briefcase, LayoutDashboard, LogOut, Bell, Settings, User as UserIcon, ChevronDown } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import Sidebar from "@/components/Sidebar";
 
 export function Navbar() {
   const { user, profile, logout } = useAuth();
@@ -56,57 +42,7 @@ export function Navbar() {
 
   return (
     <>
-      {user && (
-        <aside className="app-sidebar hidden lg:flex fixed left-0 top-0 bottom-0 flex-col p-6 border-r bg-white z-50">
-          <div className="flex items-center gap-3 mb-6">
-            <Link href="/" className="flex items-center gap-2 font-black text-lg text-primary">
-              <div className="bg-primary p-2 rounded-lg">
-                <Briefcase className="h-5 w-5 text-white" />
-              </div>
-              <span>OpsMarket</span>
-            </Link>
-          </div>
-          <nav className="flex-1 space-y-1">
-            <Link href="/dashboard" className={cn('nav-item', pathname?.startsWith('/dashboard') ? 'active' : '')}>
-              <LayoutDashboard className="h-4 w-4" /> Dashboard
-            </Link>
-            <Link href="/admin" className={cn('nav-item', pathname?.startsWith('/admin') ? 'active' : '')}>
-              <UserIcon className="h-4 w-4" /> Super Admin
-            </Link>
-            <Link href="/request/new" className="nav-item">
-              <FileText className="h-4 w-4" /> Log Requirement
-            </Link>
-            <Link href="/dashboard/consultant" className="nav-item">
-              <Users className="h-4 w-4" /> Consultants
-            </Link>
-            <Link href="/dashboard/partner" className="nav-item">
-              <Handshake className="h-4 w-4" /> Partners
-            </Link>
-            <Link href="/dashboard/sme" className="nav-item">
-              <Briefcase className="h-4 w-4" /> SMEs
-            </Link>
-            <Link href="/dashboard" className="nav-item">
-              <Activity className="h-4 w-4" /> Live Pipeline
-            </Link>
-            <Link href="/dashboard/conflicts" className="nav-item">
-              <AlertTriangle className="h-4 w-4" /> Conflicts
-            </Link>
-            <Link href="/dashboard/users" className="nav-item">
-              <Database className="h-4 w-4" /> Users
-            </Link>
-          </nav>
-
-          <div className="mt-6">
-            <div className="p-3 bg-muted rounded-xl">
-              <p className="text-xs font-black">Platform Control</p>
-              <p className="text-[11px] text-muted-foreground">Manage users, access and system settings.</p>
-              <div className="mt-3">
-                <Link href="/settings" className="text-sm font-bold text-primary">Go to Settings →</Link>
-              </div>
-            </div>
-          </div>
-        </aside>
-      )}
+      {user && <Sidebar profile={profile} pathname={pathname} />}
 
       <nav className="border-b bg-white sticky top-0 z-50 py-2">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
