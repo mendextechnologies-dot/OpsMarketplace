@@ -325,13 +325,6 @@ export default function AdminDashboard() {
 
         <div className="flex items-center gap-3 mb-8 bg-white p-1 rounded-full shadow-sm border overflow-x-auto px-3">
           <NavItem view="dashboard" icon={LayoutDashboard} label="Overview" />
-          <NavItem view="requests" icon={FileText} label="SME Requests" count={requests.length} />
-          <NavItem view="consultants" icon={Users} label="Consultants" count={consultants.length} />
-          <NavItem view="partners" icon={Handshake} label="Partners" count={partners.length} />
-          <NavItem view="pipeline" icon={Activity} label="Live Pipeline" />
-          <NavItem view="conflicts" icon={AlertTriangle} label="Conflicts" count={conflicts.length} />
-          <NavItem view="users" icon={Database} label="Users" count={users.length} />
-          <NavItem view="templates" icon={Mail} label="Communications" />
         </div>
 
         {activeView === 'dashboard' && (
