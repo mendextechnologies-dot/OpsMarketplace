@@ -65,7 +65,7 @@ import Link from "next/link";
 import { getCategoryName, getServiceName } from "@/lib/constants";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-type AdminView = 'dashboard' | 'requests' | 'consultants' | 'partners' | 'pipeline' | 'conflicts' | 'templates';
+type AdminView = 'dashboard' | 'requests' | 'consultants' | 'partners' | 'pipeline' | 'conflicts' | 'templates' | 'users';
 
 export default function AdminDashboard() {
   const { profile, loading: authLoading } = useAuth();
@@ -75,11 +75,13 @@ export default function AdminDashboard() {
   const [requests, setRequests] = useState<any[]>([]);
   const [consultants, setConsultants] = useState<any[]>([]);
   const [partners, setPartners] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
   const [assignments, setAssignments] = useState<any[]>([]);
   const [templates, setTemplates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewingConsultant, setViewingConsultant] = useState<any>(null);
   const [viewingPartner, setViewingPartner] = useState<any>(null);
+  const [viewingUser, setViewingUser] = useState<any>(null);
   const [editingTemplate, setEditingTemplate] = useState<any>(null);
   const [seeding, setSeeding] = useState(false);
 
@@ -87,12 +89,13 @@ export default function AdminDashboard() {
     if (!profile || profile.role !== 'admin') return;
     setLoading(true);
     try {
-      const [reqSnap, consSnap, partnerSnap, assignSnap, tempSnap] = await Promise.all([
+      const [reqSnap, consSnap, partnerSnap, assignSnap, tempSnap, usersSnap] = await Promise.all([
         getDocs(query(collection(db, "serviceRequests"), orderBy("createdAt", "desc"))),
         getDocs(collection(db, "consultantProfiles")),
         getDocs(collection(db, "partnerProfiles")),
         getDocs(query(collection(db, "leadAssignments"), orderBy("createdAt", "desc"))),
         getDocs(collection(db, "emailTemplates"))
+        , getDocs(collection(db, "users"))
       ]);
 
       setRequests(reqSnap.docs.map(d => ({ id: d.id, ...d.data() })));
@@ -100,6 +103,7 @@ export default function AdminDashboard() {
       setPartners(partnerSnap.docs.map(d => ({ id: d.id, ...d.data() })));
       setAssignments(assignSnap.docs.map(d => ({ id: d.id, ...d.data() })));
       setTemplates(tempSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setUsers(usersSnap.docs.map(d => ({ id: d.id, ...d.data() })));
     } catch (error: any) {
       toast({ title: "Sync Failed", description: "Could not sync compliance network data.", variant: "destructive" });
     } finally {
@@ -231,10 +235,10 @@ export default function AdminDashboard() {
     <button
       onClick={() => setActiveView(view)}
       className={cn(
-        "flex items-center gap-2 px-4 py-2 text-sm font-bold transition-all rounded-xl",
-        activeView === view 
-          ? "bg-primary text-white shadow-lg" 
-          : "text-muted-foreground hover:bg-muted"
+        "flex items-center gap-3 px-5 py-2 text-sm font-semibold transition-all rounded-full min-w-[140px] justify-center",
+        activeView === view
+          ? "bg-primary text-white shadow-md"
+          : "text-muted-foreground hover:bg-slate-50"
       )}
     >
       <Icon className="h-4 w-4" />
@@ -269,13 +273,14 @@ export default function AdminDashboard() {
           </div>
         </header>
 
-        <div className="flex flex-wrap gap-2 mb-8 bg-white p-2 rounded-2xl shadow-sm border overflow-x-auto">
+        <div className="flex items-center gap-3 mb-8 bg-white p-1 rounded-full shadow-sm border overflow-x-auto px-3">
           <NavItem view="dashboard" icon={LayoutDashboard} label="Overview" />
           <NavItem view="requests" icon={FileText} label="SME Requests" count={requests.length} />
           <NavItem view="consultants" icon={Users} label="Consultants" count={consultants.length} />
           <NavItem view="partners" icon={Handshake} label="Partners" count={partners.length} />
           <NavItem view="pipeline" icon={Activity} label="Live Pipeline" />
           <NavItem view="conflicts" icon={AlertTriangle} label="Conflicts" count={conflicts.length} />
+          <NavItem view="users" icon={Database} label="Users" count={users.length} />
           <NavItem view="templates" icon={Mail} label="Communications" />
         </div>
 
@@ -605,6 +610,54 @@ export default function AdminDashboard() {
                         <Button variant="outline" size="sm" className="rounded-xl font-bold border-slate-200 hover:bg-slate-50" onClick={() => setViewingConsultant(cons)}>
                           View Profile
                         </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+
+        {activeView === 'users' && (
+          <Card className="border-none shadow-sm rounded-3xl">
+            <CardHeader className="p-8 border-b">
+              <CardTitle className="text-2xl font-black text-slate-900">Platform Users</CardTitle>
+              <CardDescription className="text-sm font-medium mt-1">All authenticated accounts in the system.</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader className="bg-slate-50/50">
+                  <TableRow className="border-none h-14">
+                    <TableHead className="px-8 font-black text-[11px] uppercase tracking-wider">Name</TableHead>
+                    <TableHead className="font-black text-[11px] uppercase tracking-wider">Email</TableHead>
+                    <TableHead className="font-black text-[11px] uppercase tracking-wider text-center">Role</TableHead>
+                    <TableHead className="font-black text-[11px] uppercase tracking-wider text-center">Status</TableHead>
+                    <TableHead className="text-right px-8"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {users.map((u) => (
+                    <TableRow key={u.id} className="border-none hover:bg-slate-50 transition-colors h-20">
+                      <TableCell className="px-8">
+                        <div className="flex items-center gap-4">
+                          <Avatar className="h-10 w-10 rounded-xl">
+                            <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${u.name}`} />
+                            <AvatarFallback>{u.name?.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-bold text-sm text-slate-900">{u.name || 'User'}</p>
+                            <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">{u.onboarded ? 'Onboarded' : 'Registered'}</p>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm font-medium text-slate-600">{u.email}</TableCell>
+                      <TableCell className="text-center font-black text-slate-900">{u.role}</TableCell>
+                      <TableCell className="text-center">{u.disabled ? <Badge className="bg-amber-100 text-amber-700">Disabled</Badge> : <Badge className="bg-emerald-100 text-emerald-700">Active</Badge>}</TableCell>
+                      <TableCell className="text-right px-8">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button variant="outline" size="sm" className="rounded-xl font-bold" onClick={() => setViewingUser(u)}>View</Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
