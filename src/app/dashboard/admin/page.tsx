@@ -31,6 +31,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogAction, AlertDialogCancel } from "@/components/ui/alert-dialog";
 import { 
   FileText, 
   Users, 
@@ -82,6 +83,9 @@ export default function AdminDashboard() {
   const [viewingConsultant, setViewingConsultant] = useState<any>(null);
   const [viewingPartner, setViewingPartner] = useState<any>(null);
   const [viewingUser, setViewingUser] = useState<any>(null);
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertLoading, setAlertLoading] = useState(false);
+  const [alertPayload, setAlertPayload] = useState<any>(null);
   const [editingTemplate, setEditingTemplate] = useState<any>(null);
   const [seeding, setSeeding] = useState(false);
 
@@ -209,7 +213,18 @@ export default function AdminDashboard() {
   // User management actions
   const handleChangeUserRole = async (userId: string, newRole: string) => {
     try {
-      await updateDoc(doc(db, "users", userId), { role: newRole });
+      await updateDoc(doc(db, "users", userId), {
+        role: newRole,
+        auditLog: arrayUnion({
+          event: "role_changed",
+          newRole,
+          byId: profile.id,
+          byName: profile.name,
+          byRole: profile.role,
+          timestamp: serverTimestamp(),
+          note: `Role changed to ${newRole}`
+        })
+      });
       setUsers(users.map(u => u.id === userId ? { ...u, role: newRole } : u));
       if (viewingUser && viewingUser.id === userId) setViewingUser({ ...viewingUser, role: newRole });
       toast({ title: "Role Updated", description: `User role changed to ${newRole}.` });
@@ -222,7 +237,17 @@ export default function AdminDashboard() {
     try {
       const user = users.find(u => u.id === userId);
       const newDisabled = !user?.disabled;
-      await updateDoc(doc(db, "users", userId), { disabled: newDisabled });
+      await updateDoc(doc(db, "users", userId), {
+        disabled: newDisabled,
+        auditLog: arrayUnion({
+          event: newDisabled ? 'user_disabled' : 'user_enabled',
+          byId: profile.id,
+          byName: profile.name,
+          byRole: profile.role,
+          timestamp: serverTimestamp(),
+          note: `${newDisabled ? 'Disabled' : 'Enabled'} user account.`
+        })
+      });
       setUsers(users.map(u => u.id === userId ? { ...u, disabled: newDisabled } : u));
       if (viewingUser && viewingUser.id === userId) setViewingUser({ ...viewingUser, disabled: newDisabled });
       toast({ title: newDisabled ? "User Disabled" : "User Enabled", description: `User ${newDisabled ? 'disabled' : 'enabled'}.` });
@@ -824,6 +849,42 @@ export default function AdminDashboard() {
         </DialogContent>
       </Dialog>
 
+      <AlertDialog open={alertOpen} onOpenChange={setAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm action</AlertDialogTitle>
+            <AlertDialogDescription>
+              {alertPayload?.type === 'change_role' && (
+                <>Are you sure you want to change role of <strong>{alertPayload.userName}</strong> to <strong>{alertPayload.newRole}</strong>?</>
+              )}
+              {alertPayload?.type === 'toggle_disabled' && (
+                <>Are you sure you want to {alertPayload.currentDisabled ? 'enable' : 'disable'} the user <strong>{alertPayload.userName}</strong>?</>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={async () => {
+              if (!alertPayload) return;
+              setAlertLoading(true);
+              try {
+                if (alertPayload.type === 'change_role') {
+                  await handleChangeUserRole(alertPayload.userId, alertPayload.newRole);
+                } else if (alertPayload.type === 'toggle_disabled') {
+                  await handleToggleUserDisabled(alertPayload.userId);
+                }
+                setAlertOpen(false);
+                setAlertPayload(null);
+              } catch (e) {
+                console.error(e);
+              } finally {
+                setAlertLoading(false);
+              }
+            }}>{alertLoading ? 'Working...' : 'Confirm'}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Dialog open={!!viewingConsultant} onOpenChange={() => setViewingConsultant(null)}>
         <DialogContent className="max-w-2xl rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
           <div className="bg-primary p-8 text-white relative">
@@ -961,15 +1022,15 @@ export default function AdminDashboard() {
 
                   <div className="flex gap-3 mt-4">
                     {viewingUser?.role !== 'admin' ? (
-                      <Button onClick={() => handleChangeUserRole(viewingUser.id, 'admin')}>Promote to Admin</Button>
+                      <Button onClick={() => { setAlertPayload({ type: 'change_role', userId: viewingUser.id, newRole: 'admin', userName: viewingUser.name }); setAlertOpen(true); }}>Promote to Admin</Button>
                     ) : (
-                      <Button variant="outline" onClick={() => handleChangeUserRole(viewingUser.id, 'sme')}>Demote to SME</Button>
+                      <Button variant="outline" onClick={() => { setAlertPayload({ type: 'change_role', userId: viewingUser.id, newRole: 'sme', userName: viewingUser.name }); setAlertOpen(true); }}>Demote to SME</Button>
                     )}
 
                     <Button variant={viewingUser?.disabled ? 'secondary' : 'destructive'} onClick={() => {
                       if (!viewingUser) return;
-                      const ok = confirm(`Are you sure you want to ${viewingUser.disabled ? 'enable' : 'disable'} this user?`);
-                      if (ok) handleToggleUserDisabled(viewingUser.id);
+                      setAlertPayload({ type: 'toggle_disabled', userId: viewingUser.id, currentDisabled: viewingUser.disabled, userName: viewingUser.name });
+                      setAlertOpen(true);
                     }}>{viewingUser?.disabled ? 'Enable User' : 'Disable User'}</Button>
                   </div>
 
