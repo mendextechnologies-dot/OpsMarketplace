@@ -2,6 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState, useMemo } from "react";
+import { usePathname } from "next/navigation";
 import { onAuthStateChanged, User, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase-config";
@@ -75,6 +76,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [consultantProfile, setConsultantProfile] = useState<ConsultantProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const pathname = usePathname();
 
   const fetchProfile = async (uid: string) => {
     const docRef = doc(db, "users", uid);
@@ -110,6 +112,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(firebaseUser);
       if (firebaseUser) {
         await fetchProfile(firebaseUser.uid);
+        // If user landed on the public root or auth pages, redirect to dashboard
+        if (pathname === '/' || pathname?.startsWith('/login') || pathname?.startsWith('/signup')) {
+          router.replace('/dashboard');
+        }
       } else {
         setProfile(null);
         setOrgProfile(null);
