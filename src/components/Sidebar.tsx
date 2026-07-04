@@ -44,6 +44,9 @@ export default function Sidebar({ profile, pathname }: { profile: any, pathname?
         </Link>
         {isAdmin && (
           <>
+            <Link href="/dashboard/admin?view=templates" className="nav-item">
+              <Mail className="h-4 w-4" /> <span>Communications</span>
+            </Link>
             <Link href="/dashboard/admin?view=conflicts" className="nav-item">
               <AlertTriangle className="h-4 w-4" /> <span>Conflicts</span>
             </Link>
